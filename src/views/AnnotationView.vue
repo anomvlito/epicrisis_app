@@ -161,13 +161,13 @@ onUnmounted(async () => {
     <!-- Top bar -->
     <div class="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-white border-b border-gray-200 shadow-sm z-10">
       <button
-        class="p-1 rounded text-gray-400 hover:text-gray-600 transition-colors"
-        title="Volver al dashboard"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:bg-gray-100 hover:text-brand-600 transition-all border border-transparent hover:border-gray-200"
         @click="goToDashboard"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
+        Volver
       </button>
 
       <div class="flex items-center gap-2">
@@ -299,7 +299,10 @@ onUnmounted(async () => {
             Documento clínico
           </span>
           <div class="flex items-center gap-2">
-            <span v-if="isObscured" class="text-[10px] text-red-500 font-semibold">● Protegido</span>
+            <span v-if="isObscured" class="flex items-center gap-1 text-[10px] text-red-500 font-bold uppercase tracking-wider">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+              Protección de Datos Activa
+            </span>
             <span class="text-[10px] text-gray-400">Selecciona texto → Capturar evidencia</span>
           </div>
         </div>

@@ -190,7 +190,7 @@ onMounted(load)
           size="sm"
           @click="quickAssign"
         >
-          ⚡ Distribuir {{ stats.unassigned }} sin asignar
+          Distribuir {{ stats.unassigned }} sin asignar
         </BaseButton>
       </div>
 
