@@ -16,7 +16,11 @@ async function handleSubmit() {
   error.value = ''
   try {
     await auth.login(email.value, password.value)
-    router.push({ name: 'dashboard' })
+    if (auth.isAdmin) {
+      router.push({ name: 'admin' })
+    } else {
+      router.push({ name: 'dashboard' })
+    }
   } catch (e) {
     if (e instanceof ApiError) {
       error.value = e.message

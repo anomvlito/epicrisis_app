@@ -51,7 +51,12 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.requiresGuest && auth.isAuthenticated) {
-    return { name: 'dashboard' }
+    return auth.isAdmin ? { name: 'admin' } : { name: 'dashboard' }
+  }
+
+  // Redirect to admin by default if logged in and accessing root or dashboard as admin
+  if (to.path === '/dashboard' && auth.isAdmin) {
+    return { name: 'admin' }
   }
 })
 
