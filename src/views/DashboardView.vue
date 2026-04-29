@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useEpicrisisStore } from '@/stores/epicrisis'
+import { useAutoRefresh } from '@/composables/useAutoRefresh'
+import { useToast } from '@/composables/useToast'
 import EpicrisisCard from '@/components/EpicrisisCard.vue'
 import BaseLoader from '@/components/ui/BaseLoader.vue'
 
 const epicrisisStore = useEpicrisisStore()
+const { show: showToast } = useToast()
 
 const activeTab = ref<'pending' | 'in_review' | 'reviewed'>('pending')
 
@@ -14,7 +17,20 @@ const tabs = [
   { key: 'reviewed' as const,  label: 'Completadas' },
 ]
 
-onMounted(() => epicrisisStore.fetchList())
+useAutoRefresh(
+  () => epicrisisStore.fetchList(true),
+  {
+    intervalMs: 30_000,
+    immediate: true,
+    getCount: () => epicrisisStore.list.length,
+    onNewItems: (delta) => {
+      showToast(
+        delta === 1 ? 'Se te asignó 1 nueva epicrisis' : `Se te asignaron ${delta} nuevas epicrisis`,
+        'info'
+      )
+    },
+  }
+)
 </script>
 
 <template>

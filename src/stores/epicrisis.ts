@@ -25,13 +25,13 @@ export const useEpicrisisStore = defineStore('epicrisis', () => {
   const inReview = computed(() => list.value.filter((e) => e.status === 'in_review'))
   const reviewed = computed(() => list.value.filter((e) => e.status === 'reviewed'))
 
-  async function fetchList() {
-    loading.value = true
+  async function fetchList(silent = false) {
+    if (!silent) loading.value = true
     try {
       const data = await epicrisisService.getList()
       list.value = data.epicrises
     } finally {
-      loading.value = false
+      if (!silent) loading.value = false
     }
   }
 
