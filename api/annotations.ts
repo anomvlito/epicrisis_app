@@ -37,13 +37,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { epicrisisId } = req.query
     if (!epicrisisId) return res.status(400).json({ error: 'epicrisisId requerido' })
 
+    const [doc] = await db
+      .select({ assigneeId: epicrisis.assigneeId })
+      .from(epicrisis)
+      .where(eq(epicrisis.id, Number(epicrisisId)))
+      .limit(1)
+
+    // Si es admin, buscamos las del asignado. Si no hay asignado o es estudiante, buscamos las propias.
+    const targetUserId = (authUser.role === 'admin' && doc?.assigneeId) 
+      ? doc.assigneeId 
+      : userId
+
     const rows = await db
       .select()
       .from(annotations)
       .where(
         and(
           eq(annotations.epicrisisId, Number(epicrisisId)),
-          eq(annotations.userId, userId)
+          eq(annotations.userId, targetUserId)
         )
       )
 
@@ -69,9 +80,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const isOwner = doc.assigneeId === userId || authUser.role === 'admin'
     if (!isOwner) return res.status(403).json({ error: 'Sin permiso' })
 
-    if (doc.status === 'reviewed' && authUser.role !== 'admin') {
-      return res.status(409).json({ error: 'Esta epicrisis ya fue revisada' })
-    }
+    // Permitir re-edición siempre, incluso si ya está 'reviewed'
+    // if (doc.status === 'reviewed' && authUser.role !== 'admin') {
+    //   return res.status(409).json({ error: 'Esta epicrisis ya fue revisada' })
+    // }
 
     await db
       .delete(annotations)

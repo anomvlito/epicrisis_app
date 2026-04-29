@@ -6,6 +6,7 @@ export interface AdminEpicrisisRow {
   assigneeId: number | null
   createdAt: string
   assigneeEmail: string | null
+  annotatedCount: number
 }
 
 export interface AdminStats {

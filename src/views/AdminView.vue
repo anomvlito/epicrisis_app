@@ -164,6 +164,7 @@ onMounted(load)
               <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">ID</th>
               <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Estado</th>
               <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Asignado a</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Progreso</th>
               <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-40">Asignar</th>
             </tr>
           </thead>
@@ -198,6 +199,23 @@ onMounted(load)
                   {{ row.assigneeEmail }}
                 </span>
                 <span v-else class="text-gray-300 text-xs italic">Sin asignar</span>
+              </td>
+
+              <!-- Progress -->
+              <td class="px-4 py-3">
+                <div v-if="row.assigneeId" class="flex flex-col gap-1">
+                  <div class="flex justify-between text-[10px] text-gray-500 font-medium">
+                    <span>{{ row.annotatedCount }}/15</span>
+                    <span>{{ Math.round((row.annotatedCount / 15) * 100) }}%</span>
+                  </div>
+                  <div class="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+                    <div 
+                      class="h-full bg-brand-500 rounded-full transition-all duration-500"
+                      :style="{ width: (row.annotatedCount / 15) * 100 + '%' }"
+                    />
+                  </div>
+                </div>
+                <span v-else class="text-gray-300 text-[10px]">—</span>
               </td>
 
               <!-- Assignment dropdown -->

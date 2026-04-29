@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
-import { eq } from 'drizzle-orm'
-import { db, users, epicrisis } from './_lib/db.js'
+import { eq, sql, and } from 'drizzle-orm'
+import { db, users, epicrisis, annotations } from './_lib/db.js'
 import { getAuthUser } from './_lib/auth.js'
 
 function cors(res: VercelResponse) {
@@ -44,9 +44,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           assigneeId: epicrisis.assigneeId,
           createdAt: epicrisis.createdAt,
           assigneeEmail: users.email,
+          // Contamos cuántas anotaciones tiene el usuario asignado
+          annotatedCount: sql<number>`count(${annotations.id})`.mapWith(Number),
         })
         .from(epicrisis)
         .leftJoin(users, eq(epicrisis.assigneeId, users.id))
+        .leftJoin(annotations, and(
+          eq(epicrisis.id, annotations.epicrisisId),
+          eq(epicrisis.assigneeId, annotations.userId)
+        ))
+        .groupBy(epicrisis.id, users.email)
         .orderBy(epicrisis.id)
 
       // Stats summary

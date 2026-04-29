@@ -37,7 +37,14 @@ const showConfirmModal = ref(false)
 const showSuccessModal = ref(false)
 const errorMessage = ref('')
 
-const isReadOnly = computed(() => epicrisisStore.current?.status === 'reviewed')
+// Permitimos editar siempre, incluso si está en estado 'reviewed',
+// para que puedan corregir errores post-entrega.
+const isReadOnly = computed(() => {
+  // Si quisiéramos que el admin pueda editar pero el estudiante no una vez finalizado,
+  // usaríamos: return !auth.isAdmin && epicrisisStore.current?.status === 'reviewed'
+  // Pero el usuario pidió que ambos puedan volver a editar.
+  return false
+})
 
 const completedCount = computed(
   () => annotationStore.criteria.filter((c) => c.isPresent !== null).length
