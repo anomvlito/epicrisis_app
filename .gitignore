@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.local
+.vercel
+db/migrations
+readme_usuarios.md
+scripts/seed_epicrisis.sql

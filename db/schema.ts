@@ -1,0 +1,86 @@
+import {
+  pgTable,
+  serial,
+  text,
+  boolean,
+  timestamp,
+  pgEnum,
+  integer,
+  json,
+} from 'drizzle-orm/pg-core'
+import { relations } from 'drizzle-orm'
+
+export const userRoleEnum = pgEnum('user_role', ['admin', 'annotator'])
+export const epicrisisStatusEnum = pgEnum('epicrisis_status', [
+  'pending',
+  'in_review',
+  'reviewed',
+])
+
+export interface LlmPrediction {
+  valor: boolean | null
+  metodo: string
+  confianza: number
+  evidencia: string
+  conflicto: boolean
+  requiere_llm: boolean
+  num_presentes: number
+  num_ausentes: number
+  _evidencia_llm?: string
+  _razonamiento_llm?: string
+}
+
+export type LlmPredictions = Record<string, LlmPrediction>
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  role: userRoleEnum('role').notNull().default('annotator'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const epicrisis = pgTable('epicrisis', {
+  id: serial('id').primaryKey(),
+  contentMarkdown: text('content_markdown').notNull(),
+  llmPredictions: json('llm_predictions').$type<LlmPredictions>(),
+  status: epicrisisStatusEnum('status').notNull().default('pending'),
+  assigneeId: integer('assignee_id').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const annotations = pgTable('annotations', {
+  id: serial('id').primaryKey(),
+  epicrisisId: integer('epicrisis_id')
+    .notNull()
+    .references(() => epicrisis.id, { onDelete: 'cascade' }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  criterionName: text('criterion_name').notNull(),
+  isPresent: boolean('is_present'),
+  evidenceText: text('evidence_text'),
+  comments: text('comments'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const usersRelations = relations(users, ({ many }) => ({
+  epicrises: many(epicrisis),
+  annotations: many(annotations),
+}))
+
+export const epicrisisRelations = relations(epicrisis, ({ one, many }) => ({
+  assignee: one(users, { fields: [epicrisis.assigneeId], references: [users.id] }),
+  annotations: many(annotations),
+}))
+
+export const annotationsRelations = relations(annotations, ({ one }) => ({
+  epicrisis: one(epicrisis, { fields: [annotations.epicrisisId], references: [epicrisis.id] }),
+  user: one(users, { fields: [annotations.userId], references: [users.id] }),
+}))
+
+export type User = typeof users.$inferSelect
+export type Epicrisis = typeof epicrisis.$inferSelect
+export type Annotation = typeof annotations.$inferSelect
+export type NewAnnotation = typeof annotations.$inferInsert
