@@ -22,8 +22,14 @@ export interface ServerAnnotation {
 
 export const annotationService = {
   getForEpicrisis: (epicrisisId: number) =>
-    api.get<{ annotations: ServerAnnotation[] }>(`/annotations?epicrisisId=${epicrisisId}`),
+    api.get<{ annotations: any[] }>(`/annotations?epicrisisId=${epicrisisId}`),
 
-  submit: (payload: SubmitPayload) =>
-    api.post<{ ok: boolean; status: string }>('/annotations', payload),
+  submit: (epicrisisId: number, criteria: any[], isFinal: boolean) =>
+    api.post<{ ok: boolean; status: string }>('/annotations', { epicrisisId, criteria, isFinal }),
+
+  lock: (epicrisisId: number) =>
+    api.post<{ ok: boolean }>('/lock', { epicrisisId, action: 'lock' }),
+
+  unlock: (epicrisisId: number) =>
+    api.post<{ ok: boolean }>('/lock', { epicrisisId, action: 'unlock' }),
 }

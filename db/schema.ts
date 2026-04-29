@@ -46,6 +46,8 @@ export const epicrisis = pgTable('epicrisis', {
   llmPredictions: json('llm_predictions').$type<LlmPredictions>(),
   status: epicrisisStatusEnum('status').notNull().default('pending'),
   assigneeId: integer('assignee_id').references(() => users.id),
+  lockedBy: integer('locked_by').references(() => users.id),
+  lockedAt: timestamp('locked_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

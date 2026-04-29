@@ -36,14 +36,11 @@ const { isObscured } = useAntiScreenCapture(textPanelRef)
 const showConfirmModal = ref(false)
 const showSuccessModal = ref(false)
 const errorMessage = ref('')
+const lockError = ref('')
+const isLockedByOthers = ref(false)
 
-// Permitimos editar siempre, incluso si está en estado 'reviewed',
-// para que puedan corregir errores post-entrega.
 const isReadOnly = computed(() => {
-  // Si quisiéramos que el admin pueda editar pero el estudiante no una vez finalizado,
-  // usaríamos: return !auth.isAdmin && epicrisisStore.current?.status === 'reviewed'
-  // Pero el usuario pidió que ambos puedan volver a editar.
-  return false
+  return isLockedByOthers.value
 })
 
 const completedCount = computed(
@@ -113,6 +110,17 @@ function goToDashboard() {
 }
 
 onMounted(async () => {
+  // Intentar bloquear para edición
+  try {
+    await annotationService.lock(epicrisisId)
+    isLockedByOthers.value = false
+  } catch (e: any) {
+    if (e.response?.status === 423) {
+      isLockedByOthers.value = true
+      lockError.value = `Este documento está siendo editado por ${e.response.data.lockedBy}. Solo puedes verlo.`
+    }
+  }
+
   await epicrisisStore.fetchOne(epicrisisId)
   const llmPredictions = epicrisisStore.current?.llmPredictions ?? null
 
@@ -132,7 +140,10 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => {
+onUnmounted(async () => {
+  if (!isLockedByOthers.value) {
+    await annotationService.unlock(epicrisisId)
+  }
   annotationStore.reset()
 })
 </script>
@@ -219,11 +230,28 @@ onUnmounted(() => {
 
       <div
         v-if="isReadOnly"
-        class="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200"
+        class="px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200"
       >
-        Solo lectura
+        Bloqueado (Solo Lectura)
       </div>
     </div>
+
+    <!-- Lock banner -->
+    <Transition
+      enter-active-class="transition duration-200"
+      enter-from-class="opacity-0 -translate-y-1"
+      enter-to-class="opacity-100 translate-y-0"
+    >
+      <div
+        v-if="lockError"
+        class="flex-shrink-0 flex items-center gap-2 bg-amber-50 border-b border-amber-200 px-4 py-2 text-sm text-amber-700 font-medium"
+      >
+        <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+        </svg>
+        {{ lockError }}
+      </div>
+    </Transition>
 
     <!-- Error banner -->
     <Transition
