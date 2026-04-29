@@ -117,21 +117,27 @@ onMounted(load)
         </BaseButton>
       </div>
 
-      <!-- View Switcher -->
-      <div class="flex p-1 bg-gray-200/50 rounded-xl mb-6 w-fit">
+      <!-- View Switcher (Tabs Style) -->
+      <div class="flex items-center gap-1 p-1 bg-gray-200/40 backdrop-blur-sm rounded-xl mb-8 w-fit border border-gray-200">
         <button 
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-all"
-          :class="viewMode === 'assignment' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+          class="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200"
+          :class="viewMode === 'assignment' ? 'bg-white text-brand-600 shadow-md ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
           @click="viewMode = 'assignment'"
         >
-          Asignación
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          Gestión de Asignación
         </button>
         <button 
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-all"
-          :class="viewMode === 'matrix' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+          class="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200"
+          :class="viewMode === 'matrix' ? 'bg-white text-brand-600 shadow-md ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
           @click="viewMode = 'matrix'; if(!matrixRows.length) loadMatrix()"
         >
-          Matriz de Comorbilidades
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          Matriz de Hallazgos
         </button>
       </div>
 
