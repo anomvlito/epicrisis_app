@@ -68,7 +68,7 @@ async function handleLogout() {
     </header>
 
     <!-- Content Area -->
-    <main class="flex-1 flex flex-col">
+    <main class="flex-1 overflow-hidden flex flex-col">
       <slot />
     </main>
   </div>

@@ -294,7 +294,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="flex-1 overflow-y-auto bg-gray-50">
+  <div class="flex-1 min-h-0 overflow-y-auto bg-gray-50">
     <div class="max-w-5xl mx-auto px-4 py-8">
 
       <!-- Header -->

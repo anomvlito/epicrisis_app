@@ -157,7 +157,7 @@ onUnmounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden bg-white">
+  <div class="flex flex-col flex-1 min-h-0 overflow-hidden bg-white">
     <!-- Top bar -->
     <div class="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-white border-b border-gray-200 shadow-sm z-10">
       <button
@@ -286,13 +286,13 @@ onUnmounted(async () => {
     <div
       v-else-if="epicrisisStore.current"
       ref="containerRef"
-      class="flex flex-1 overflow-hidden"
+      class="flex flex-1 min-h-0 overflow-hidden"
       :class="{ 'select-none': isDragging }"
     >
       <!-- ===== LEFT PANEL: Epicrisis document ===== -->
       <div
         :style="{ width: leftWidthPct + '%' }"
-        class="flex flex-col overflow-hidden border-r border-gray-200"
+        class="flex flex-col min-h-0 overflow-hidden border-r border-gray-200"
       >
         <div class="flex-shrink-0 flex items-center justify-between px-4 py-1.5 bg-gray-50 border-b border-gray-200">
           <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
@@ -310,7 +310,7 @@ onUnmounted(async () => {
         <!-- Paper sheet effect: fondo gris, "hoja" blanca centrada -->
         <div
           ref="textPanelRef"
-          class="flex-1 overflow-y-auto relative"
+          class="flex-1 min-h-0 overflow-y-auto relative"
           style="background: #e8ecf0;"
         >
           <!-- User Watermark (Deterrent) -->
@@ -336,7 +336,7 @@ onUnmounted(async () => {
       <!-- ===== RIGHT PANEL: Annotation form ===== -->
       <div
         :style="{ width: (100 - leftWidthPct) + '%' }"
-        class="flex flex-col overflow-hidden bg-gray-50"
+        class="flex flex-col min-h-0 overflow-hidden bg-gray-50"
       >
         <!-- Panel header with progress -->
         <div class="flex-shrink-0 px-3 py-1.5 bg-gray-50 border-b border-gray-200">
@@ -359,7 +359,7 @@ onUnmounted(async () => {
         </div>
 
         <!-- Criteria list -->
-        <div class="flex-1 overflow-y-auto px-2 py-2 space-y-1.5">
+        <div class="flex-1 min-h-0 overflow-y-auto px-2 py-2 space-y-1.5">
           <CriterionRow
             v-for="criterion in COMORBIDITIES"
             :key="criterion.name"
