@@ -1,2 +1,2 @@
-export { db } from '../../db/index'
-export * from '../../db/schema'
+export { db } from '../../db/index.js'
+export * from '../../db/schema.js'

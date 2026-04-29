@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
-import { db, users, epicrisis } from './_lib/db'
-import { getAuthUser } from './_lib/auth'
+import { db, users, epicrisis } from './_lib/db.js'
+import { getAuthUser } from './_lib/auth.js'
 
 function cors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN ?? '*')

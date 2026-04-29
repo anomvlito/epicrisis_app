@@ -2,14 +2,14 @@ import 'dotenv/config'
 import pkg from 'pg'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
-import { users } from './schema'
+import { users } from './schema.js'
 import { eq } from 'drizzle-orm'
 
 const { Pool } = pkg
 
 async function main() {
-  const connectionString = process.env.DATABASE_URL_UNPOOLED
-  if (!connectionString) throw new Error('DATABASE_URL_UNPOOLED is not set')
+  const connectionString = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL
+  if (!connectionString) throw new Error('DATABASE_URL or DATABASE_URL_UNPOOLED is not set')
 
   const pool = new Pool({ connectionString })
   const db = drizzle(pool)

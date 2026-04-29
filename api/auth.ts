@@ -2,8 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
-import { db, users } from './_lib/db'
-import { signToken, setCookieHeader, clearCookieHeader, getAuthUser } from './_lib/auth'
+import { db, users } from './_lib/db.js'
+import { signToken, setCookieHeader, clearCookieHeader, getAuthUser } from './_lib/auth.js'
 
 const LoginSchema = z.object({
   email: z.string().email(),
