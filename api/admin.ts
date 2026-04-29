@@ -44,15 +44,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           assigneeId: epicrisis.assigneeId,
           createdAt: epicrisis.createdAt,
           assigneeEmail: users.email,
-          // Contamos cuántas anotaciones tiene el usuario asignado
-          annotatedCount: sql<number>`count(${annotations.id})`.mapWith(Number),
+          // Contamos cuántas anotaciones tienen un valor definido (isPresent no es null)
+          annotatedCount: sql<number>`count(${annotations.isPresent})`.mapWith(Number),
         })
         .from(epicrisis)
         .leftJoin(users, eq(epicrisis.assigneeId, users.id))
-        .leftJoin(annotations, and(
-          eq(epicrisis.id, annotations.epicrisisId),
-          eq(epicrisis.assigneeId, annotations.userId)
-        ))
+        .leftJoin(annotations, eq(epicrisis.id, annotations.epicrisisId))
         .groupBy(epicrisis.id, users.email)
         .orderBy(epicrisis.id)
 
