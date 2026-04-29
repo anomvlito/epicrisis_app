@@ -4,7 +4,7 @@ Aplicación web para la anotación de **ground truth** de epicrisis clínicas, d
 
 ---
 
-## 🎯 Objetivo del Proyecto
+## Objetivo del Proyecto
 
 El objetivo central es construir un conjunto de datos de **ground truth** médico que permita evaluar y comparar la capacidad de un modelo LLM para identificar comorbilidades presentes en documentos clínicos (epicrisis).
 
@@ -17,7 +17,7 @@ El flujo es el siguiente:
 
 ---
 
-## 🏗️ Arquitectura
+## Arquitectura
 
 ### Visión General
 
@@ -65,7 +65,7 @@ El flujo es el siguiente:
 
 ---
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 epicrisis_app/
@@ -127,7 +127,7 @@ epicrisis_app/
 
 ---
 
-## 🗃️ Modelo de Datos
+## Modelo de Datos
 
 ### Tablas principales
 
@@ -176,7 +176,7 @@ pending  ──►  in_review  ──►  reviewed
 
 ---
 
-## 🖥️ Vistas de la Aplicación
+## Vistas de la Aplicación
 
 ### `LoginView`
 Formulario de autenticación. Genera un JWT almacenado en cookie HTTP-only.
@@ -201,11 +201,11 @@ Panel exclusivo para usuarios con rol `admin`:
 - **Estadísticas globales**: Total, sin asignar, pendientes, en revisión, revisadas.
 - **Tabla de epicrisis**: Filtrado por estado, visualización de progreso por anotador.
 - **Asignación manual**: Selector por fila para cambiar el asignado.
-- **Asignación rápida (⚡)**: Distribuye automáticamente todas las epicrisis sin asignar entre los anotadores disponibles en orden rotativo.
+- **Asignación rápida**: Distribuye automáticamente todas las epicrisis sin asignar entre los anotadores disponibles en orden rotativo.
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
 Todas las rutas tienen el prefijo `/api/`.
 
@@ -224,7 +224,7 @@ Todas las rutas tienen el prefijo `/api/`.
 
 ---
 
-## ⚙️ Variables de Entorno
+## Variables de Entorno
 
 Copia `.env.example` a `.env` y completa los valores:
 
@@ -241,7 +241,7 @@ CORS_ORIGIN=https://tu-app.vercel.app
 
 ---
 
-## 🚀 Instalación y Desarrollo Local
+## Instalación y Desarrollo Local
 
 ### Prerrequisitos
 - Node.js 20.x
@@ -286,7 +286,7 @@ La API corre en `http://localhost:3000/api/`.
 
 ---
 
-## ☁️ Despliegue en Vercel
+## Despliegue en Vercel
 
 El proyecto está configurado para desplegarse directamente en Vercel.
 
@@ -303,7 +303,7 @@ El SPA (en `dist/`) se sirve con una regla de rewrite para soportar el ruteo del
 
 ---
 
-## 🔐 Seguridad
+## Seguridad
 
 - Las contraseñas se almacenan con hash **bcrypt**.
 - La autenticación usa **JWT** firmados con `jose`, almacenados en cookies `HttpOnly; Secure; SameSite=Strict`.
@@ -312,7 +312,7 @@ El SPA (en `dist/`) se sirve con una regla de rewrite para soportar el ruteo del
 
 ---
 
-## 👥 Roles de Usuario
+## Roles de Usuario
 
 | Rol | Permisos |
 |-----|---------|
@@ -321,7 +321,7 @@ El SPA (en `dist/`) se sirve con una regla de rewrite para soportar el ruteo del
 
 ---
 
-## 📊 Flujo de Datos para Validación del LLM
+## Flujo de Datos para Validación del LLM
 
 ```
 Epicrisis (texto clínico)
@@ -359,7 +359,7 @@ El campo `llm_predictions` en la tabla `epicrisis` almacena un JSON estructurado
 
 ---
 
-## 🤝 Contribución
+## Contribución
 
 1. Crea una rama desde `main`: `git checkout -b feature/mi-mejora`
 2. Realiza tus cambios y asegúrate de que el proyecto compila: `npm run build`
@@ -367,6 +367,6 @@ El campo `llm_predictions` en la tabla `epicrisis` almacena un JSON estructurado
 
 ---
 
-## 📄 Licencia
+## Licencia
 
 Este proyecto fue desarrollado con fines académicos e investigativos.
