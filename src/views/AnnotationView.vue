@@ -110,7 +110,11 @@ function goToDashboard() {
 }
 
 onMounted(async () => {
-  // Intentar bloquear para edición
+  // Inicializar store inmediatamente con placeholders (15 criterios)
+  // Esto evita que la pantalla se vea vacía si falla la red
+  annotationStore.initForEpicrisis(epicrisisId, null)
+
+  // Intentar bloquear para edición (no bloqueante)
   try {
     await annotationService.lock(epicrisisId)
     isLockedByOthers.value = false
@@ -121,18 +125,22 @@ onMounted(async () => {
     }
   }
 
-  await epicrisisStore.fetchOne(epicrisisId)
-  const llmPredictions = epicrisisStore.current?.llmPredictions ?? null
-
-  annotationStore.initForEpicrisis(epicrisisId, llmPredictions)
-
+  // Cargar datos de la epicrisis
   try {
+    await epicrisisStore.fetchOne(epicrisisId)
+    const llmPredictions = epicrisisStore.current?.llmPredictions ?? null
+    
+    // Re-inicializar con predicciones si existen
+    annotationStore.initForEpicrisis(epicrisisId, llmPredictions)
+
+    // Cargar anotaciones guardadas
     const { annotations } = await annotationService.getForEpicrisis(epicrisisId)
     if (annotations.length > 0) {
       annotationStore.loadFromServer(annotations, llmPredictions)
     }
-  } catch {
-    // use local draft
+  } catch (e) {
+    console.error('Error loading epicrisis:', e)
+    errorMessage.value = 'No se pudo cargar el documento. Verifica tu conexión.'
   }
 
   if (COMORBIDITIES.length > 0) {

@@ -43,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .where(eq(epicrisis.id, Number(epicrisisId)))
       .limit(1)
 
-    if (doc.lockedBy && doc.lockedBy !== userId && doc.lockedAt && doc.lockedAt > timeoutDate) {
+    if (doc && doc.lockedBy && doc.lockedBy !== userId && doc.lockedAt && doc.lockedAt > timeoutDate) {
       return res.status(423).json({ 
         error: 'Documento bloqueado', 
         lockedBy: doc.lockedByEmail || 'Otro usuario' 
