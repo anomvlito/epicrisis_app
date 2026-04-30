@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, toRef } from 'vue'
 import { useAnnotationStore } from '@/stores/annotation'
 
 export function useTextSelection(containerRef: { value: HTMLElement | null }) {
@@ -54,8 +54,8 @@ export function useTextSelection(containerRef: { value: HTMLElement | null }) {
   })
 
   return { 
-    selectedText: store.selectedText, 
-    hasSelection: store.hasSelection, 
+    selectedText: toRef(store, 'selectedText'), 
+    hasSelection: toRef(store, 'hasSelection'), 
     clearSelection: store.clearGlobalSelection, 
     captureAndReturn 
   }
