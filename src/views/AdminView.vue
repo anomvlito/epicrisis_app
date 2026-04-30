@@ -16,8 +16,8 @@ const epicrisisStore = useEpicrisisStore()
 type AdminTab = 'assignment' | 'matrix' | 'users' | 'my_tasks'
 
 // ── Assignment tab ──────────────────────────────────────────────────────────
+// ── Assignment tab ──────────────────────────────────────────────────────────
 const epicrises = ref<AdminEpicrisisRow[]>([])
-const annotators = ref<AdminUser[]>([])
 const stats = ref<AdminStats | null>(null)
 const loading = ref(true)
 const saving = ref<Record<number, boolean>>({})
@@ -36,6 +36,9 @@ const errorMsg = ref('')
 const allUsers = ref<AdminUser[]>([])
 const loadingUsers = ref(false)
 const usersLoaded = ref(false)
+
+// Computed selector for annotators (SSOT strategy)
+const annotators = computed(() => allUsers.value.filter(u => u.role === 'annotator'))
 
 const showCreateForm = ref(false)
 const newEmail = ref('')
@@ -97,13 +100,15 @@ async function load() {
   loading.value = true
   errorMsg.value = ''
   try {
+    // We load EVERYTHING on mount for a smoother experience
     const [eRes, uRes] = await Promise.all([
       adminService.getEpicrises(),
-      adminService.getUsers(),
+      adminService.getAllUsers(),
     ])
     epicrises.value = eRes.epicrises
     stats.value = eRes.stats
-    annotators.value = uRes.users
+    allUsers.value = uRes.users
+    usersLoaded.value = true
   } catch (e) {
     errorMsg.value = e instanceof Error ? e.message : 'Error cargando datos'
   } finally {
@@ -187,7 +192,7 @@ async function assign(epicrisisId: number, userId: string) {
     if (row) {
       row.assigneeId = parsedId
       row.assigneeEmail = parsedId
-        ? (annotators.value.find(u => u.id === parsedId)?.email ?? null)
+        ? (allUsers.value.find(u => u.id === parsedId)?.email ?? null)
         : null
     }
     if (stats.value) {
@@ -217,9 +222,6 @@ async function createUser() {
   try {
     const res = await adminService.createUser(newEmail.value.trim(), newPassword.value, createRole.value)
     allUsers.value.push(res.user)
-    if (res.user.role === 'annotator') {
-      annotators.value.push(res.user)
-    }
     newEmail.value = ''
     newPassword.value = ''
     createRole.value = 'annotator'
@@ -239,11 +241,6 @@ async function toggleRole(user: AdminUser) {
     await adminService.updateUserRole(user.id, targetRole)
     const idx = allUsers.value.findIndex(u => u.id === user.id)
     if (idx !== -1) allUsers.value[idx]!.role = targetRole
-    if (targetRole === 'admin') {
-      annotators.value = annotators.value.filter(u => u.id !== user.id)
-    } else if (!annotators.value.find(u => u.id === user.id)) {
-      annotators.value.push({ ...user, role: targetRole })
-    }
   } catch (e) {
     errorMsg.value = e instanceof Error ? e.message : 'Error al cambiar rol'
   } finally {
@@ -257,7 +254,6 @@ async function handleDeleteUser(user: AdminUser) {
   try {
     await adminService.deleteUser(user.id)
     allUsers.value = allUsers.value.filter(u => u.id !== user.id)
-    annotators.value = annotators.value.filter(u => u.id !== user.id)
     epicrises.value.forEach(e => {
       if (e.assigneeId === user.id) {
         e.assigneeId = null
