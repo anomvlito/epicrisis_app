@@ -37,6 +37,7 @@ export const users = pgTable('users', {
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: userRoleEnum('role').notNull().default('annotator'),
+  termsAcceptedAt: timestamp('terms_accepted_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

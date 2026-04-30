@@ -32,72 +32,138 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4 py-12">
-    <div class="w-full max-w-md">
-      <!-- Simple Brand Header -->
-      <div class="text-center mb-10">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-brand-600 rounded-2xl mb-6 shadow-xl shadow-brand-200">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  <div class="flex-1 flex overflow-hidden">
+    <!-- Left Panel: Brand & Info (Desktop only) -->
+    <div class="hidden lg:flex lg:w-3/5 relative overflow-hidden bg-brand-600">
+      <!-- Background Image with Overlay -->
+      <img 
+        src="@/assets/login-bg.png" 
+        alt="Clinical Research" 
+        class="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay"
+      />
+      <div class="absolute inset-0 bg-gradient-to-tr from-brand-900/80 via-brand-800/40 to-transparent" />
+      
+      <!-- Content -->
+      <div class="relative z-10 flex flex-col justify-between p-16 w-full">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-lg">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <span class="text-white font-bold tracking-tighter text-xl">EPICRISIS AI</span>
+        </div>
+
+        <div class="max-w-xl">
+          <h2 class="text-5xl font-black text-white leading-tight mb-6">
+            Estandarización inteligente de <span class="text-brand-300">datos clínicos.</span>
+          </h2>
+          <p class="text-brand-100 text-lg leading-relaxed font-medium">
+            Plataforma avanzada para la validación de comorbilidades y generación de evidencia médica mediante inteligencia artificial.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-8">
+          <div class="flex -space-x-3">
+            <div v-for="i in 4" :key="i" class="w-10 h-10 rounded-full border-2 border-brand-700 bg-brand-800 flex items-center justify-center text-[10px] text-white font-bold ring-2 ring-brand-600/50">
+              U{{ i }}
+            </div>
+          </div>
+          <p class="text-brand-200 text-sm font-semibold">
+            Utilizado por +50 investigadores clínicos
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Login Form -->
+    <div class="w-full lg:w-2/5 bg-white flex flex-col justify-center px-8 sm:px-16 lg:px-20 relative">
+      <!-- Mobile Logo Header -->
+      <div class="lg:hidden absolute top-12 left-8 right-8 flex flex-col items-center">
+        <div class="w-14 h-14 bg-brand-600 rounded-2xl flex items-center justify-center shadow-xl shadow-brand-100 mb-4">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
-        <h1 class="text-2xl font-black text-slate-900 tracking-tight">EPICRISIS AI</h1>
-        <p class="text-slate-500 mt-2 font-semibold uppercase tracking-widest text-[10px]">Research Platform</p>
+        <h1 class="text-xl font-black text-slate-900 tracking-tight">EPICRISIS AI</h1>
       </div>
 
-      <!-- Login Card -->
-      <div class="bg-white rounded-3xl shadow-2xl shadow-slate-200 border border-slate-100 p-8 sm:p-10">
+      <div class="max-w-md w-full mx-auto">
+        <div class="mb-10">
+          <h2 class="text-3xl font-black text-slate-900 mb-3">Bienvenido</h2>
+          <p class="text-slate-500 font-medium">Ingresa tus credenciales institucionales para continuar.</p>
+        </div>
+
         <form class="space-y-6" @submit.prevent="handleSubmit">
-          <div>
-            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2" for="email">
+          <div class="space-y-2">
+            <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1" for="email">
               Correo Institucional
             </label>
-            <input
-              id="email"
-              v-model="email"
-              type="email"
-              required
-              autocomplete="email"
-              placeholder="usuario@institucion.cl"
-              class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all"
-            />
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206" />
+                </svg>
+              </span>
+              <input
+                id="email"
+                v-model="email"
+                type="email"
+                required
+                autocomplete="email"
+                placeholder="usuario@institucion.cl"
+                class="w-full rounded-2xl border border-slate-200 pl-12 pr-4 py-4 text-sm text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all bg-slate-50/50"
+              />
+            </div>
           </div>
 
-          <div>
-            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2" for="password">
+          <div class="space-y-2">
+            <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1" for="password">
               Contraseña
             </label>
-            <input
-              id="password"
-              v-model="password"
-              type="password"
-              required
-              autocomplete="current-password"
-              placeholder="••••••••"
-              class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all"
-            />
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </span>
+              <input
+                id="password"
+                v-model="password"
+                type="password"
+                required
+                autocomplete="current-password"
+                placeholder="••••••••"
+                class="w-full rounded-2xl border border-slate-200 pl-12 pr-4 py-4 text-sm text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all bg-slate-50/50"
+              />
+            </div>
           </div>
 
           <div
             v-if="error"
-            class="flex items-center gap-2 rounded-xl bg-red-50 border border-red-100 p-3 text-xs text-red-700 font-bold"
+            class="flex items-center gap-3 rounded-2xl bg-red-50 border border-red-100 p-4 text-xs text-red-700 font-bold animate-shake"
           >
-            <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
             </svg>
             {{ error }}
           </div>
 
-          <BaseButton type="submit" class="w-full !rounded-xl !py-4 font-black shadow-lg shadow-brand-100" :loading="auth.loading">
+          <BaseButton 
+            type="submit" 
+            class="w-full !rounded-2xl !py-4 font-black shadow-xl shadow-brand-200/50 !text-sm tracking-tight" 
+            :loading="auth.loading"
+          >
             ENTRAR AL PANEL
           </BaseButton>
         </form>
-      </div>
 
-      <p class="text-center text-xs text-slate-400 mt-10 font-medium">
-        Plataforma restringida para fines de investigación clínica.
-      </p>
+        <p class="text-center text-[10px] text-slate-400 mt-12 font-bold uppercase tracking-widest leading-relaxed">
+          Plataforma restringida para fines de investigación clínica.
+          <br/>
+          <span class="text-slate-300 mt-1 block">iHealth — 2026</span>
+        </p>
+      </div>
     </div>
   </div>
 </template>
