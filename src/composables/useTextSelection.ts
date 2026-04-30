@@ -4,24 +4,32 @@ export function useTextSelection(containerRef: { value: HTMLElement | null }) {
   const selectedText = ref('')
   const hasSelection = ref(false)
 
-  function onMouseUp() {
+  function onMouseUp(e: MouseEvent) {
     const selection = window.getSelection()
-    if (!selection || selection.rangeCount === 0) return
+    const text = selection?.toString().trim()
 
-    const text = selection.toString().trim()
-    if (!text) {
+    // 1. Si hay texto seleccionado, intentamos capturarlo si está dentro del contenedor
+    if (text) {
+      let isInside = true
+      if (containerRef.value) {
+        const range = selection!.getRangeAt(0)
+        isInside = containerRef.value.contains(range.commonAncestorContainer)
+      }
+
+      if (isInside) {
+        selectedText.value = text
+        hasSelection.value = true
+        return
+      }
+    }
+
+    // 2. Si no hay texto o la selección es externa, solo limpiamos si el click
+    // físico ocurrió dentro del contenedor. Esto permite que clicks en botones/pestañas
+    // fuera del documento no borren la selección que el usuario ya tenía.
+    if (containerRef.value && containerRef.value.contains(e.target as Node)) {
+      selectedText.value = ''
       hasSelection.value = false
-      return
     }
-
-    if (containerRef.value) {
-      const range = selection.getRangeAt(0)
-      const isInsideContainer = containerRef.value.contains(range.commonAncestorContainer)
-      if (!isInsideContainer) return
-    }
-
-    selectedText.value = text
-    hasSelection.value = true
   }
 
   function clearSelection() {

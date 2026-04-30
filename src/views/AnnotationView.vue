@@ -5,6 +5,7 @@ import { useEpicrisisStore } from '@/stores/epicrisis'
 import { useAuthStore } from '@/stores/auth'
 import { useAnnotationStore } from '@/stores/annotation'
 import { annotationService } from '@/services/annotation.service'
+import { ApiError } from '@/services/api'
 import { useTextSelection } from '@/composables/useTextSelection'
 import { useAntiScreenCapture } from '@/composables/useAntiScreenCapture'
 import { COMORBIDITIES } from '@/constants/criteria'
@@ -118,10 +119,10 @@ onMounted(async () => {
   try {
     await annotationService.lock(epicrisisId)
     isLockedByOthers.value = false
-  } catch (e: any) {
-    if (e.response?.status === 423) {
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 423) {
       isLockedByOthers.value = true
-      lockError.value = `Este documento está siendo editado por ${e.response.data.lockedBy}. Solo puedes verlo.`
+      lockError.value = `Este documento está siendo editado por ${e.data?.lockedBy ?? 'otro usuario'}. Solo puedes verlo.`
     }
   }
 

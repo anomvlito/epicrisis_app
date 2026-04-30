@@ -3,7 +3,8 @@ const BASE = '/api'
 class ApiError extends Error {
   constructor(
     public status: number,
-    message: string
+    message: string,
+    public data?: Record<string, unknown>
   ) {
     super(message)
     this.name = 'ApiError'
@@ -25,7 +26,7 @@ async function request<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }))
-    throw new ApiError(res.status, body.error ?? 'Error desconocido')
+    throw new ApiError(res.status, body.error ?? 'Error desconocido', body)
   }
 
   return res.json() as Promise<T>
