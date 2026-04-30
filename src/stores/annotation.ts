@@ -21,6 +21,10 @@ export const useAnnotationStore = defineStore('annotation', () => {
   const saving = ref(false)
   const submitting = ref(false)
 
+  // Global selection state
+  const selectedText = ref('')
+  const hasSelection = ref(false)
+
   const isComplete = computed(() =>
     criteria.value.every((c) => c.isPresent !== null)
   )
@@ -95,7 +99,20 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   function setIsPresent(name: string, value: boolean) {
     const c = criteria.value.find((c) => c.criterionName === name)
-    if (c) c.isPresent = value
+    if (c) {
+      c.isPresent = value
+      // Auto-capture selection if present
+      if (hasSelection.value && selectedText.value) {
+        c.evidenceText = selectedText.value
+        clearGlobalSelection()
+      }
+    }
+  }
+
+  function clearGlobalSelection() {
+    selectedText.value = ''
+    hasSelection.value = false
+    window.getSelection()?.removeAllRanges()
   }
 
   function setEvidence(name: string, text: string) {
@@ -165,6 +182,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
     epicrisisId.value = null
     activeCriterionName.value = null
     criteria.value = []
+    selectedText.value = ''
+    hasSelection.value = false
   }
 
   watch(criteria, persistLocally, { deep: true })
@@ -176,6 +195,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
     criteria,
     saving,
     submitting,
+    selectedText,
+    hasSelection,
     isComplete,
     pendingCount,
     initForEpicrisis,
@@ -185,6 +206,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     setEvidence,
     setComments,
     injectEvidenceToActive,
+    clearGlobalSelection,
     saveProgress,
     submitFinal,
     reset,

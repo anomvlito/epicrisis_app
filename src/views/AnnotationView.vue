@@ -321,7 +321,10 @@ onUnmounted(async () => {
             </span>
           </div>
 
-          <div class="max-w-[680px] mx-auto my-8 px-12 py-10 bg-white shadow-md rounded relative z-0">
+          <div 
+            class="max-w-[680px] mx-auto my-8 px-12 py-10 bg-white shadow-md rounded relative z-0"
+            v-memo="[epicrisisStore.current.contentMarkdown]"
+          >
             <MarkdownRenderer :content="epicrisisStore.current.contentMarkdown" />
           </div>
         </div>

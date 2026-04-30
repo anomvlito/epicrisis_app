@@ -1,8 +1,8 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
+import { useAnnotationStore } from '@/stores/annotation'
 
 export function useTextSelection(containerRef: { value: HTMLElement | null }) {
-  const selectedText = ref('')
-  const hasSelection = ref(false)
+  const store = useAnnotationStore()
 
   function onSelectionChange() {
     const selection = window.getSelection()
@@ -16,8 +16,8 @@ export function useTextSelection(containerRef: { value: HTMLElement | null }) {
       const range = selection.getRangeAt(0)
       const isInside = containerRef.value.contains(range.commonAncestorContainer)
       if (isInside) {
-        selectedText.value = text
-        hasSelection.value = true
+        store.selectedText = text
+        store.hasSelection = true
       }
     }
   }
@@ -32,22 +32,14 @@ export function useTextSelection(containerRef: { value: HTMLElement | null }) {
     const isClickInside = containerRef.value && containerRef.value.contains(e.target as Node)
     
     if (isClickInside && !text) {
-      selectedText.value = ''
-      hasSelection.value = false
+      store.selectedText = ''
+      store.hasSelection = false
     }
-    // Clicks fuera (en pestañas, botones, inputs) se ignoran por completo
-    // para preservar la última selección válida guardada por onSelectionChange.
-  }
-
-  function clearSelection() {
-    selectedText.value = ''
-    hasSelection.value = false
-    window.getSelection()?.removeAllRanges()
   }
 
   function captureAndReturn(): string {
-    const text = selectedText.value
-    clearSelection()
+    const text = store.selectedText
+    store.clearGlobalSelection()
     return text
   }
 
@@ -61,5 +53,10 @@ export function useTextSelection(containerRef: { value: HTMLElement | null }) {
     document.removeEventListener('mouseup', onMouseUp)
   })
 
-  return { selectedText, hasSelection, clearSelection, captureAndReturn }
+  return { 
+    selectedText: store.selectedText, 
+    hasSelection: store.hasSelection, 
+    clearSelection: store.clearGlobalSelection, 
+    captureAndReturn 
+  }
 }
