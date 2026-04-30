@@ -57,13 +57,18 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.requiresGuest && auth.isAuthenticated) {
-    if (!auth.hasAcceptedTerms) return { name: 'terms' }
+    if (!auth.isAdmin && !auth.hasAcceptedTerms) return { name: 'terms' }
     return auth.isAdmin ? { name: 'admin' } : { name: 'dashboard' }
   }
 
-  // Redirect authenticated users without accepted terms to /terms (except the terms page itself)
-  if (auth.isAuthenticated && !auth.hasAcceptedTerms && !to.meta.termsPage) {
+  // Admins skip terms; users already accepted skip terms; terms page itself is exempt
+  if (auth.isAuthenticated && !auth.isAdmin && !auth.hasAcceptedTerms && !to.meta.termsPage) {
     return { name: 'terms' }
+  }
+
+  // Already accepted terms → don't show terms page again
+  if (to.meta.termsPage && auth.isAuthenticated && (auth.isAdmin || auth.hasAcceptedTerms)) {
+    return auth.isAdmin ? { name: 'admin' } : { name: 'dashboard' }
   }
 
   // Redirect to admin by default if logged in and accessing root or dashboard as admin
