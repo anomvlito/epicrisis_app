@@ -186,8 +186,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(403).json({ error: 'No puedes eliminar tu propia cuenta' })
       }
 
-      // Desasignar epicrisis primero (la FK no tiene ON DELETE SET NULL)
-      await db.update(epicrisis).set({ assigneeId: null }).where(eq(epicrisis.assigneeId, userId))
+      // Limpieza manual de todas las referencias para evitar errores de FK
+      await db.delete(annotations).where(eq(annotations.userId, userId))
+      await db.update(epicrisis)
+        .set({ assigneeId: null })
+        .where(eq(epicrisis.assigneeId, userId))
+      await db.update(epicrisis)
+        .set({ lockedBy: null })
+        .where(eq(epicrisis.lockedBy, userId))
+      
       await db.delete(users).where(eq(users.id, userId))
       return res.status(200).json({ ok: true })
     }
