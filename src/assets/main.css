@@ -67,3 +67,10 @@
 .prose-epicrisis strong { @apply font-semibold text-gray-900; }
 .prose-epicrisis em { @apply italic; }
 .prose-epicrisis hr { @apply border-gray-200 my-4; }
+
+/* CSS Custom Highlight API for persistent text selection */
+::highlight(epicrisis-selection) {
+  background-color: #fef08a; /* bg-yellow-200 */
+  color: #1f2937; /* text-gray-800 */
+  border-radius: 2px;
+}

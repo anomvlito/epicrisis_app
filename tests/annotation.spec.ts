@@ -57,10 +57,28 @@ test.describe('Anotación de Comorbilidades', () => {
     // Seleccionamos el texto "Hipertensión" haciendo doble clic nativo en el elemento <strong>
     await page.locator('strong').first().dblclick();
 
-    // 7. Hacer clic en "Capturar evidencia"
+    // 7. Verificar Selección Persistente (Virtual Highlighting)
+    // Hacemos clic "afuera" (en el contenedor derecho) para intentar borrar la selección nativa
+    await page.locator('.rounded-lg.border').first().click();
+    
+    // Verificamos que la API de CSS Highlights mantenga nuestro texto resaltado
+    const hasHighlight = await page.evaluate(() => {
+      // @ts-ignore
+      return CSS.highlights && CSS.highlights.has('epicrisis-selection');
+    });
+    expect(hasHighlight).toBeTruthy();
+
+    // 8. Hacer clic en "Capturar evidencia"
     await page.getByRole('button', { name: /Capturar evidencia/i }).click();
 
-    // 8. Verificar que la evidencia se guardó (verificamos que el texto aparece en la página dentro de un div con las clases correspondientes)
+    // 9. Verificar que el Virtual Highlight se limpió después de capturar
+    const isHighlightCleared = await page.evaluate(() => {
+      // @ts-ignore
+      return CSS.highlights && !CSS.highlights.has('epicrisis-selection');
+    });
+    expect(isHighlightCleared).toBeTruthy();
+
+    // 10. Verificar que la evidencia se guardó (verificamos que el texto aparece en la página dentro de un div con las clases correspondientes)
     await expect(page.locator('.bg-yellow-50').first()).toContainText('Hipertensión');
   });
 });
