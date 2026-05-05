@@ -11,3 +11,10 @@ scripts/seed_epicrisis.sql
 *.xls
 *.xlsm
 *.xlsb
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
