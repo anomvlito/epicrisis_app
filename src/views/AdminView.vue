@@ -585,6 +585,7 @@ onMounted(load)
                   <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
                   <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Rol</th>
                   <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Creado</th>
+                  <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Términos</th>
                   <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-64">Acciones</th>
                 </tr>
               </thead>
@@ -609,6 +610,30 @@ onMounted(load)
                     </span>
                   </td>
                   <td class="px-4 py-3 text-xs text-gray-400">{{ formatDate(user.createdAt) }}</td>
+                  <td class="px-4 py-3">
+                    <span
+                      v-if="user.role === 'admin'"
+                      class="text-xs text-gray-400 italic"
+                      title="Los administradores no requieren firmar términos"
+                    >
+                      N/A
+                    </span>
+                    <span
+                      v-else-if="user.termsAcceptedAt"
+                      class="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full"
+                      :title="'Firmado el ' + formatDate(user.termsAcceptedAt)"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                      Firmado
+                    </span>
+                    <span
+                      v-else
+                      class="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      Pendiente
+                    </span>
+                  </td>
                   <td class="px-4 py-3">
                     <!-- Normal actions -->
                     <div v-if="confirmDeleteId !== user.id" class="flex items-center gap-2">

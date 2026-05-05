@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (resource === 'users') {
       const rows = await db
-        .select({ id: users.id, email: users.email, role: users.role, createdAt: users.createdAt })
+        .select({ id: users.id, email: users.email, role: users.role, createdAt: users.createdAt, termsAcceptedAt: users.termsAcceptedAt })
         .from(users)
         .where(eq(users.role, 'annotator'))
       return res.status(200).json({ users: rows })
@@ -63,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (resource === 'allUsers') {
       const rows = await db
-        .select({ id: users.id, email: users.email, role: users.role, createdAt: users.createdAt })
+        .select({ id: users.id, email: users.email, role: users.role, createdAt: users.createdAt, termsAcceptedAt: users.termsAcceptedAt })
         .from(users)
         .orderBy(users.createdAt)
       return res.status(200).json({ users: rows })

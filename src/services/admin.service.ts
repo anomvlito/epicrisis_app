@@ -31,6 +31,7 @@ export interface AdminUser {
   email: string
   role: 'admin' | 'annotator'
   createdAt: string
+  termsAcceptedAt: string | null
 }
 
 export const adminService = {
