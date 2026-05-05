@@ -43,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const token = await signToken({ sub: String(user.id), email: user.email, role: user.role })
       res.setHeader('Set-Cookie', setCookieHeader(token))
       return res.status(200).json({
-        user: { id: user.id, email: user.email, role: user.role },
+        user: { id: user.id, email: user.email, role: user.role, termsAcceptedAt: user.termsAcceptedAt },
       })
     }
 
