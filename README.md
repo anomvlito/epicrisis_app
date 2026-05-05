@@ -239,6 +239,30 @@ JWT_SECRET=tu_secreto_muy_largo_y_aleatorio
 CORS_ORIGIN=https://tu-app.vercel.app
 ```
 
+## Características Especiales de UX (Experiencia de Usuario)
+
+### Virtual Highlighting (Selección Persistente)
+La interfaz de anotación utiliza la **CSS Custom Highlight API** para proporcionar resaltado de texto persistente. Cuando un anotador selecciona texto en el documento clínico, este resaltado (amarillo estilo marcador) se mantiene anclado visualmente incluso si el usuario hace clic en los paneles laterales (perdiendo el foco de selección nativo del navegador). Esto reduce la carga cognitiva al evitar perder el contexto de lectura. El resaltado se destruye automáticamente al presionar el botón de capturar evidencia.
+
+---
+
+## Testing (End-to-End)
+
+El proyecto utiliza **Playwright** para pruebas funcionales y visuales de extremo a extremo (E2E), garantizando que los flujos críticos para los anotadores no se rompan por accidente.
+
+### Estrategia de Pruebas
+1. **API Mocking**: Los tests inyectan respuestas falsas (Mocks) en los llamados al servidor (`/api/auth`, `/api/epicrisis`). Esto asegura que los tests se ejecuten de manera determinista y no muten ni dependan de la base de datos de producción.
+2. **Eventos Nativos**: Playwright simula el movimiento del mouse y hace `dblclick()` real para validar que características como el Virtual Highlighting y la captura de texto respondan igual que con un usuario humano.
+
+### Comandos de Testing
+
+| Script | Descripción |
+|--------|-------------|
+| `npm run test:e2e` | Ejecuta la suite completa de Playwright en modo "silencioso" (Headless) |
+| `npm run test:e2e:ui` | Abre el Panel de Control Interactivo de Playwright para depuración paso a paso |
+
+*(Los reportes HTML generados se guardan en `playwright-report/` y están excluidos de Git).*
+
 ---
 
 ## Instalación y Desarrollo Local
