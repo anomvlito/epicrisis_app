@@ -46,6 +46,14 @@ const KNOWN_HEADERS = [
 ] as const
 const KNOWN_HEADER_SET = new Set<string>(KNOWN_HEADERS)
 
+// These enriched headers render as h1 (same style as RESUMEN CLÍNICO), not blue h2
+const H1_HEADERS = new Set([
+  'ANTECEDENTES MÉDICOS DETALLADOS',
+  'CONDICIÓN DE EGRESO',
+  'CONTROLES',
+  'TIPO DE REPOSO',
+])
+
 // Return index of the first line that is a known enriched header, or -1 if none.
 function findEnrichedStart(lines: string[]): number {
   for (let i = 0; i < lines.length; i++) {
@@ -110,7 +118,7 @@ function toMarkdown(text: string): string {
         out.push('---')
       }
       out.push('')
-      out.push(`## ${s}`)
+      out.push(H1_HEADERS.has(s) ? `# ${s}` : `## ${s}`)
       out.push('')
       firstEnriched = false
       continue
