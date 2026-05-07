@@ -29,10 +29,12 @@ function isMarkdownFormatted(text: string): boolean {
 }
 
 // ALL-CAPS section header detection (e.g. "ANTECEDENTES", "DIAGNÓSTICOS ALTA")
+// Lines with colons are key:value pairs, not headers — checked first.
 function isSectionHeader(line: string): boolean {
   const s = line.trim()
   if (!s || s.length > 60) return false
   if (/^[-*>0-9]/.test(s)) return false
+  if (s.includes(':')) return false   // "FI CASR: 10.10.2024" is key:value, not a header
   const alpha = s.replace(/[^a-zA-ZÀ-ÖØ-öø-ÿ]/g, '')
   return alpha.length >= 6 && alpha === alpha.toUpperCase()
 }
@@ -41,19 +43,26 @@ function isSectionHeader(line: string): boolean {
 function toMarkdown(text: string): string {
   const lines = text.split('\n')
   const out: string[] = []
+  let firstSection = true
+
   for (const line of lines) {
     const s = line.trim()
     if (!s) { out.push(''); continue }
 
     if (isSectionHeader(s)) {
-      // Blank line before header (only if there's preceding content)
-      if (out.length > 0 && out[out.length - 1] !== '') out.push('')
+      // Separator before each section (except the very first)
+      if (!firstSection) {
+        out.push('')
+        out.push('---')
+      }
+      out.push('')
       out.push(`## ${s}`)
       out.push('')
+      firstSection = false
       continue
     }
 
-    // "Label: value" → **Label:** value  (label must be short and not a sentence)
+    // "Label: value" → **Label:** value  (label ≤ 4 words, not a sentence)
     const colonIdx = s.indexOf(':')
     if (
       colonIdx > 0 &&
@@ -69,7 +78,7 @@ function toMarkdown(text: string): string {
       }
     }
 
-    out.push(line + '  ') // trailing spaces force <br> in markdown
+    out.push(line + '  ')
   }
   return out.join('\n')
 }
