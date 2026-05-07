@@ -11,7 +11,6 @@ marked.use({
     },
     heading(text: string, level: number) {
       if (level === 1) return `<h1 class="epi-document-title">${text}</h1>`
-      if (level === 2) return `<h2 class="epi-section">${text}</h2>`
       if (level === 3) return `<h3 class="epi-subsection">${text}</h3>`
       return `<h${level} class="epi-h${level}">${text}</h${level}>`
     },
@@ -45,14 +44,6 @@ const KNOWN_HEADERS = [
   'EGRESO CON CATÉTER DOBLE J',
 ] as const
 const KNOWN_HEADER_SET = new Set<string>(KNOWN_HEADERS)
-
-// These enriched headers render as h1 (same style as RESUMEN CLÍNICO), not blue h2
-const H1_HEADERS = new Set([
-  'ANTECEDENTES MÉDICOS DETALLADOS',
-  'CONDICIÓN DE EGRESO',
-  'CONTROLES',
-  'TIPO DE REPOSO',
-])
 
 // Return index of the first line that is a known enriched header, or -1 if none.
 function findEnrichedStart(lines: string[]): number {
@@ -118,7 +109,7 @@ function toMarkdown(text: string): string {
         out.push('---')
       }
       out.push('')
-      out.push(H1_HEADERS.has(s) ? `# ${s}` : `## ${s}`)
+      out.push(`# ${s}`)
       out.push('')
       firstEnriched = false
       continue
@@ -182,20 +173,6 @@ const html = computed(() => {
   font-size: 0.8125rem;
   color: #0c4a6e;
   line-height: 1.6;
-}
-
-/* ──── Section header (## → pipeline sections) ──── */
-.epi-document :deep(.epi-section) {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #0369a1;
-  background: #f0f9ff;
-  border-left: 3px solid #0ea5e9;
-  padding: 0.4rem 0.75rem;
-  margin: 2rem 0 1rem 0;
-  border-radius: 0 4px 4px 0;
 }
 
 /* ──── Subsection header (###) ──── */
