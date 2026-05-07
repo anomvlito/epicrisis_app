@@ -70,7 +70,7 @@ def meaningful(text: str) -> bool:
 # Section headers as they appear in the epicrisis (used for idempotency check)
 SECTION_MARKERS = [
     'ANTECEDENTES MÉDICOS DETALLADOS',
-    'MOTIVO O DIAGNÓSTICO DE INGRESO',
+    'MOTIVO O DIAGNÓSTICO DE INGRESO',  # kept for stripping old runs; no longer added
     'COMORBILIDADES',
     'PROCEDIMIENTOS',
     'INTERVENCIONES QUIRÚRGICAS',
@@ -87,7 +87,6 @@ SECTION_MARKERS = [
 # Ordered sections to append (sqlite_field, section_header)
 SECTIONS = [
     ('Antecedentes Médicos Detallados',  'ANTECEDENTES MÉDICOS DETALLADOS'),
-    ('Motivo o Diagnóstico de Ingreso',  'MOTIVO O DIAGNÓSTICO DE INGRESO'),
     ('Comorbilidades',                   'COMORBILIDADES'),
     ('Procedimientos',                   'PROCEDIMIENTOS'),
     ('Intervenciones Quirúrgicas',       'INTERVENCIONES QUIRÚRGICAS'),

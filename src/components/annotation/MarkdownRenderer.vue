@@ -30,11 +30,13 @@ function isMarkdownFormatted(text: string): boolean {
 
 // ALL-CAPS section header detection (e.g. "ANTECEDENTES", "DIAGNÓSTICOS ALTA")
 // Lines with colons are key:value pairs, not headers — checked first.
+const NON_HEADER_WORDS = new Set(['INTERNO', 'STAFF', 'UCI', 'UCO', 'UTI', 'RN', 'FO', 'FUR'])
 function isSectionHeader(line: string): boolean {
   const s = line.trim()
   if (!s || s.length > 60) return false
   if (/^[-*>0-9\[]/.test(s)) return false  // [ excludes anonymization placeholders
   if (s.includes(':')) return false   // "FI CASR: 10.10.2024" is key:value, not a header
+  if (NON_HEADER_WORDS.has(s)) return false
   const alpha = s.replace(/[^a-zA-ZÀ-ÖØ-öø-ÿ]/g, '')
   return alpha.length >= 6 && alpha === alpha.toUpperCase()
 }
@@ -44,7 +46,7 @@ function toMarkdown(text: string): string {
   // Remove [FIRMA MÉDICO ANONIMIZADA] + its date line — anonymization artifact that
   // splits sentences mid-flow. The date adds no clinical value for annotators.
   text = text.replace(
-    /[ \t]*\[FIRMA MÉDICO ANONIMIZADA\][ \t]*\n[ \t]*\d{1,2}[-/]\d{1,2}[-/]\d{4}[^\n]*/g,
+    /[ \t]*\[FIRMA MÉDICO ANONIMIZADA\][ \t]*\n+[ \t]*\d{1,2}[-/]\d{1,2}[-/]\d{4}[^\n]*/g,
     ''
   )
   // Collapse triple+ blank lines that may result
