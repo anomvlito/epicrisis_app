@@ -23,8 +23,62 @@ marked.use({
   },
 })
 
+// Detect whether text already has markdown formatting (old SQL-seeded records)
+function isMarkdownFormatted(text: string): boolean {
+  return /(?:^|\n)#{1,3} /.test(text) || /(?:^|\n)> /.test(text)
+}
+
+// ALL-CAPS section header detection (e.g. "ANTECEDENTES", "DIAGNÓSTICOS ALTA")
+function isSectionHeader(line: string): boolean {
+  const s = line.trim()
+  if (!s || s.length > 60) return false
+  if (/^[-*>0-9]/.test(s)) return false
+  const alpha = s.replace(/[^a-zA-ZÀ-ÖØ-öø-ÿ]/g, '')
+  return alpha.length >= 6 && alpha === alpha.toUpperCase()
+}
+
+// Convert plain clinical text to markdown so it renders with section styling
+function toMarkdown(text: string): string {
+  const lines = text.split('\n')
+  const out: string[] = []
+  for (const line of lines) {
+    const s = line.trim()
+    if (!s) { out.push(''); continue }
+
+    if (isSectionHeader(s)) {
+      // Blank line before header (only if there's preceding content)
+      if (out.length > 0 && out[out.length - 1] !== '') out.push('')
+      out.push(`## ${s}`)
+      out.push('')
+      continue
+    }
+
+    // "Label: value" → **Label:** value  (label must be short and not a sentence)
+    const colonIdx = s.indexOf(':')
+    if (
+      colonIdx > 0 &&
+      colonIdx < 40 &&
+      !/^[-*>]/.test(s) &&
+      !s.startsWith('**')
+    ) {
+      const label = s.slice(0, colonIdx).trim()
+      const value = s.slice(colonIdx + 1).trim()
+      if (value && label.split(' ').length <= 4) {
+        out.push(`**${label}:** ${value}  `)
+        continue
+      }
+    }
+
+    out.push(line + '  ') // trailing spaces force <br> in markdown
+  }
+  return out.join('\n')
+}
+
 const html = computed(() => {
-  const result = marked.parse(props.content, { async: false })
+  const source = isMarkdownFormatted(props.content)
+    ? props.content
+    : toMarkdown(props.content)
+  const result = marked.parse(source, { async: false })
   return typeof result === 'string' ? result : ''
 })
 </script>
