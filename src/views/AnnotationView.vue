@@ -130,9 +130,9 @@ onMounted(async () => {
   try {
     await epicrisisStore.fetchOne(epicrisisId)
     const llmPredictions = epicrisisStore.current?.llmPredictions ?? null
-    
-    // Re-inicializar con predicciones si existen
-    annotationStore.initForEpicrisis(epicrisisId, llmPredictions)
+
+    // Re-inicializar con predicciones y fechas auto-extraídas
+    annotationStore.initForEpicrisis(epicrisisId, llmPredictions, epicrisisStore.current)
 
     // Cargar anotaciones guardadas
     const { annotations } = await annotationService.getForEpicrisis(epicrisisId)
@@ -174,6 +174,9 @@ onUnmounted(async () => {
       <div class="flex items-center gap-2">
         <span class="font-mono text-sm font-semibold text-gray-700">
           EPC-{{ String(epicrisisId).padStart(5, '0') }}
+          <template v-if="epicrisisStore.current?.patientId">
+            ({{ epicrisisStore.current.patientId }})
+          </template>
         </span>
         <span
           v-if="epicrisisStore.current"
@@ -362,8 +365,68 @@ onUnmounted(async () => {
           </div>
         </div>
 
-        <!-- Criteria list -->
+        <!-- Scrollable area: fechas + criteria + comentario -->
         <div class="flex-1 min-h-0 overflow-y-auto px-2 py-2 space-y-1.5">
+
+          <!-- ── Fechas Clínicas ── -->
+          <div class="rounded-lg border border-sky-100 bg-white p-3 mb-1">
+            <div class="flex items-center gap-2 mb-2.5">
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fechas Clínicas</span>
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-600 border border-sky-100">Auto-extraídas · editables</span>
+            </div>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-2.5">
+              <div>
+                <label class="block text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
+                  Ingreso Hospital
+                </label>
+                <input
+                  v-model="annotationStore.fechaIngresoHosp"
+                  type="text"
+                  placeholder="DD/MM/AAAA"
+                  :disabled="isReadOnly"
+                  class="w-full rounded border border-gray-200 px-2 py-1.5 text-xs text-gray-700 placeholder-gray-300 focus:outline-none focus:border-sky-400 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
+                  Egreso Hospital
+                </label>
+                <input
+                  v-model="annotationStore.fechaEgresoHosp"
+                  type="text"
+                  placeholder="DD/MM/AAAA"
+                  :disabled="isReadOnly"
+                  class="w-full rounded border border-gray-200 px-2 py-1.5 text-xs text-gray-700 placeholder-gray-300 focus:outline-none focus:border-sky-400 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
+                  Ingreso UCI
+                </label>
+                <input
+                  v-model="annotationStore.fechaIngresoUci"
+                  type="text"
+                  placeholder="DD/MM/AAAA"
+                  :disabled="isReadOnly"
+                  class="w-full rounded border border-gray-200 px-2 py-1.5 text-xs text-gray-700 placeholder-gray-300 focus:outline-none focus:border-sky-400 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
+                  Egreso UCI
+                </label>
+                <input
+                  v-model="annotationStore.fechaEgresoUci"
+                  type="text"
+                  placeholder="DD/MM/AAAA"
+                  :disabled="isReadOnly"
+                  class="w-full rounded border border-gray-200 px-2 py-1.5 text-xs text-gray-700 placeholder-gray-300 focus:outline-none focus:border-sky-400 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Criteria list -->
           <CriterionRow
             v-for="criterion in COMORBIDITIES"
             :key="criterion.name"
@@ -372,6 +435,22 @@ onUnmounted(async () => {
             :is-active="annotationStore.activeCriterionName === criterion.name"
             :is-read-only="isReadOnly"
           />
+
+          <!-- ── Comentario Final ── -->
+          <div class="rounded-lg border border-gray-200 bg-white p-3 mt-1">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+              Comentario Final
+              <span class="normal-case font-normal ml-1 text-gray-300">— opcional</span>
+            </label>
+            <textarea
+              v-model="annotationStore.comentarioFinal"
+              :readonly="isReadOnly"
+              rows="3"
+              placeholder="Observaciones relevantes sobre este caso, hallazgos atípicos, dudas de interpretación…"
+              class="w-full resize-none rounded border border-gray-200 px-2 py-1.5 text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-brand-400 bg-white disabled:bg-gray-50"
+            />
+          </div>
+
         </div>
       </div>
     </div>

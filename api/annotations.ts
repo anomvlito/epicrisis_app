@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'POST') {
-    const { epicrisisId, criteria, isFinal } = req.body
+    const { epicrisisId, criteria, isFinal, epicrisisMetadata } = req.body
     if (!epicrisisId || !Array.isArray(criteria)) {
       return res.status(400).json({ error: 'Datos inválidos' })
     }
@@ -70,11 +70,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const newStatus = isFinal ? 'reviewed' : 'in_review'
     await db
       .update(epicrisis)
-      .set({ 
+      .set({
         status: newStatus,
-        // Al guardar/enviar, liberamos el lock
         lockedBy: null,
-        lockedAt: null
+        lockedAt: null,
+        ...(epicrisisMetadata && {
+          fechaIngresoHosp: epicrisisMetadata.fechaIngresoHosp ?? null,
+          fechaEgresoHosp: epicrisisMetadata.fechaEgresoHosp ?? null,
+          fechaIngresoUci: epicrisisMetadata.fechaIngresoUci ?? null,
+          fechaEgresoUci: epicrisisMetadata.fechaEgresoUci ?? null,
+          comentarioFinal: epicrisisMetadata.comentarioFinal ?? null,
+        }),
       })
       .where(eq(epicrisis.id, Number(epicrisisId)))
 

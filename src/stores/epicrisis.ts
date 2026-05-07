@@ -5,6 +5,7 @@ import type { LlmPredictions } from '@/types/db'
 
 export interface EpicrisisListItem {
   id: number
+  patientId: string | null
   status: 'pending' | 'in_review' | 'reviewed'
   assigneeId: number | null
   createdAt: string
@@ -14,6 +15,11 @@ export interface EpicrisisListItem {
 export interface EpicrisisDetail extends EpicrisisListItem {
   contentMarkdown: string
   llmPredictions: LlmPredictions | null
+  fechaIngresoHosp: string | null
+  fechaEgresoHosp: string | null
+  fechaIngresoUci: string | null
+  fechaEgresoUci: string | null
+  comentarioFinal: string | null
 }
 
 export const useEpicrisisStore = defineStore('epicrisis', () => {

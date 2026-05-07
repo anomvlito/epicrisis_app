@@ -3,6 +3,7 @@ import type { LlmPredictions } from '@/types/db'
 
 export interface AdminEpicrisisRow {
   id: number
+  patientId: string | null
   status: 'pending' | 'in_review' | 'reviewed'
   assigneeId: number | null
   createdAt: string
@@ -12,6 +13,7 @@ export interface AdminEpicrisisRow {
 
 export interface AdminMatrixRow {
   id: number
+  patientId: string | null
   status: 'pending' | 'in_review' | 'reviewed'
   assigneeEmail: string | null
   llmPredictions: LlmPredictions | null

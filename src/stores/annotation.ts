@@ -3,6 +3,7 @@ import { ref, watch, computed } from 'vue'
 import { annotationService } from '@/services/annotation.service'
 import { COMORBIDITIES } from '@/constants/criteria'
 import type { LlmPrediction, LlmPredictions } from '@/types/db'
+import type { EpicrisisDetail } from '@/stores/epicrisis'
 
 export interface CriterionState {
   criterionName: string
@@ -24,6 +25,13 @@ export const useAnnotationStore = defineStore('annotation', () => {
   // Global selection state
   const selectedText = ref('')
   const hasSelection = ref(false)
+
+  // Editable epicrisis metadata (dates + final comment)
+  const fechaIngresoHosp = ref('')
+  const fechaEgresoHosp = ref('')
+  const fechaIngresoUci = ref('')
+  const fechaEgresoUci = ref('')
+  const comentarioFinal = ref('')
 
   const isComplete = computed(() =>
     criteria.value.every((c) => c.isPresent !== null)
@@ -50,25 +58,51 @@ export const useAnnotationStore = defineStore('annotation', () => {
     })
   }
 
-  function initForEpicrisis(id: number, llmPredictions: LlmPredictions | null) {
+  function initForEpicrisis(
+    id: number,
+    llmPredictions: LlmPredictions | null,
+    epicrisisData?: EpicrisisDetail | null,
+  ) {
     epicrisisId.value = id
+
+    let criteriaLoaded = false
+    let datesFromStorage = false
 
     const saved = localStorage.getItem(`annotation_draft_${id}`)
     if (saved) {
       try {
-        const parsed = JSON.parse(saved) as CriterionState[]
-        // Re-attach LLM predictions (they're not stored in localStorage)
-        criteria.value = parsed.map((c) => ({
+        const parsed = JSON.parse(saved)
+        const criteriaData: CriterionState[] = Array.isArray(parsed) ? parsed : parsed.criteria
+        criteria.value = criteriaData.map((c) => ({
           ...c,
           llm: llmPredictions?.[c.criterionName] ?? null,
         }))
-        return
+        criteriaLoaded = true
+
+        if (!Array.isArray(parsed)) {
+          fechaIngresoHosp.value = parsed.fechaIngresoHosp ?? ''
+          fechaEgresoHosp.value = parsed.fechaEgresoHosp ?? ''
+          fechaIngresoUci.value = parsed.fechaIngresoUci ?? ''
+          fechaEgresoUci.value = parsed.fechaEgresoUci ?? ''
+          comentarioFinal.value = parsed.comentarioFinal ?? ''
+          datesFromStorage = true
+        }
       } catch {
         // fallback to fresh
       }
     }
 
-    criteria.value = buildInitial(llmPredictions)
+    if (!criteriaLoaded) {
+      criteria.value = buildInitial(llmPredictions)
+    }
+
+    if (!datesFromStorage && epicrisisData) {
+      fechaIngresoHosp.value = epicrisisData.fechaIngresoHosp ?? ''
+      fechaEgresoHosp.value = epicrisisData.fechaEgresoHosp ?? ''
+      fechaIngresoUci.value = epicrisisData.fechaIngresoUci ?? ''
+      fechaEgresoUci.value = epicrisisData.fechaEgresoUci ?? ''
+      comentarioFinal.value = epicrisisData.comentarioFinal ?? ''
+    }
   }
 
   function loadFromServer(
@@ -130,6 +164,16 @@ export const useAnnotationStore = defineStore('annotation', () => {
     setEvidence(activeCriterionName.value, text)
   }
 
+  function buildMetadata() {
+    return {
+      fechaIngresoHosp: fechaIngresoHosp.value || undefined,
+      fechaEgresoHosp: fechaEgresoHosp.value || undefined,
+      fechaIngresoUci: fechaIngresoUci.value || undefined,
+      fechaEgresoUci: fechaEgresoUci.value || undefined,
+      comentarioFinal: comentarioFinal.value || undefined,
+    }
+  }
+
   async function saveProgress() {
     if (!epicrisisId.value) return
     saving.value = true
@@ -142,7 +186,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
           evidenceText: c.evidenceText || null,
           comments: c.comments || null,
         })),
-        false
+        false,
+        buildMetadata(),
       )
       persistLocally()
     } finally {
@@ -162,7 +207,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
           evidenceText: c.evidenceText || null,
           comments: c.comments || null,
         })),
-        true
+        true,
+        buildMetadata(),
       )
       localStorage.removeItem(`annotation_draft_${epicrisisId.value}`)
       return result.status
@@ -173,8 +219,14 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   function persistLocally() {
     if (!epicrisisId.value) return
-    // Strip LLM data from localStorage (it comes from server)
-    const toSave = criteria.value.map(({ llm: _llm, ...rest }) => rest)
+    const toSave = {
+      criteria: criteria.value.map(({ llm: _llm, ...rest }) => rest),
+      fechaIngresoHosp: fechaIngresoHosp.value,
+      fechaEgresoHosp: fechaEgresoHosp.value,
+      fechaIngresoUci: fechaIngresoUci.value,
+      fechaEgresoUci: fechaEgresoUci.value,
+      comentarioFinal: comentarioFinal.value,
+    }
     localStorage.setItem(`annotation_draft_${epicrisisId.value}`, JSON.stringify(toSave))
   }
 
@@ -184,9 +236,15 @@ export const useAnnotationStore = defineStore('annotation', () => {
     criteria.value = []
     selectedText.value = ''
     hasSelection.value = false
+    fechaIngresoHosp.value = ''
+    fechaEgresoHosp.value = ''
+    fechaIngresoUci.value = ''
+    fechaEgresoUci.value = ''
+    comentarioFinal.value = ''
   }
 
   watch(criteria, persistLocally, { deep: true })
+  watch([fechaIngresoHosp, fechaEgresoHosp, fechaIngresoUci, fechaEgresoUci, comentarioFinal], persistLocally)
 
   return {
     epicrisisId,
@@ -199,6 +257,11 @@ export const useAnnotationStore = defineStore('annotation', () => {
     hasSelection,
     isComplete,
     pendingCount,
+    fechaIngresoHosp,
+    fechaEgresoHosp,
+    fechaIngresoUci,
+    fechaEgresoUci,
+    comentarioFinal,
     initForEpicrisis,
     loadFromServer,
     setActive,

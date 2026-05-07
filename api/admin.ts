@@ -73,6 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const rows = await db
         .select({
           id: epicrisis.id,
+          patientId: epicrisis.patientId,
           status: epicrisis.status,
           assigneeEmail: users.email,
           llmPredictions: epicrisis.llmPredictions,
@@ -87,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               ) FILTER (WHERE ${annotations.criterionName} IS NOT NULL),
               '{}'::json
             )
-          `,
+          `.as('annotations'),
         })
         .from(epicrisis)
         .leftJoin(users, eq(epicrisis.assigneeId, users.id))
@@ -105,6 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const rows = await db
         .select({
           id: epicrisis.id,
+          patientId: epicrisis.patientId,
           status: epicrisis.status,
           assigneeId: epicrisis.assigneeId,
           createdAt: epicrisis.createdAt,

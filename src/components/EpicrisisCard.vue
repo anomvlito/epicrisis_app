@@ -7,7 +7,11 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 const props = defineProps<{ epicrisis: EpicrisisListItem }>()
 const router = useRouter()
 
-const maskedId = computed(() => `EPC-${String(props.epicrisis.id).padStart(5, '0')}`)
+const maskedId = computed(() => 
+  props.epicrisis.patientId 
+    ? `EPC-${String(props.epicrisis.id).padStart(5, '0')} (${props.epicrisis.patientId})`
+    : `EPC-${String(props.epicrisis.id).padStart(5, '0')}`
+)
 
 const statusConfig = computed(() => {
   const s = props.epicrisis.status

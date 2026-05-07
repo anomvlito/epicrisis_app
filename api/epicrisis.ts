@@ -48,6 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const list = await db
     .select({
       id: epicrisis.id,
+      patientId: epicrisis.patientId,
       status: epicrisis.status,
       assigneeId: epicrisis.assigneeId,
       createdAt: epicrisis.createdAt,

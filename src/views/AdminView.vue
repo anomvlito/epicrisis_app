@@ -87,8 +87,10 @@ const statusConfig = {
   reviewed:  { label: 'Revisada',    cls: 'bg-green-100 text-green-800' },
 } as const
 
-function maskedId(id: number) {
-  return `EPC-${String(id).padStart(5, '0')}`
+function maskedId(id: number, patientId?: string | null) {
+  return patientId
+    ? `EPC-${String(id).padStart(5, '0')} (${patientId})`
+    : `EPC-${String(id).padStart(5, '0')}`
 }
 
 function formatDate(dateStr: string) {
@@ -436,7 +438,7 @@ onMounted(load)
                       :to="{ name: 'annotate', params: { id: row.id } }"
                       class="text-brand-600 hover:text-brand-700 hover:underline"
                     >
-                      {{ maskedId(row.id) }}
+                      {{ maskedId(row.id, row.patientId) }}
                     </router-link>
                   </td>
                   <td class="px-4 py-3">

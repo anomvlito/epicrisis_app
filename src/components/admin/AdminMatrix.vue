@@ -20,8 +20,10 @@ function handleMouseLeave() {
   hoverData.value = null
 }
 
-function maskedId(id: number) {
-  return `EPC-${String(id).padStart(5, '0')}`
+function maskedId(id: number, patientId?: string | null) {
+  return patientId
+    ? `EPC-${String(id).padStart(5, '0')} (${patientId})`
+    : `EPC-${String(id).padStart(5, '0')}`
 }
 
 // ── Stats computation ─────────────────────────────────────────────────────────
@@ -266,7 +268,7 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
               <!-- Sticky patient ID -->
               <td class="sticky left-0 z-20 bg-white group-hover:bg-brand-50/50 border-r border-gray-200 px-5 py-3 font-mono font-bold text-gray-700 transition-colors">
                 <div class="flex flex-col">
-                  <span class="text-brand-600 text-xs">{{ maskedId(row.id) }}</span>
+                  <span class="text-brand-600 text-xs">{{ maskedId(row.id, row.patientId) }}</span>
                   <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5 truncate max-w-[100px]" :title="row.assigneeEmail ?? 'Sin asignar'">
                     {{ row.assigneeEmail?.split('@')[0] ?? 'Sin asignar' }}
                   </span>
