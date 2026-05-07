@@ -4,6 +4,8 @@ import { annotationService } from '@/services/annotation.service'
 import { COMORBIDITIES } from '@/constants/criteria'
 import type { LlmPrediction, LlmPredictions } from '@/types/db'
 import type { EpicrisisDetail } from '@/stores/epicrisis'
+import { defaultClinicalData } from '@/types/clinical'
+import type { ClinicalData } from '@/types/clinical'
 
 export interface CriterionState {
   criterionName: string
@@ -25,6 +27,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
   // Global selection state
   const selectedText = ref('')
   const hasSelection = ref(false)
+
+  // Structured clinical data (JSONB on epicrisis)
+  const clinicalData = ref<ClinicalData>(defaultClinicalData())
 
   // Editable epicrisis metadata (dates + final comment)
   const fechaIngresoHosp = ref('')
@@ -85,6 +90,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
           fechaIngresoUci.value = parsed.fechaIngresoUci ?? ''
           fechaEgresoUci.value = parsed.fechaEgresoUci ?? ''
           comentarioFinal.value = parsed.comentarioFinal ?? ''
+          if (parsed.clinicalData) {
+            clinicalData.value = { ...defaultClinicalData(), ...parsed.clinicalData }
+          }
           // Only block DB values if the user actually saved something here.
           // All-empty means the watcher persisted before fetchOne completed.
           datesFromStorage = !!(
@@ -110,6 +118,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
       fechaIngresoUci.value = epicrisisData.fechaIngresoUci ?? ''
       fechaEgresoUci.value = epicrisisData.fechaEgresoUci ?? ''
       comentarioFinal.value = epicrisisData.comentarioFinal ?? ''
+      if (epicrisisData.clinicalData) {
+        clinicalData.value = { ...defaultClinicalData(), ...epicrisisData.clinicalData }
+      }
     }
   }
 
@@ -172,6 +183,10 @@ export const useAnnotationStore = defineStore('annotation', () => {
     setEvidence(activeCriterionName.value, text)
   }
 
+  function setClinical<K extends keyof ClinicalData>(key: K, value: ClinicalData[K]) {
+    clinicalData.value[key] = value
+  }
+
   function buildMetadata() {
     return {
       fechaIngresoHosp: fechaIngresoHosp.value || undefined,
@@ -179,6 +194,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
       fechaIngresoUci: fechaIngresoUci.value || undefined,
       fechaEgresoUci: fechaEgresoUci.value || undefined,
       comentarioFinal: comentarioFinal.value || undefined,
+      clinicalData: clinicalData.value,
     }
   }
 
@@ -234,6 +250,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
       fechaIngresoUci: fechaIngresoUci.value,
       fechaEgresoUci: fechaEgresoUci.value,
       comentarioFinal: comentarioFinal.value,
+      clinicalData: clinicalData.value,
     }
     localStorage.setItem(`annotation_draft_${epicrisisId.value}`, JSON.stringify(toSave))
   }
@@ -249,10 +266,12 @@ export const useAnnotationStore = defineStore('annotation', () => {
     fechaIngresoUci.value = ''
     fechaEgresoUci.value = ''
     comentarioFinal.value = ''
+    clinicalData.value = defaultClinicalData()
   }
 
   watch(criteria, persistLocally, { deep: true })
   watch([fechaIngresoHosp, fechaEgresoHosp, fechaIngresoUci, fechaEgresoUci, comentarioFinal], persistLocally)
+  watch(clinicalData, persistLocally, { deep: true })
 
   return {
     epicrisisId,
@@ -270,6 +289,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
     fechaIngresoUci,
     fechaEgresoUci,
     comentarioFinal,
+    clinicalData,
+    setClinical,
     initForEpicrisis,
     loadFromServer,
     setActive,

@@ -11,6 +11,7 @@ import { useAntiScreenCapture } from '@/composables/useAntiScreenCapture'
 import { COMORBIDITIES } from '@/constants/criteria'
 import MarkdownRenderer from '@/components/annotation/MarkdownRenderer.vue'
 import CriterionRow from '@/components/annotation/CriterionRow.vue'
+import ClinicalDataPanel from '@/components/annotation/ClinicalDataPanel.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseLoader from '@/components/ui/BaseLoader.vue'
@@ -426,15 +427,84 @@ onUnmounted(async () => {
             </div>
           </div>
 
-          <!-- Criteria list -->
-          <CriterionRow
-            v-for="criterion in COMORBIDITIES"
-            :key="criterion.name"
-            :meta="criterion"
-            :state="annotationStore.criteria.find(c => c.criterionName === criterion.name)!"
-            :is-active="annotationStore.activeCriterionName === criterion.name"
-            :is-read-only="isReadOnly"
-          />
+          <!-- ── ANTECEDENTES ── -->
+          <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
+            <div class="px-3 py-1.5 bg-gray-50 border-b border-gray-200">
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Antecedentes</span>
+            </div>
+            <div class="divide-y divide-gray-100">
+              <CriterionRow
+                v-for="criterion in COMORBIDITIES"
+                :key="criterion.name"
+                :meta="criterion"
+                :state="annotationStore.criteria.find(c => c.criterionName === criterion.name)!"
+                :is-active="annotationStore.activeCriterionName === criterion.name"
+                :is-read-only="isReadOnly"
+              />
+            </div>
+
+            <!-- Cirugías previas + fármacos habituales -->
+            <div class="px-3 py-2.5 space-y-2.5 border-t border-gray-100">
+              <!-- Cirugías previas -->
+              <div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs text-gray-700 font-medium">Cirugías previas</span>
+                  <div class="flex gap-1 flex-shrink-0" @click.stop>
+                    <button
+                      :class="[
+                        'px-2 py-0.5 rounded text-[11px] font-semibold transition-colors',
+                        annotationStore.clinicalData.cirugiaPrevias === true  ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
+                      ]"
+                      :disabled="isReadOnly"
+                      @click="annotationStore.setClinical('cirugiaPrevias', annotationStore.clinicalData.cirugiaPrevias === true ? null : true)"
+                    >Sí</button>
+                    <button
+                      :class="[
+                        'px-2 py-0.5 rounded text-[11px] font-semibold transition-colors',
+                        annotationStore.clinicalData.cirugiaPrevias === false ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
+                      ]"
+                      :disabled="isReadOnly"
+                      @click="annotationStore.setClinical('cirugiaPrevias', annotationStore.clinicalData.cirugiaPrevias === false ? null : false)"
+                    >No</button>
+                  </div>
+                </div>
+                <div v-if="annotationStore.clinicalData.cirugiaPrevias === true" class="mt-1.5">
+                  <label class="block text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Cantidad</label>
+                  <input
+                    :value="annotationStore.clinicalData.cirugiasPreviasCantidad ?? ''"
+                    :readonly="isReadOnly"
+                    type="number" min="0"
+                    placeholder="0"
+                    class="w-24 rounded border border-gray-200 px-2 py-1.5 text-xs text-gray-700 placeholder-gray-300 focus:outline-none focus:border-brand-400 bg-white disabled:bg-gray-50"
+                    @input="annotationStore.setClinical('cirugiasPreviasCantidad', ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value))"
+                  />
+                </div>
+              </div>
+
+              <!-- Fármacos habituales -->
+              <div>
+                <label class="block text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Fármacos habituales</label>
+                <textarea
+                  :value="annotationStore.clinicalData.farmacos"
+                  :readonly="isReadOnly"
+                  rows="2"
+                  placeholder="Lista de fármacos que consume el paciente habitualmente…"
+                  class="w-full resize-none rounded border border-gray-200 px-2 py-1.5 text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-brand-400 bg-white disabled:bg-gray-50"
+                  @input="annotationStore.setClinical('farmacos', ($event.target as HTMLTextAreaElement).value)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Datos Clínicos del Episodio ── -->
+          <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
+            <div class="px-3 py-1.5 bg-gray-50 border-b border-gray-200">
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Datos Clínicos del Episodio</span>
+            </div>
+            <div class="px-3 py-2">
+              <ClinicalDataPanel :is-read-only="isReadOnly" />
+            </div>
+          </div>
 
           <!-- ── Comentario Final ── -->
           <div class="rounded-lg border border-gray-200 bg-white p-3 mt-1">

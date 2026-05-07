@@ -17,6 +17,23 @@ export const epicrisisStatusEnum = pgEnum('epicrisis_status', [
   'reviewed',
 ])
 
+export interface ClinicalData {
+  cirugiaPrevias: boolean | null; cirugiasPreviasCantidad: number | null; farmacos: string
+  vmi: boolean | null; vmiEvidencia: string; vmiMotivo: string; vmiUrgente: boolean | null; vmiProno: boolean | null
+  maniobrasReanimacion: string; ciclosParo: number | null; cantidadParos: number | null
+  transfusion: boolean | null; transfusionEvidencia: string; transfusionUnidades: number | null
+  drogasVasoactivas: boolean | null; drogasVasoactivasEvidencia: string; drogasVasoactivasMultiples: boolean | null
+  cirugiasHosp: number | null; cirugiasHospDescripcion: string
+  infeccionUrinario: boolean | null; infeccionRespiratorio: boolean | null; infeccionVascular: boolean | null
+  infeccionSangre: boolean | null; infeccionCerebral: boolean | null; infeccionCardiaco: boolean | null
+  infeccionQuirurgico: boolean | null; infeccionGastrointestinal: boolean | null; infeccionPielTejidos: boolean | null
+  trr: boolean | null
+  fallaRenal: boolean | null; fallaNervioso: boolean | null; fallaVascular: boolean | null
+  fallaCardiaco: boolean | null; fallaPulmonar: boolean | null; fallaHepatico: boolean | null; fallaOtra: boolean | null
+  diagnosticoIngreso: string; diagnosticoEgreso: string; farmacosHosp: string
+  mortalidad: boolean | null; hfav: boolean | null
+}
+
 export interface LlmPrediction {
   valor: boolean | null
   metodo: string
@@ -60,6 +77,7 @@ export const epicrisis = pgTable('epicrisis', {
   comentarioFinal: text('comentario_final'),
   contentMarkdown: text('content_markdown').notNull(),
   llmPredictions: json('llm_predictions').$type<LlmPredictions>(),
+  clinicalData: json('clinical_data').$type<ClinicalData>(),
   status: epicrisisStatusEnum('status').notNull().default('pending'),
   assigneeId: integer('assignee_id').references(() => users.id),
   lockedBy: integer('locked_by').references(() => users.id),

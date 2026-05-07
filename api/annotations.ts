@@ -80,6 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           fechaIngresoUci: epicrisisMetadata.fechaIngresoUci ?? null,
           fechaEgresoUci: epicrisisMetadata.fechaEgresoUci ?? null,
           comentarioFinal: epicrisisMetadata.comentarioFinal ?? null,
+          clinicalData: epicrisisMetadata.clinicalData ?? null,
         }),
       })
       .where(eq(epicrisis.id, Number(epicrisisId)))

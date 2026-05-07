@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { epicrisisService } from '@/services/epicrisis.service'
 import type { LlmPredictions } from '@/types/db'
+import type { ClinicalData } from '@/types/clinical'
 
 export interface EpicrisisListItem {
   id: number
@@ -20,6 +21,7 @@ export interface EpicrisisDetail extends EpicrisisListItem {
   fechaIngresoUci: string | null
   fechaEgresoUci: string | null
   comentarioFinal: string | null
+  clinicalData: ClinicalData | null
 }
 
 export const useEpicrisisStore = defineStore('epicrisis', () => {
