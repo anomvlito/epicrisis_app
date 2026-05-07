@@ -33,7 +33,7 @@ function isMarkdownFormatted(text: string): boolean {
 function isSectionHeader(line: string): boolean {
   const s = line.trim()
   if (!s || s.length > 60) return false
-  if (/^[-*>0-9]/.test(s)) return false
+  if (/^[-*>0-9\[]/.test(s)) return false  // [ excludes anonymization placeholders
   if (s.includes(':')) return false   // "FI CASR: 10.10.2024" is key:value, not a header
   const alpha = s.replace(/[^a-zA-ZÀ-ÖØ-öø-ÿ]/g, '')
   return alpha.length >= 6 && alpha === alpha.toUpperCase()
@@ -41,6 +41,15 @@ function isSectionHeader(line: string): boolean {
 
 // Convert plain clinical text to markdown so it renders with section styling
 function toMarkdown(text: string): string {
+  // Remove [FIRMA MÉDICO ANONIMIZADA] + its date line — anonymization artifact that
+  // splits sentences mid-flow. The date adds no clinical value for annotators.
+  text = text.replace(
+    /[ \t]*\[FIRMA MÉDICO ANONIMIZADA\][ \t]*\n[ \t]*\d{1,2}[-/]\d{1,2}[-/]\d{4}[^\n]*/g,
+    ''
+  )
+  // Collapse triple+ blank lines that may result
+  text = text.replace(/\n{3,}/g, '\n\n')
+
   const lines = text.split('\n')
   const out: string[] = []
   let firstSection = true
