@@ -16,7 +16,7 @@ async function handleLogout() {
   <div class="h-screen overflow-hidden bg-gray-50 flex flex-col font-sans text-slate-900">
     <!-- Top Navbar -->
     <header class="h-16 bg-white border-b border-gray-200 flex-shrink-0 sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto h-full px-4 sm:px-6 flex items-center justify-between">
+      <div class="h-full px-4 sm:px-6 flex items-center justify-between">
         <!-- Logo & Main Nav -->
         <div class="flex items-center gap-8">
           <RouterLink to="/dashboard" class="flex items-center gap-2.5 group">
