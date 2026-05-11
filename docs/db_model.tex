@@ -1,0 +1,129 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{longtable}
+\usepackage{booktabs}
+
+\geometry{letterpaper, margin=1in}
+
+\title{Documentación del Modelo Relacional \\ Plataforma de Anotación de Epicrisis}
+\author{Antigravity AI Assistant}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introducción}
+Este documento describe el modelo relacional de la base de datos de la plataforma de anotación de epicrisis. El modelo ha sido migrado de un enfoque híbrido (con datos clínicos en formato JSON) a un modelo completamente relacional para garantizar la consistencia, integridad y facilitar las consultas analíticas.
+
+\section{Conexión a la Base de Datos}
+Para realizar consultas por terminal a la base de datos de Neon, puedes utilizar el cliente estándar de PostgreSQL (\texttt{psql}). Debes extraer la URL de conexión de tu archivo \texttt{.env}.
+
+El comando general es:
+\begin{verbatim}
+psql "postgresql://usuario:password@host/dbname?sslmode=require"
+\end{verbatim}
+
+Asegúrate de incluir las comillas para que los caracteres especiales de la URL no sean interpretados por la terminal.
+
+\section{Tablas del Sistema}
+
+\subsection{Tabla: \texttt{users}}
+Almacena los usuarios del sistema (administradores y anotadores).
+
+\begin{itemize}
+    \item \texttt{id}: Entero, Llave Primaria (Autoincremental).
+    \item \texttt{email}: Texto, Único. Correo electrónico del usuario.
+    \item \texttt{password\_hash}: Texto. Hash de la contraseña.
+    \item \texttt{role}: Enum (\texttt{'admin'}, \texttt{'annotator'}). Rol del usuario.
+    \item \texttt{terms\_accepted}: Booleano. Indica si aceptó los términos y condiciones.
+\end{itemize}
+
+\subsection{Tabla: \texttt{epicrisis}}
+Almacena los documentos de epicrisis a ser anotados.
+
+\begin{itemize}
+    \item \texttt{id}: Entero, Llave Primaria (Autoincremental).
+    \item \texttt{patient\_id}: Texto. Identificador del paciente.
+    \item \texttt{status}: Enum (\texttt{'pending'}, \texttt{'in\_review'}, \texttt{'reviewed'}). Estado de la anotación.
+    \item \texttt{assignee\_id}: Entero, Llave Foránea a \texttt{users.id}. Usuario asignado.
+    \item \texttt{locked\_by}: Entero, Llave Foránea a \texttt{users.id}. Usuario que tiene bloqueado el documento.
+    \item \texttt{locked\_at}: Timestamp. Fecha y hora del bloqueo.
+    \item \texttt{created\_at}: Timestamp. Fecha de creación del registro.
+    \item \texttt{content\_markdown}: Texto. Contenido completo de la epicrisis.
+    \item \texttt{llm\_predictions}: JSON. Predicciones iniciales del modelo de lenguaje.
+\end{itemize}
+
+\subsection{Tabla: \texttt{annotations}}
+Almacena las anotaciones específicas (comorbilidades y criterios) realizadas por los usuarios. Una epicrisis puede tener múltiples filas en esta tabla.
+
+\begin{itemize}
+    \item \texttt{id}: Entero, Llave Primaria (Autoincremental).
+    \item \texttt{epicrisis\_id}: Entero, Llave Foránea a \texttt{epicrisis.id} (on delete cascade).
+    \item \texttt{user\_id}: Entero, Llave Foránea a \texttt{users.id}. Usuario que realizó la anotación.
+    \item \texttt{criterion\_name}: Texto. Nombre del criterio o comorbilidad (ej: "ICC", "Diabetes").
+    \item \texttt{is\_present}: Booleano. Indica si el criterio está presente o ausente.
+    \item \texttt{evidence\_text}: Texto. Fragmento de texto de la epicrisis que sirve como evidencia.
+    \item \texttt{comments}: Texto. Comentarios adicionales del anotador.
+\end{itemize}
+
+\subsection{Tabla: \texttt{epicrisis\_clinical\_data}}
+Esta tabla fue creada para reemplazar el campo JSON y contiene los datos clínicos estructurados de la epicrisis en una relación 1:1 con la tabla \texttt{epicrisis}.
+
+\begin{itemize}
+    \item \texttt{epicrisis\_id}: Entero, Llave Primaria y Llave Foránea a \texttt{epicrisis.id} (on delete cascade).
+\end{itemize}
+
+La tabla contiene más de 90 columnas específicas para datos clínicos, agrupadas en las siguientes categorías:
+
+\subsubsection{Antecedentes y Soporte}
+\begin{itemize}
+    \item \texttt{cirugia\_previas}: Booleano.
+    \item \texttt{cirugias\_previas\_cantidad}: Entero.
+    \item \texttt{farmacos}: Texto.
+    \item \texttt{vmi}: Booleano (Ventilación Mecánica Invasiva).
+    \item \texttt{vmi\_evidencia}, \texttt{vmi\_motivo}, \texttt{vmi\_urgente}, \texttt{vmi\_prono}, \texttt{vmi\_comments}.
+\end{itemize}
+
+\subsubsection{Infecciones por Foco}
+Para cada uno de los 9 focos (Urinario, Respiratorio, Vascular, Sangre, Cerebral, Cardíaco, Quirúrgico, Gastrointestinal, Piel y Tejidos), se incluyen 4 columnas:
+\begin{itemize}
+    \item \texttt{infeccion\_[foco]}: Booleano.
+    \item \texttt{infeccion\_[foco]\_evidencia}: Texto.
+    \item \texttt{infeccion\_[foco]\_germen}: Texto.
+    \item \texttt{infeccion\_[foco]\_comments}: Texto.
+\end{itemize}
+
+\subsubsection{Falla Orgánica}
+Para cada uno de los 7 sistemas (Renal, Nervioso, Vascular, Cardíaco, Pulmonar, Hepático, Otra), se incluyen 3 columnas:
+\begin{itemize}
+    \item \texttt{falla\_[sistema]}: Booleano.
+    \item \texttt{falla\_[sistema]\_evidencia}: Texto.
+    \item \texttt{falla\_[sistema]\_comments}: Texto.
+\end{itemize}
+
+\section{Ventajas del Modelo}
+\begin{enumerate}
+    \item \textbf{Integridad Referencial}: Las restricciones de llave foránea con \texttt{ON DELETE CASCADE} aseguran que si se elimina una epicrisis, sus anotaciones y datos clínicos se eliminan automáticamente.
+    \item \textbf{Tipado Fuerte}: Cada campo clínico tiene su tipo de datos nativo en SQL, evitando errores de formato que ocurrían en el JSON.
+    \item \textbf{Facilidad de Consulta}: Es posible hacer agregaciones y estadísticas (ej: contar cuántos pacientes tuvieron falla renal) directamente con SQL estándar sin tener que parsear JSON.
+\end{enumerate}
+
+\section{Scripts de Utilidad}
+Se han creado scripts en TypeScript para realizar tareas de mantenimiento y migración. Se ejecutan con \texttt{npx tsx scripts/[nombre\_del\_script].ts}.
+
+\begin{enumerate}
+    \item \texttt{migrate\_clinical\_data.ts}: Intenta migrar los datos del antiguo campo JSON \texttt{clinical\_data} a la nueva tabla \texttt{epicrisis\_clinical\_data}.
+    \item \texttt{reset\_assignments.ts}: Resetea todas las asignaciones de epicrisis. Establece \texttt{assignee\_id = null}, \texttt{status = 'pending'}, \texttt{locked\_by = null} y \texttt{locked\_at = null} para todos los registros, permitiendo reiniciar el proceso de asignación.
+\end{enumerate}
+
+\section{Mejoras y Arreglos Recientes}
+\begin{itemize}
+    \item \textbf{Transacciones}: Se implementaron transacciones en el endpoint de guardado de anotaciones (\texttt{api/annotations.ts}) para asegurar que los cambios sean atómicos y consistentes.
+    \item \textbf{Interfaz de Usuario}: Se corrigió un bug en el panel de datos clínicos (\texttt{ClinicalDataPanel.vue}) donde al marcar "Sí" en un criterio no se seleccionaba automáticamente el componente para capturar la evidencia.
+\end{itemize}
+
+\end{document}
