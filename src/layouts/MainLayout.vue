@@ -19,13 +19,16 @@ async function handleLogout() {
       <div class="max-w-7xl mx-auto h-full px-4 sm:px-6 flex items-center justify-between">
         <!-- Logo & Main Nav -->
         <div class="flex items-center gap-8">
-          <RouterLink to="/dashboard" class="flex items-center gap-2 group">
-            <div class="w-8 h-8 bg-brand-600 rounded flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <RouterLink to="/dashboard" class="flex items-center gap-2.5 group">
+            <div class="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg flex items-center justify-center text-white shadow-md shadow-brand-500/20 transition-transform group-hover:scale-105">
+              <svg class="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <span class="font-bold text-lg tracking-tight text-slate-800">Epicrisis AI</span>
+            <div class="flex flex-col">
+              <span class="font-extrabold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-brand-600">Epicrisis AI</span>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest -mt-0.5">Platform</span>
+            </div>
           </RouterLink>
 
           <nav class="hidden md:flex items-center gap-1">
