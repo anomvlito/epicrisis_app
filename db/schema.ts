@@ -42,7 +42,7 @@ export interface ClinicalData {
   fallaHepatico: boolean | null; fallaHepaticoEvidencia: string
   fallaOtra: boolean | null; fallaOtraEvidencia: string; fallaOtraDescripcion: string
   diagnosticoIngreso: string; diagnosticoEgreso: string; farmacosHosp: string
-  mortalidad: boolean | null; hfav: boolean | null
+  mortalidad: boolean | null; mortalidadEvidencia: string; hfav: boolean | null; hfavEvidencia: string
 }
 
 export interface LlmPrediction {

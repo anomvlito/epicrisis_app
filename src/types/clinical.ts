@@ -100,7 +100,9 @@ export interface ClinicalData {
   diagnosticoEgreso: string
   farmacosHosp: string
   mortalidad: boolean | null
+  mortalidadEvidencia: string
   hfav: boolean | null
+  hfavEvidencia: string
 }
 
 export function defaultClinicalData(): ClinicalData {
@@ -173,6 +175,8 @@ export function defaultClinicalData(): ClinicalData {
     diagnosticoEgreso: '',
     farmacosHosp: '',
     mortalidad: null,
+    mortalidadEvidencia: '',
     hfav: null,
+    hfavEvidencia: '',
   }
 }
