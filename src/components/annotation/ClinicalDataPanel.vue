@@ -61,6 +61,12 @@ function numInput(key: keyof ClinicalData, raw: string) {
   const n = raw === '' ? null : Number(raw)
   setVal(key, isNaN(n as number) ? null : n)
 }
+function handleToggle(key: keyof ClinicalData, value: boolean | null, evidenciaKey: keyof ClinicalData) {
+  setVal(key, value)
+  if (value === true) {
+    store.setActiveClinical(evidenciaKey)
+  }
+}
 </script>
 
 <template>
@@ -274,7 +280,7 @@ function numInput(key: keyof ClinicalData, raw: string) {
             ? 'border-brand-400 bg-brand-50 shadow-sm'
             : 'border-gray-100 bg-white hover:border-gray-200'"
           @click="store.setActiveClinical(foco.evidenciaKey)"
-          @update:model-value="setVal(foco.key, $event)"
+          @update:model-value="handleToggle(foco.key, $event, foco.evidenciaKey)"
         >
           <!-- Evidence field -->
           <div class="mb-2 mt-1.5">
@@ -338,7 +344,7 @@ function numInput(key: keyof ClinicalData, raw: string) {
             ? 'border-brand-400 bg-brand-50 shadow-sm'
             : 'border-gray-100 bg-white hover:border-gray-200'"
           @click="store.setActiveClinical(organo.evidenciaKey)"
-          @update:model-value="setVal(organo.key, $event)"
+          @update:model-value="handleToggle(organo.key, $event, organo.evidenciaKey)"
         >
           <!-- Evidence field -->
           <div class="mb-2 mt-1.5">

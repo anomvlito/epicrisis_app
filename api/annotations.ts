@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { eq } from 'drizzle-orm'
-import { db, annotations, epicrisis } from './_lib/db.js'
+import { db, annotations, epicrisis, epicrisisClinicalData } from './_lib/db.js'
 import { getAuthUser } from './_lib/auth.js'
 
 function cors(res: VercelResponse) {
@@ -48,42 +48,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const isOwner = doc.assigneeId === userId || authUser.role === 'admin'
     if (!isOwner) return res.status(403).json({ error: 'Sin permiso' })
 
-    // Nuclear: Borramos todas las anotaciones de esta epicrisis (de cualquier autor)
-    await db
-      .delete(annotations)
-      .where(eq(annotations.epicrisisId, Number(epicrisisId)))
-
-    // Insertamos las nuevas
-    if (criteria.length > 0) {
-      await db.insert(annotations).values(
-        criteria.map((c: any) => ({
-          epicrisisId: Number(epicrisisId),
-          userId: userId, // Quién hizo el último cambio
-          criterionName: c.criterionName,
-          isPresent: c.isPresent,
-          evidenceText: c.evidenceText,
-          comments: c.comments,
-        }))
-      )
-    }
-
     const newStatus = isFinal ? 'reviewed' : 'in_review'
-    await db
-      .update(epicrisis)
-      .set({
-        status: newStatus,
-        lockedBy: null,
-        lockedAt: null,
-        ...(epicrisisMetadata && {
-          fechaIngresoHosp: epicrisisMetadata.fechaIngresoHosp ?? null,
-          fechaEgresoHosp: epicrisisMetadata.fechaEgresoHosp ?? null,
-          fechaIngresoUci: epicrisisMetadata.fechaIngresoUci ?? null,
-          fechaEgresoUci: epicrisisMetadata.fechaEgresoUci ?? null,
-          comentarioFinal: epicrisisMetadata.comentarioFinal ?? null,
-          clinicalData: epicrisisMetadata.clinicalData ?? null,
-        }),
-      })
-      .where(eq(epicrisis.id, Number(epicrisisId)))
+
+    await db.transaction(async (tx) => {
+      // Nuclear: Borramos todas las anotaciones de esta epicrisis (de cualquier autor)
+      await tx
+        .delete(annotations)
+        .where(eq(annotations.epicrisisId, Number(epicrisisId)))
+
+      // Insertamos las nuevas
+      if (criteria.length > 0) {
+        await tx.insert(annotations).values(
+          criteria.map((c: any) => ({
+            epicrisisId: Number(epicrisisId),
+            userId: userId, // Quién hizo el último cambio
+            criterionName: c.criterionName,
+            isPresent: c.isPresent,
+            evidenceText: c.evidenceText,
+            comments: c.comments,
+          }))
+        )
+      }
+
+      // Update epicrisis status
+      await tx
+        .update(epicrisis)
+        .set({
+          status: newStatus,
+          lockedBy: null,
+          lockedAt: null,
+          ...(epicrisisMetadata && {
+            fechaIngresoHosp: epicrisisMetadata.fechaIngresoHosp ?? null,
+            fechaEgresoHosp: epicrisisMetadata.fechaEgresoHosp ?? null,
+            fechaIngresoUci: epicrisisMetadata.fechaIngresoUci ?? null,
+            fechaEgresoUci: epicrisisMetadata.fechaEgresoUci ?? null,
+            comentarioFinal: epicrisisMetadata.comentarioFinal ?? null,
+          }),
+        })
+        .where(eq(epicrisis.id, Number(epicrisisId)))
+
+      // Save clinical data to the new table if present
+      if (epicrisisMetadata && epicrisisMetadata.clinicalData) {
+        await tx
+          .insert(epicrisisClinicalData)
+          .values({
+            epicrisisId: Number(epicrisisId),
+            ...epicrisisMetadata.clinicalData,
+          })
+          .onConflictDoUpdate({
+            target: epicrisisClinicalData.epicrisisId,
+            set: epicrisisMetadata.clinicalData,
+          })
+      }
+    })
 
     return res.status(200).json({ ok: true, status: newStatus })
   }

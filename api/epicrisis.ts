@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { eq, and } from 'drizzle-orm'
-import { db, epicrisis, users } from './_lib/db.js'
+import { db, epicrisis, users, epicrisisClinicalData } from './_lib/db.js'
 import { getAuthUser } from './_lib/auth.js'
 
 function cors(res: VercelResponse) {
@@ -31,15 +31,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? [eq(epicrisis.id, epicrisisId)]
       : [eq(epicrisis.id, epicrisisId), eq(epicrisis.assigneeId, userId)]
 
-    const [doc] = await db
+    const result = await db
       .select()
       .from(epicrisis)
+      .leftJoin(epicrisisClinicalData, eq(epicrisis.id, epicrisisClinicalData.epicrisisId))
       .where(and(...conditions))
       .limit(1)
 
-    if (!doc) return res.status(404).json({ error: 'Epicrisis no encontrada' })
+    if (result.length === 0) return res.status(404).json({ error: 'Epicrisis no encontrada' })
 
-    return res.status(200).json({ epicrisis: doc })
+    const row = result[0]
+    const fullDoc = {
+      ...row.epicrisis,
+      clinicalData: row.epicrisis_clinical_data || null
+    }
+
+    return res.status(200).json({ epicrisis: fullDoc })
   }
 
   // List retrieval: Always filter by assigneeId (Personal Dashboard)
