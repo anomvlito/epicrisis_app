@@ -49,6 +49,18 @@ const completedCount = computed(
   () => annotationStore.criteria.filter((c) => c.isPresent !== null).length
 )
 
+// Mobile responsiveness
+const activeMobilePanel = ref<'doc' | 'form'>('doc')
+const windowWidth = ref(window.innerWidth)
+const isMobile = computed(() => windowWidth.value < 1024)
+const leftPanelStyle = computed(() =>
+  isMobile.value ? {} : { width: leftWidthPct.value + '%' }
+)
+const rightPanelStyle = computed(() =>
+  isMobile.value ? {} : { width: (100 - leftWidthPct.value) + '%' }
+)
+function updateWindowWidth() { windowWidth.value = window.innerWidth }
+
 // Drag-to-resize split pane
 function startDrag(e: MouseEvent) {
   if (!containerRef.value) return
@@ -112,6 +124,7 @@ function goToDashboard() {
 }
 
 onMounted(async () => {
+  window.addEventListener('resize', updateWindowWidth)
   // Inicializar store inmediatamente con placeholders (15 criterios)
   // Esto evita que la pantalla se vea vacía si falla la red
   annotationStore.initForEpicrisis(epicrisisId, null)
@@ -151,6 +164,7 @@ onMounted(async () => {
 })
 
 onUnmounted(async () => {
+  window.removeEventListener('resize', updateWindowWidth)
   if (!isLockedByOthers.value) {
     await annotationService.unlock(epicrisisId)
   }
@@ -161,19 +175,19 @@ onUnmounted(async () => {
 <template>
   <div class="flex flex-col flex-1 min-h-0 overflow-hidden bg-white">
     <!-- Top bar -->
-    <div class="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-white border-b border-gray-200 shadow-sm z-10">
+    <div class="flex-shrink-0 flex items-center gap-1.5 sm:gap-3 px-2 sm:px-4 py-2 bg-white border-b border-gray-200 shadow-sm z-10">
       <button
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:bg-gray-100 hover:text-brand-600 transition-all border border-transparent hover:border-gray-200"
+        class="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:bg-gray-100 hover:text-brand-600 transition-all border border-transparent hover:border-gray-200 flex-shrink-0"
         @click="goToDashboard"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
-        Volver
+        <span class="hidden sm:inline">Volver</span>
       </button>
 
-      <div class="flex items-center gap-2">
-        <span class="font-mono text-sm font-semibold text-gray-700">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="font-mono text-xs sm:text-sm font-semibold text-gray-700 truncate max-w-[90px] sm:max-w-none">
           EPC-{{ String(epicrisisId).padStart(5, '0') }}
           <template v-if="epicrisisStore.current?.patientId">
             ({{ epicrisisStore.current.patientId }})
@@ -215,10 +229,10 @@ onUnmounted(async () => {
         :disabled="!hasSelection || isReadOnly"
         @click="captureEvidence"
       >
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
-        Capturar evidencia
+        <span class="hidden sm:inline">Capturar evidencia</span>
       </button>
 
       <BaseButton
@@ -228,7 +242,8 @@ onUnmounted(async () => {
         :loading="annotationStore.saving"
         @click="handleSaveProgress"
       >
-        Guardar borrador
+        <span class="hidden sm:inline">Guardar borrador</span>
+        <span class="sm:hidden">Guardar</span>
       </BaseButton>
 
       <BaseButton
@@ -238,7 +253,8 @@ onUnmounted(async () => {
         :title="annotationStore.isComplete ? '' : 'Debes marcar todas las comorbilidades antes de enviar'"
         @click="showConfirmModal = true"
       >
-        Enviar anotación
+        <span class="hidden sm:inline">Enviar anotación</span>
+        <span class="sm:hidden">Enviar</span>
       </BaseButton>
 
       <div
@@ -288,18 +304,42 @@ onUnmounted(async () => {
     <BaseLoader v-if="epicrisisStore.loading" message="Cargando epicrisis…" />
 
     <!-- Split pane -->
+    <template v-else-if="epicrisisStore.current">
+
+    <!-- Mobile panel tabs -->
+    <div class="flex lg:hidden flex-shrink-0 border-b border-gray-200 bg-white">
+      <button
+        class="flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors border-b-2"
+        :class="activeMobilePanel === 'doc'
+          ? 'border-brand-600 text-brand-600'
+          : 'border-transparent text-gray-400 hover:text-gray-600'"
+        @click="activeMobilePanel = 'doc'"
+      >
+        Documento
+      </button>
+      <button
+        class="flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors border-b-2"
+        :class="activeMobilePanel === 'form'
+          ? 'border-brand-600 text-brand-600'
+          : 'border-transparent text-gray-400 hover:text-gray-600'"
+        @click="activeMobilePanel = 'form'"
+      >
+        Anotación · {{ completedCount }}/{{ annotationStore.criteria.length }}
+      </button>
+    </div>
+
     <div
-      v-else-if="epicrisisStore.current"
       ref="containerRef"
       class="flex flex-1 min-h-0 overflow-hidden"
       :class="{ 'select-none': isDragging }"
     >
       <!-- ===== LEFT PANEL: Epicrisis document ===== -->
       <div
-        :style="{ width: leftWidthPct + '%' }"
-        class="flex flex-col min-h-0 overflow-hidden border-r border-gray-200"
+        :style="leftPanelStyle"
+        class="flex-col min-h-0 overflow-hidden border-r border-gray-200"
+        :class="[!isMobile || activeMobilePanel === 'doc' ? 'flex' : 'hidden', isMobile ? 'w-full' : '']"
       >
-        <div class="flex-shrink-0 flex items-center justify-between px-4 py-1.5 bg-gray-50 border-b border-gray-200">
+        <div class="flex-shrink-0 flex items-center justify-between px-2 sm:px-4 py-1.5 bg-gray-50 border-b border-gray-200">
           <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
             Documento clínico
           </span>
@@ -308,7 +348,7 @@ onUnmounted(async () => {
               <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
               Protección de Datos Activa
             </span>
-            <span class="text-[10px] text-gray-400">Selecciona texto → Capturar evidencia</span>
+            <span class="hidden sm:block text-[10px] text-gray-400">Selecciona texto → Capturar evidencia</span>
           </div>
         </div>
 
@@ -326,7 +366,7 @@ onUnmounted(async () => {
           </div>
 
           <div 
-            class="max-w-[680px] mx-auto my-8 px-12 py-10 bg-white shadow-md rounded relative z-0"
+            class="max-w-[680px] mx-auto my-4 sm:my-8 px-4 sm:px-8 lg:px-12 py-6 sm:py-8 lg:py-10 bg-white shadow-md rounded relative z-0"
             v-memo="[epicrisisStore.current.contentMarkdown]"
           >
             <MarkdownRenderer :content="epicrisisStore.current.contentMarkdown" />
@@ -336,6 +376,7 @@ onUnmounted(async () => {
 
       <!-- Drag handle -->
       <div
+        v-if="!isMobile"
         class="w-1 flex-shrink-0 bg-gray-200 hover:bg-brand-400 cursor-col-resize transition-colors active:bg-brand-500"
         :class="{ 'bg-brand-400': isDragging }"
         @mousedown="startDrag"
@@ -343,8 +384,9 @@ onUnmounted(async () => {
 
       <!-- ===== RIGHT PANEL: Annotation form ===== -->
       <div
-        :style="{ width: (100 - leftWidthPct) + '%' }"
-        class="flex flex-col min-h-0 overflow-hidden bg-gray-50"
+        :style="rightPanelStyle"
+        class="flex-col min-h-0 overflow-hidden bg-gray-50"
+        :class="[!isMobile || activeMobilePanel === 'form' ? 'flex' : 'hidden', isMobile ? 'w-full' : '']"
       >
         <!-- Panel header with progress -->
         <div class="flex-shrink-0 px-3 py-1.5 bg-gray-50 border-b border-gray-200">
@@ -524,6 +566,8 @@ onUnmounted(async () => {
         </div>
       </div>
     </div>
+
+    </template>
 
     <!-- Confirm modal -->
     <BaseModal title="Confirmar envío final" :open="showConfirmModal" @close="showConfirmModal = false">

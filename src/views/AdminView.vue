@@ -293,7 +293,7 @@ onMounted(load)
 
 <template>
   <div class="flex-1 min-h-0 overflow-y-auto bg-gray-50">
-    <div class="max-w-5xl mx-auto px-4 py-8">
+    <div class="px-4 py-6 sm:px-6 lg:px-8">
 
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
@@ -311,7 +311,7 @@ onMounted(load)
       </div>
 
       <!-- Tab Switcher -->
-      <div class="flex items-center gap-1 p-1 bg-gray-200/40 backdrop-blur-sm rounded-xl mb-8 w-fit border border-gray-200">
+      <div class="flex items-center gap-1 p-1 bg-gray-200/40 backdrop-blur-sm rounded-xl mb-8 border border-gray-200 overflow-x-auto">
         <button
           class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
           :class="activeTab === 'assignment' ? 'bg-white text-brand-600 shadow-md ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
@@ -416,8 +416,8 @@ onMounted(load)
           </div>
 
           <!-- Assignment table -->
-          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            <table class="w-full text-sm">
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm overflow-x-auto">
+            <table class="w-full text-sm min-w-[560px]">
               <thead>
                 <tr class="bg-gray-50 border-b border-gray-200">
                   <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">ID</th>
@@ -580,8 +580,8 @@ onMounted(load)
           </div>
 
           <!-- Users table -->
-          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            <table class="w-full text-sm">
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm overflow-x-auto">
+            <table class="w-full text-sm min-w-[560px]">
               <thead>
                 <tr class="bg-gray-50 border-b border-gray-200">
                   <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>

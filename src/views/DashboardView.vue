@@ -35,7 +35,7 @@ useAutoRefresh(
 
 <template>
   <div class="flex-1 min-h-0 overflow-y-auto">
-    <div class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-6 lg:px-8">
       
       <!-- Header Section -->
       <div class="mb-8 border-b border-gray-200 pb-6">
@@ -48,7 +48,7 @@ useAutoRefresh(
       </div>
 
       <!-- Tab Navigation -->
-      <div class="flex items-center gap-1 border-b border-gray-200 mb-6">
+      <div class="flex items-center gap-1 border-b border-gray-200 mb-6 overflow-x-auto">
         <button
           v-for="tab in tabs"
           :key="tab.key"
