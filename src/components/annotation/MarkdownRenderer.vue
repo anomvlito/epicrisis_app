@@ -133,10 +133,10 @@ function applyHighlight(rawHtml: string, query: string, activeIdx: number): stri
   return rawHtml.replace(/(?<=>)[^<]+(?=<)/g, (text) =>
     text.replace(re, (m) => {
       const i = idx++
-      const cls = i === activeIdx
-        ? 'bg-amber-400 text-white'
-        : 'bg-yellow-200 text-yellow-900'
-      return `<mark data-match="${i}" class="${cls} rounded px-0.5">${m}</mark>`
+      const style = i === activeIdx
+        ? 'background:#f59e0b;color:#fff;border-radius:2px;'
+        : 'background:#fef08a;color:#78350f;border-radius:2px;'
+      return `<mark data-match="${i}" style="${style}">${m}</mark>`
     })
   )
 }
@@ -308,7 +308,5 @@ const html = computed(() => {
 .epi-document :deep(mark) {
   background: unset;
   color: unset;
-  border-radius: 2px;
-  padding: 0.1em 0.2em;
 }
 </style>
