@@ -2,7 +2,11 @@
 import { computed } from 'vue'
 import { marked } from 'marked'
 
-const props = defineProps<{ content: string }>()
+const props = defineProps<{
+  content: string
+  highlightQuery?: string
+  activeMatch?: number
+}>()
 
 marked.use({
   renderer: {
@@ -121,12 +125,31 @@ function toMarkdown(text: string): string {
   return out.join('\n')
 }
 
+function applyHighlight(rawHtml: string, query: string, activeIdx: number): string {
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const re = new RegExp(escaped, 'gi')
+  let idx = 0
+  // Only replace inside text nodes (between > and <), never inside tag attributes
+  return rawHtml.replace(/(?<=>)[^<]+(?=<)/g, (text) =>
+    text.replace(re, (m) => {
+      const i = idx++
+      const cls = i === activeIdx
+        ? 'bg-amber-400 text-white'
+        : 'bg-yellow-200 text-yellow-900'
+      return `<mark data-match="${i}" class="${cls} rounded px-0.5">${m}</mark>`
+    })
+  )
+}
+
 const html = computed(() => {
   const source = isMarkdownFormatted(props.content)
     ? props.content
     : toMarkdown(props.content)
-  const result = marked.parse(source, { async: false })
-  return typeof result === 'string' ? result : ''
+  const base = marked.parse(source, { async: false })
+  const baseStr = typeof base === 'string' ? base : ''
+  const q = props.highlightQuery?.trim()
+  if (!q || q.length < 2) return baseStr
+  return applyHighlight(baseStr, q, props.activeMatch ?? 0)
 })
 </script>
 
@@ -279,5 +302,13 @@ const html = computed(() => {
 .epi-document :deep(::selection) {
   background: #bae6fd;
   color: #0c4a6e;
+}
+
+/* ──── Search highlight marks ──── */
+.epi-document :deep(mark) {
+  background: unset;
+  color: unset;
+  border-radius: 2px;
+  padding: 0.1em 0.2em;
 }
 </style>

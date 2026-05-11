@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEpicrisisStore } from '@/stores/epicrisis'
 import { useAuthStore } from '@/stores/auth'
@@ -60,6 +60,37 @@ const rightPanelStyle = computed(() =>
   isMobile.value ? {} : { width: (100 - leftWidthPct.value) + '%' }
 )
 function updateWindowWidth() { windowWidth.value = window.innerWidth }
+
+// Search within document
+const searchQuery = ref('')
+const activeMatchIndex = ref(0)
+const searchMatchCount = computed(() => {
+  const q = searchQuery.value.trim()
+  if (q.length < 2 || !epicrisisStore.current) return 0
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return (epicrisisStore.current.contentMarkdown.match(new RegExp(escaped, 'gi')) ?? []).length
+})
+
+async function scrollToActiveMatch() {
+  await nextTick()
+  textPanelRef.value
+    ?.querySelector(`[data-match="${activeMatchIndex.value}"]`)
+    ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+function nextMatch() {
+  if (!searchMatchCount.value) return
+  activeMatchIndex.value = (activeMatchIndex.value + 1) % searchMatchCount.value
+  scrollToActiveMatch()
+}
+function prevMatch() {
+  if (!searchMatchCount.value) return
+  activeMatchIndex.value = (activeMatchIndex.value - 1 + searchMatchCount.value) % searchMatchCount.value
+  scrollToActiveMatch()
+}
+watch(searchQuery, () => {
+  activeMatchIndex.value = 0
+  nextTick(scrollToActiveMatch)
+})
 
 // Drag-to-resize split pane
 function startDrag(e: MouseEvent) {
@@ -352,6 +383,32 @@ onUnmounted(async () => {
           </div>
         </div>
 
+        <!-- Search bar -->
+        <div class="flex-shrink-0 flex items-center gap-2 px-2 sm:px-4 py-1.5 bg-white border-b border-gray-200">
+          <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Buscar en documento…"
+            class="flex-1 text-xs bg-transparent outline-none text-gray-700 placeholder-gray-300 min-w-0"
+          />
+          <template v-if="searchQuery">
+            <span v-if="searchMatchCount > 0" class="text-[10px] text-gray-400 font-medium whitespace-nowrap">
+              {{ activeMatchIndex + 1 }} de {{ searchMatchCount }}
+            </span>
+            <span v-else class="text-[10px] text-red-400 font-medium whitespace-nowrap">
+              Sin resultados
+            </span>
+            <div class="flex items-center gap-0.5">
+              <button @click="prevMatch" class="p-1 hover:bg-gray-100 rounded text-gray-500 text-sm leading-none">‹</button>
+              <button @click="nextMatch" class="p-1 hover:bg-gray-100 rounded text-gray-500 text-sm leading-none">›</button>
+              <button @click="searchQuery = ''" class="p-1 hover:bg-gray-100 rounded text-gray-400 text-sm leading-none">✕</button>
+            </div>
+          </template>
+        </div>
+
         <!-- Paper sheet effect: fondo gris, "hoja" blanca centrada -->
         <div
           ref="textPanelRef"
@@ -365,11 +422,15 @@ onUnmounted(async () => {
             </span>
           </div>
 
-          <div 
+          <div
             class="max-w-[680px] mx-auto my-4 sm:my-8 px-4 sm:px-8 lg:px-12 py-6 sm:py-8 lg:py-10 bg-white shadow-md rounded relative z-0"
-            v-memo="[epicrisisStore.current.contentMarkdown]"
+            v-memo="[epicrisisStore.current.contentMarkdown, searchQuery, activeMatchIndex]"
           >
-            <MarkdownRenderer :content="epicrisisStore.current.contentMarkdown" />
+            <MarkdownRenderer
+              :content="epicrisisStore.current.contentMarkdown"
+              :highlight-query="searchQuery || undefined"
+              :active-match="activeMatchIndex"
+            />
           </div>
         </div>
       </div>
