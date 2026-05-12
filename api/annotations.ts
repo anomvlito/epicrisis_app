@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { eq } from 'drizzle-orm'
+import { eq, getTableColumns } from 'drizzle-orm'
 import { db, annotations, epicrisis, epicrisisClinicalData } from './_lib/db.js'
 import { getAuthUser } from './_lib/auth.js'
 
@@ -90,15 +90,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Save clinical data to the new table if present
       if (epicrisisMetadata && epicrisisMetadata.clinicalData) {
         const { epicrisisId: _, ...clinicalDataToSave } = epicrisisMetadata.clinicalData
+        
+        // Filter valid keys based on schema columns
+        const columns = getTableColumns(epicrisisClinicalData)
+        const validKeys = Object.keys(columns)
+        
+        const filteredData: Record<string, any> = {}
+        for (const key of Object.keys(clinicalDataToSave)) {
+          if (validKeys.includes(key) && key !== 'epicrisisId') {
+            filteredData[key] = clinicalDataToSave[key]
+          }
+        }
+
         await tx
           .insert(epicrisisClinicalData)
           .values({
             epicrisisId: Number(epicrisisId),
-            ...clinicalDataToSave,
+            ...filteredData,
           })
           .onConflictDoUpdate({
             target: epicrisisClinicalData.epicrisisId,
-            set: clinicalDataToSave,
+            set: filteredData,
           })
       }
     })
