@@ -50,79 +50,77 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const newStatus = isFinal ? 'reviewed' : 'in_review'
 
-    await db.transaction(async (tx) => {
-      // Nuclear: Borramos todas las anotaciones de esta epicrisis (de cualquier autor)
-      await tx
-        .delete(annotations)
-        .where(eq(annotations.epicrisisId, Number(epicrisisId)))
+    // Nuclear: Borramos todas las anotaciones de esta epicrisis (de cualquier autor)
+    await db
+      .delete(annotations)
+      .where(eq(annotations.epicrisisId, Number(epicrisisId)))
 
-      // Insertamos las nuevas
-      if (criteria.length > 0) {
-        await tx.insert(annotations).values(
-          criteria.map((c: any) => ({
+    // Insertamos las nuevas
+    if (criteria.length > 0) {
+      await db.insert(annotations).values(
+        criteria.map((c: any) => ({
+          epicrisisId: Number(epicrisisId),
+          userId: userId, // Quién hizo el último cambio
+          criterionName: c.criterionName,
+          isPresent: c.isPresent,
+          evidenceText: c.evidenceText,
+          comments: c.comments,
+        }))
+      )
+    }
+
+    // Update epicrisis status
+    await db
+      .update(epicrisis)
+      .set({
+        status: newStatus,
+        lockedBy: null,
+        lockedAt: null,
+        ...(epicrisisMetadata && {
+          fechaIngresoHosp: epicrisisMetadata.fechaIngresoHosp ?? null,
+          fechaEgresoHosp: epicrisisMetadata.fechaEgresoHosp ?? null,
+          fechaIngresoUci: epicrisisMetadata.fechaIngresoUci ?? null,
+          fechaEgresoUci: epicrisisMetadata.fechaEgresoUci ?? null,
+          comentarioFinal: epicrisisMetadata.comentarioFinal ?? null,
+        }),
+      })
+      .where(eq(epicrisis.id, Number(epicrisisId)))
+
+    // Save clinical data to the new table if present
+    if (epicrisisMetadata && epicrisisMetadata.clinicalData) {
+      const { epicrisisId: _, ...clinicalDataToSave } = epicrisisMetadata.clinicalData
+      
+      // Filter valid keys based on schema columns
+      const columns = getTableColumns(epicrisisClinicalData)
+      const validKeys = Object.keys(columns)
+      
+      const filteredData: Record<string, any> = {}
+      for (const key of Object.keys(clinicalDataToSave)) {
+        if (validKeys.includes(key) && key !== 'epicrisisId') {
+          filteredData[key] = clinicalDataToSave[key]
+        }
+      }
+
+      if (Object.keys(filteredData).length > 0) {
+        await db
+          .insert(epicrisisClinicalData)
+          .values({
             epicrisisId: Number(epicrisisId),
-            userId: userId, // Quién hizo el último cambio
-            criterionName: c.criterionName,
-            isPresent: c.isPresent,
-            evidenceText: c.evidenceText,
-            comments: c.comments,
-          }))
-        )
+            ...filteredData,
+          })
+          .onConflictDoUpdate({
+            target: epicrisisClinicalData.epicrisisId,
+            set: filteredData,
+          })
+      } else {
+        await db
+          .insert(epicrisisClinicalData)
+          .values({
+            epicrisisId: Number(epicrisisId),
+          })
+          .onConflictDoNothing()
       }
-
-      // Update epicrisis status
-      await tx
-        .update(epicrisis)
-        .set({
-          status: newStatus,
-          lockedBy: null,
-          lockedAt: null,
-          ...(epicrisisMetadata && {
-            fechaIngresoHosp: epicrisisMetadata.fechaIngresoHosp ?? null,
-            fechaEgresoHosp: epicrisisMetadata.fechaEgresoHosp ?? null,
-            fechaIngresoUci: epicrisisMetadata.fechaIngresoUci ?? null,
-            fechaEgresoUci: epicrisisMetadata.fechaEgresoUci ?? null,
-            comentarioFinal: epicrisisMetadata.comentarioFinal ?? null,
-          }),
-        })
-        .where(eq(epicrisis.id, Number(epicrisisId)))
-
-      // Save clinical data to the new table if present
-      if (epicrisisMetadata && epicrisisMetadata.clinicalData) {
-        const { epicrisisId: _, ...clinicalDataToSave } = epicrisisMetadata.clinicalData
-        
-        // Filter valid keys based on schema columns
-        const columns = getTableColumns(epicrisisClinicalData)
-        const validKeys = Object.keys(columns)
-        
-        const filteredData: Record<string, any> = {}
-        for (const key of Object.keys(clinicalDataToSave)) {
-          if (validKeys.includes(key) && key !== 'epicrisisId') {
-            filteredData[key] = clinicalDataToSave[key]
-          }
-        }
-
-        if (Object.keys(filteredData).length > 0) {
-          await tx
-            .insert(epicrisisClinicalData)
-            .values({
-              epicrisisId: Number(epicrisisId),
-              ...filteredData,
-            })
-            .onConflictDoUpdate({
-              target: epicrisisClinicalData.epicrisisId,
-              set: filteredData,
-            })
-        } else {
-          await tx
-            .insert(epicrisisClinicalData)
-            .values({
-              epicrisisId: Number(epicrisisId),
-            })
-            .onConflictDoNothing()
-        }
-      }
-    })
+    }
 
     return res.status(200).json({ ok: true, status: newStatus })
   }
