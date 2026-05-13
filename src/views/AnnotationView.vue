@@ -45,9 +45,6 @@ const isReadOnly = computed(() => {
   return isLockedByOthers.value
 })
 
-const completedCount = computed(
-  () => annotationStore.criteria.filter((c) => c.isPresent !== null).length
-)
 
 // Mobile responsiveness
 const activeMobilePanel = ref<'doc' | 'form'>('doc')
@@ -245,7 +242,7 @@ onUnmounted(async () => {
 
       <!-- Completion counter -->
       <span class="text-xs text-gray-400 hidden sm:block">
-        {{ completedCount }}/{{ annotationStore.criteria.length }} comorbilidades
+        {{ annotationStore.totalProgress.completed }}/{{ annotationStore.totalProgress.total }} ítems completados
       </span>
 
       <!-- Capture button (pulses when text is selected) -->
@@ -281,7 +278,7 @@ onUnmounted(async () => {
         v-if="!isReadOnly"
         size="sm"
         :disabled="!annotationStore.isComplete"
-        :title="annotationStore.isComplete ? '' : 'Debes marcar todas las comorbilidades antes de enviar'"
+        :title="annotationStore.isComplete ? '' : 'Debes completar todos los campos obligatorios antes de enviar'"
         @click="showConfirmModal = true"
       >
         <span class="hidden sm:inline">Enviar anotación</span>
@@ -355,7 +352,7 @@ onUnmounted(async () => {
           : 'border-transparent text-gray-400 hover:text-gray-600'"
         @click="activeMobilePanel = 'form'"
       >
-        Anotación · {{ completedCount }}/{{ annotationStore.criteria.length }}
+        Anotación · {{ annotationStore.totalProgress.percentage }}%
       </button>
     </div>
 
@@ -453,17 +450,17 @@ onUnmounted(async () => {
         <div class="flex-shrink-0 px-3 py-1.5 bg-gray-50 border-b border-gray-200">
           <div class="flex items-center justify-between mb-1.5">
             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              Comorbilidades · Ground Truth
+              Progreso de la Anotación
             </span>
             <span class="text-[10px] text-gray-500 font-medium">
-              {{ completedCount }}/{{ annotationStore.criteria.length }}
+              {{ annotationStore.totalProgress.completed }}/{{ annotationStore.totalProgress.total }} ({{ annotationStore.totalProgress.percentage }}%)
             </span>
           </div>
           <div class="h-1 bg-gray-200 rounded-full overflow-hidden">
             <div
               class="h-full bg-brand-500 rounded-full transition-all duration-500"
               :style="{
-                width: (completedCount / Math.max(annotationStore.criteria.length, 1)) * 100 + '%',
+                width: annotationStore.totalProgress.percentage + '%',
               }"
             />
           </div>

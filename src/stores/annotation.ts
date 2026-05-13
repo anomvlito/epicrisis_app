@@ -39,16 +39,43 @@ export const useAnnotationStore = defineStore('annotation', () => {
   const fechaEgresoUci = ref('')
   const comentarioFinal = ref('')
 
-  const isComplete = computed(() =>
-    criteria.value.every((c) => c.isPresent !== null)
-  )
+  // Fields that MUST be filled (not null/empty) to consider the annotation complete
+  const criticalClinicalFields: Array<keyof ClinicalData> = [
+    'vmi', 'transfusion', 'drogasVasoactivas', 'trr',
+    'fallaRenal', 'fallaNervioso', 'fallaVascular', 'fallaCardiaco',
+    'fallaPulmonar', 'fallaHepatico', 'fallaOtra', 'mortalidad', 'hfav'
+  ]
+
+  const totalProgress = computed(() => {
+    const criteriaDone = criteria.value.filter(c => c.isPresent !== null).length
+    const criteriaTotal = criteria.value.length
+
+    const clinicalDone = criticalClinicalFields.filter(f => clinicalData.value[f] !== null).length
+    const clinicalTotal = criticalClinicalFields.length
+
+    // Dates: we consider them "done" if they have some text (even if invalid format, that's a different validation)
+    const dates = [fechaIngresoHosp.value, fechaEgresoHosp.value, fechaIngresoUci.value, fechaEgresoUci.value]
+    const datesDone = dates.filter(d => d && d.trim() !== '').length
+    const datesTotal = 4
+
+    const completed = criteriaDone + clinicalDone + datesDone
+    const total = criteriaTotal + clinicalTotal + datesTotal
+
+    return {
+      completed,
+      total,
+      percentage: Math.round((completed / Math.max(total, 1)) * 100)
+    }
+  })
+
+  const isComplete = computed(() => totalProgress.value.completed === totalProgress.value.total)
 
   const activeCriterion = computed(() =>
     criteria.value.find((c) => c.criterionName === activeCriterionName.value) ?? null
   )
 
   const pendingCount = computed(() =>
-    criteria.value.filter((c) => c.isPresent === null).length
+    totalProgress.value.total - totalProgress.value.completed
   )
 
   function buildInitial(llmPredictions: LlmPredictions | null): CriterionState[] {
@@ -293,6 +320,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     submitting,
     selectedText,
     hasSelection,
+    totalProgress,
     isComplete,
     pendingCount,
     fechaIngresoHosp,
