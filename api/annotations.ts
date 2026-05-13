@@ -102,16 +102,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         }
 
-        await tx
-          .insert(epicrisisClinicalData)
-          .values({
-            epicrisisId: Number(epicrisisId),
-            ...filteredData,
-          })
-          .onConflictDoUpdate({
-            target: epicrisisClinicalData.epicrisisId,
-            set: filteredData,
-          })
+        if (Object.keys(filteredData).length > 0) {
+          await tx
+            .insert(epicrisisClinicalData)
+            .values({
+              epicrisisId: Number(epicrisisId),
+              ...filteredData,
+            })
+            .onConflictDoUpdate({
+              target: epicrisisClinicalData.epicrisisId,
+              set: filteredData,
+            })
+        } else {
+          await tx
+            .insert(epicrisisClinicalData)
+            .values({
+              epicrisisId: Number(epicrisisId),
+            })
+            .onConflictDoNothing()
+        }
       }
     })
 
