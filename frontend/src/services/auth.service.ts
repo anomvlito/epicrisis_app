@@ -3,7 +3,7 @@ import type { AuthUser } from '@/stores/auth'
 
 export const authService = {
   login: (email: string, password: string) =>
-    api.post<{ user: AuthUser }>('/auth', { email, password }),
+    api.post<{ user: AuthUser; token: string }>('/auth', { email, password }),
 
   logout: () => api.delete<{ ok: boolean }>('/auth'),
 

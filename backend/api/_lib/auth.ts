@@ -37,8 +37,14 @@ export function parseCookies(req: IncomingMessage): Record<string, string> {
 
 export async function getAuthUser(req: IncomingMessage): Promise<TokenPayload | null> {
   try {
-    const cookies = parseCookies(req)
-    const token = cookies['auth_token']
+    let token = ''
+    const authHeader = req.headers.authorization
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7)
+    } else {
+      const cookies = parseCookies(req)
+      token = cookies['auth_token']
+    }
     if (!token) return null
     return await verifyToken(token)
   } catch {

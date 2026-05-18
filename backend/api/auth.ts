@@ -44,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.setHeader('Set-Cookie', setCookieHeader(token))
       return res.status(200).json({
         user: { id: user.id, email: user.email, role: user.role, termsAcceptedAt: user.termsAcceptedAt },
+        token
       })
     }
 
