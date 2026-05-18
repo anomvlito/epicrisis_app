@@ -11,16 +11,16 @@ El objetivo es permitir que los anotadores (clínicos/estudiantes) visualicen el
 
 Se requiere confirmación sobre los siguientes puntos antes de la fase de despliegue:
 
-1. **Proveedor de Almacenamiento (Object Storage):** Al estar en Vercel, la opción más nativa es **Vercel Blob**, pero también se puede utilizar **AWS S3** o **Supabase Storage**.
-2. **Naturaleza de los PDFs:** Confirmar que los PDFs a utilizar contienen texto nativamente seleccionable.
+1. **Naturaleza de los PDFs:** Confirmar que los PDFs a utilizar contienen texto nativamente seleccionable.
+2. **Exposición a Internet:** Determinar cómo se expondrá el backend local (ej. túnel Cloudflare/Ngrok) para servir los PDFs al frontend en Vercel.
 
 ## Arquitectura Propuesta
 
 ### 1. Almacenamiento y Base de Datos (Backend)
-Guardar archivos binarios pesados (PDFs) en PostgreSQL degradaría el rendimiento de la base de datos Neon. 
+Guardar archivos binarios pesados (PDFs) en PostgreSQL degradaría el rendimiento de la base de datos local.
 
-- **Estrategia:** Los archivos PDF se subirán a un servicio de Object Storage (ej. Vercel Blob o AWS S3).
-- **Modificación en BD:** En la tabla `epicrisis` (`db/schema.ts`), en lugar de guardar el PDF, agregaremos un campo de tipo `text` (ej. `pdf_url`) que almacenará el enlace directo al archivo almacenado en el Object Storage.
+- **Estrategia:** Los archivos PDF se guardarán en una carpeta local del sistema de archivos del servidor backend (ej. `uploads/pdfs/`) y se servirán estáticamente mediante Express.
+- **Modificación en BD:** En la tabla `epicrisis` (`db/schema.ts`), en lugar de guardar el PDF, agregaremos un campo de tipo `text` (ej. `pdf_url`) que almacenará el nombre del archivo o enlace relativo.
 
 ### 2. Renderizado del PDF (Frontend)
 El uso nativo de `<iframe src="documento.pdf">` no permite interactuar con el DOM (es imposible extraer el texto seleccionado vía JavaScript).

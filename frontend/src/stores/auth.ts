@@ -21,6 +21,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     try {
       const data = await authService.login(email, password)
+      localStorage.setItem('auth_token', data.token)
       user.value = data.user
     } finally {
       loading.value = false
@@ -28,15 +29,25 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    await authService.logout()
-    user.value = null
+    try {
+      await authService.logout()
+    } finally {
+      localStorage.removeItem('auth_token')
+      user.value = null
+    }
   }
 
   async function fetchCurrentUser() {
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      user.value = null
+      return
+    }
     try {
       const data = await authService.me()
       user.value = data.user
     } catch {
+      localStorage.removeItem('auth_token')
       user.value = null
     }
   }
