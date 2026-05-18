@@ -1,11 +1,10 @@
 node_modules
 dist
+uploads
 .env
 .env.local
-.vercel
-readme_usuarios.md
-scripts/seed_epicrisis.sql
 .env*.local
+.vercel
 
 # Archivos Excel (datos clínicos, no se suben al repositorio)
 *.xlsx
