@@ -58,6 +58,7 @@ export const epicrisis = pgTable('epicrisis', {
   fechaIngresoUci: text('fecha_ingreso_uci'),
   fechaEgresoUci: text('fecha_egreso_uci'),
   comentarioFinal: text('comentario_final'),
+  pdfPath: text('pdf_path'),
   contentMarkdown: text('content_markdown').notNull(),
   llmPredictions: json('llm_predictions').$type<LlmPredictions>(),
   status: epicrisisStatusEnum('status').notNull().default('pending'),

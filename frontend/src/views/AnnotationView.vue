@@ -10,6 +10,7 @@ import { useTextSelection } from '@/composables/useTextSelection'
 import { useAntiScreenCapture } from '@/composables/useAntiScreenCapture'
 import { COMORBIDITIES } from '@/constants/criteria'
 import MarkdownRenderer from '@/components/annotation/MarkdownRenderer.vue'
+import PdfViewer from '@/components/annotation/PdfViewer.vue'
 import CriterionRow from '@/components/annotation/CriterionRow.vue'
 import ClinicalDataPanel from '@/components/annotation/ClinicalDataPanel.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -75,6 +76,9 @@ const isReadOnly = computed(() => {
   return isLockedByOthers.value
 })
 
+
+// Left panel tab (text vs PDF)
+const docTab = ref<'text' | 'pdf'>('text')
 
 // Mobile responsiveness
 const activeMobilePanel = ref<'doc' | 'form'>('doc')
@@ -397,21 +401,37 @@ onUnmounted(async () => {
         class="flex-col min-h-0 overflow-hidden border-r border-gray-200"
         :class="[!isMobile || activeMobilePanel === 'doc' ? 'flex' : 'hidden', isMobile ? 'w-full' : '']"
       >
+        <!-- Left panel header with tabs -->
         <div class="flex-shrink-0 flex items-center justify-between px-2 sm:px-4 py-1.5 bg-gray-50 border-b border-gray-200">
-          <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-            Documento clínico
-          </span>
+          <!-- Doc/PDF tab switcher -->
+          <div class="flex items-center gap-0.5">
+            <button
+              class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors"
+              :class="docTab === 'text'
+                ? 'bg-white shadow-sm text-brand-600 border border-gray-200'
+                : 'text-gray-400 hover:text-gray-600'"
+              @click="docTab = 'text'"
+            >Texto</button>
+            <button
+              v-if="epicrisisStore.current.pdfPath"
+              class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors"
+              :class="docTab === 'pdf'
+                ? 'bg-white shadow-sm text-brand-600 border border-gray-200'
+                : 'text-gray-400 hover:text-gray-600'"
+              @click="docTab = 'pdf'"
+            >PDF</button>
+          </div>
           <div class="flex items-center gap-2">
             <span v-if="isObscured" class="flex items-center gap-1 text-[10px] text-red-500 font-bold uppercase tracking-wider">
               <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
               Protección de Datos Activa
             </span>
-            <span class="hidden sm:block text-[10px] text-gray-400">Selecciona texto → Capturar evidencia</span>
+            <span v-if="docTab === 'text'" class="hidden sm:block text-[10px] text-gray-400">Selecciona texto → Capturar evidencia</span>
           </div>
         </div>
 
-        <!-- Search bar -->
-        <div class="flex-shrink-0 flex items-center gap-2 px-2 sm:px-4 py-1.5 bg-white border-b border-gray-200">
+        <!-- Search bar (only in text tab) -->
+        <div v-if="docTab === 'text'" class="flex-shrink-0 flex items-center gap-2 px-2 sm:px-4 py-1.5 bg-white border-b border-gray-200">
           <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -436,8 +456,16 @@ onUnmounted(async () => {
           </template>
         </div>
 
+        <!-- PDF viewer -->
+        <PdfViewer
+          v-if="docTab === 'pdf' && epicrisisStore.current.pdfPath"
+          :pdf-path="epicrisisStore.current.pdfPath"
+          class="flex-1 min-h-0"
+        />
+
         <!-- Paper sheet effect: fondo gris, "hoja" blanca centrada -->
         <div
+          v-if="docTab === 'text'"
           ref="textPanelRef"
           class="flex-1 min-h-0 overflow-y-auto relative"
           style="background: #e8ecf0;"
