@@ -3,15 +3,9 @@ import { computed, ref } from 'vue'
 
 const props = defineProps<{ pdfPath: string }>()
 
-// VITE_API_URL is e.g. "https://host.ngrok-free.dev/api" — strip the /api suffix
-const uploadsBase = computed(() => {
-  const apiUrl = import.meta.env.VITE_API_URL || ''
-  return apiUrl.replace(/\/api\/?$/, '')
-})
-
-const pdfUrl = computed(
-  () => `${uploadsBase.value}/uploads/${props.pdfPath}?ngrok-skip-browser-warning=true`
-)
+// Same-origin rewrite (configured in vercel.json) → /pdfs/* proxies to the ngrok backend.
+// Using same-origin lets the iframe satisfy CSP default-src 'self' without needing frame-src.
+const pdfUrl = computed(() => `/pdfs/${props.pdfPath}`)
 
 // Track load state
 const loaded = ref(false)
