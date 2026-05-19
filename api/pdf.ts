@@ -1,33 +1,32 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-const BACKEND_URL = 'https://carmela-unadjacent-unpreventively.ngrok-free.dev'
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { id } = req.query
+
   if (!id || typeof id !== 'string') {
-    return res.status(400).send('Missing id parameter')
-  }
-  if (id.includes('..') || id.includes('/') || id.includes('\\')) {
-    return res.status(400).send('Invalid id')
+    return res.status(400).json({ error: 'Missing PDF ID' })
   }
 
+  // El backend reside en el VPS de Hostinger con HTTPS habilitado
+  const backendUrl = `https://epicrisis.2.24.69.49.nip.io/uploads/${id}`
+
   try {
-    const upstream = await fetch(`${BACKEND_URL}/uploads/${id}`, {
-      headers: { 'ngrok-skip-browser-warning': 'true' },
-    })
-    if (!upstream.ok) {
-      return res.status(upstream.status).send('PDF not found')
+    const response = await fetch(backendUrl)
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: `Backend returned ${response.statusText}` })
     }
-    const buffer = Buffer.from(await upstream.arrayBuffer())
+
+    const arrayBuffer = await response.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
     res.setHeader('Content-Type', 'application/pdf')
-    res.setHeader('Content-Length', String(buffer.length))
-    res.setHeader('Cache-Control', 'private, max-age=300')
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN')
     res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    res.setHeader('Content-Disposition', `inline; filename="${id}"`)
+    
     return res.status(200).send(buffer)
-  } catch {
-    return res.status(502).send('Failed to fetch PDF from backend')
+  } catch (error: any) {
+    console.error('Proxy error:', error)
+    return res.status(500).json({ error: error.message || 'Internal Server Error' })
   }
 }
