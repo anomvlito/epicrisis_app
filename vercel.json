@@ -2,7 +2,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/pdfs/:filename", "destination": "https://carmela-unadjacent-unpreventively.ngrok-free.dev/uploads/:filename?ngrok-skip-browser-warning=true" },
+    { "source": "/((?!api/|pdfs/).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
