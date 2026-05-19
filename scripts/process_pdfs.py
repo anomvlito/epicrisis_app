@@ -15,7 +15,7 @@ import pdfplumber
 SCRIPT_DIR   = Path(__file__).parent
 ROOT         = SCRIPT_DIR.parent
 PDF_DIR      = Path("/Users/fabianortega/src/proyecto_sotero_ihealth/pipeline/PDFs_prueba-input")
-UPLOADS_DIR  = ROOT / "backend" / "uploads"
+UPLOADS_DIR  = ROOT / "uploads"
 SALT_FILE    = SCRIPT_DIR / ".pdf_salt"
 OUTPUT_JSON  = SCRIPT_DIR / "seed_data_pdfs.json"
 

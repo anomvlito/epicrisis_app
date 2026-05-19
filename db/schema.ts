@@ -7,8 +7,16 @@ import {
   pgEnum,
   integer,
   json,
+  customType,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
+
+export const bytea = customType<{ data: Buffer }>({
+  dataType() {
+    return 'bytea'
+  },
+})
+
 
 export const userRoleEnum = pgEnum('user_role', ['admin', 'annotator'])
 export const epicrisisStatusEnum = pgEnum('epicrisis_status', [
@@ -59,6 +67,7 @@ export const epicrisis = pgTable('epicrisis', {
   fechaEgresoUci: text('fecha_egreso_uci'),
   comentarioFinal: text('comentario_final'),
   pdfPath: text('pdf_path'),
+  pdfData: bytea('pdf_data'),
   contentMarkdown: text('content_markdown').notNull(),
   llmPredictions: json('llm_predictions').$type<LlmPredictions>(),
   status: epicrisisStatusEnum('status').notNull().default('pending'),
