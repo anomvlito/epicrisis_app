@@ -1,88 +1,65 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import * as pdfjsLib from 'pdfjs-dist'
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl
+import { ref, watch, onMounted } from 'vue'
 
 const props = defineProps<{ pdfPath: string }>()
 
-const containerRef = ref<HTMLDivElement | null>(null)
 const loading = ref(false)
 const errored = ref(false)
-const totalPages = ref(0)
-const currentPage = ref(0)
+const viewerId = `pdf-viewer-${Math.random().toString(36).slice(2, 9)}`
 
-let cancelled = false
-let currentTask: { destroy: () => void } | null = null
+onMounted(() => {
+  initEmbedPdf()
+})
 
-async function renderPdf() {
-  if (!containerRef.value || !props.pdfPath) return
-  cancelled = false
+watch(() => props.pdfPath, () => {
+  initEmbedPdf()
+})
+
+function initEmbedPdf() {
+  if (!props.pdfPath) return
+
   loading.value = true
   errored.value = false
-  totalPages.value = 0
-  currentPage.value = 0
-  containerRef.value.innerHTML = ''
 
-  try {
-    const url = `/api/pdf?id=${encodeURIComponent(props.pdfPath)}`
-    const loadingTask = pdfjsLib.getDocument({ url, withCredentials: false })
-    currentTask = loadingTask
-    const pdf = await loadingTask.promise
-    if (cancelled) return
-    totalPages.value = pdf.numPages
+  const script = document.createElement('script')
+  script.async = true
+  script.type = 'module'
+  script.textContent = `
+    import EmbedPDF from 'https://snippet.embedpdf.com/embedpdf.js';
 
-    const dpr = window.devicePixelRatio || 1
-    const baseScale = 1.4
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      if (cancelled) return
-      const page = await pdf.getPage(i)
-      const viewport = page.getViewport({ scale: baseScale * dpr })
-      const canvas = document.createElement('canvas')
-      canvas.width = viewport.width
-      canvas.height = viewport.height
-      canvas.style.width = '100%'
-      canvas.style.height = 'auto'
-      canvas.style.display = 'block'
-      canvas.style.marginBottom = '12px'
-      canvas.style.boxShadow = '0 2px 6px rgba(0,0,0,0.12)'
-      canvas.style.borderRadius = '4px'
-      canvas.style.background = '#fff'
-      containerRef.value!.appendChild(canvas)
-      const ctx = canvas.getContext('2d')!
-      await page.render({ canvas, canvasContext: ctx, viewport }).promise
-      currentPage.value = i
+    try {
+      const viewer = EmbedPDF.init({
+        type: 'container',
+        target: document.getElementById('${viewerId}'),
+        src: '${props.pdfPath}'
+      });
+      window.dispatchEvent(new CustomEvent('pdf-loaded'));
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent('pdf-error', { detail: err }));
     }
-  } catch (err) {
-    if (!cancelled) {
-      errored.value = true
-      console.error('PDF render failed', err)
-    }
-  } finally {
+  `
+
+  window.addEventListener('pdf-loaded', () => {
     loading.value = false
-    currentTask = null
-  }
-}
+  }, { once: true })
 
-onMounted(renderPdf)
-watch(() => props.pdfPath, renderPdf)
-onBeforeUnmount(() => {
-  cancelled = true
-  currentTask?.destroy?.()
-})
+  window.addEventListener('pdf-error', () => {
+    loading.value = false
+    errored.value = true
+    console.error('PDF viewer failed to load')
+  }, { once: true })
+
+  document.head.appendChild(script)
+}
 </script>
 
 <template>
   <div class="flex flex-col flex-1 min-h-0 h-full bg-gray-100">
     <div
-      v-if="loading || totalPages > 0"
+      v-if="loading"
       class="flex-shrink-0 flex items-center justify-between px-3 py-1.5 bg-white border-b border-gray-200 text-[10px] text-gray-500"
     >
-      <span v-if="loading && totalPages === 0">Cargando PDF…</span>
-      <span v-else-if="loading">Renderizando página {{ currentPage }} / {{ totalPages }}…</span>
-      <span v-else>{{ totalPages }} página{{ totalPages === 1 ? '' : 's' }}</span>
+      <span>Cargando PDF…</span>
     </div>
 
     <div v-if="errored" class="flex flex-col items-center justify-center flex-1 gap-3 text-gray-400 text-sm">
@@ -93,8 +70,10 @@ onBeforeUnmount(() => {
     </div>
 
     <div
-      ref="containerRef"
-      class="flex-1 min-h-0 overflow-y-auto p-3"
-    />
+      :id="viewerId"
+      class="flex-1 min-h-0 overflow-y-auto"
+    >
+      <embedpdf-container data-color-scheme="light"></embedpdf-container>
+    </div>
   </div>
 </template>
