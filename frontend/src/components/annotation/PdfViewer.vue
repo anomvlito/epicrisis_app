@@ -9,7 +9,9 @@ const uploadsBase = computed(() => {
   return apiUrl.replace(/\/api\/?$/, '')
 })
 
-const pdfUrl = computed(() => `${uploadsBase.value}/uploads/${props.pdfPath}`)
+const pdfUrl = computed(
+  () => `${uploadsBase.value}/uploads/${props.pdfPath}?ngrok-skip-browser-warning=true`
+)
 
 // Track load state
 const loaded = ref(false)
