@@ -50,6 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .select({
       id: epicrisis.id,
       patientId: epicrisis.patientId,
+      pdfPath: epicrisis.pdfPath,
       status: epicrisis.status,
       assigneeId: epicrisis.assigneeId,
       createdAt: epicrisis.createdAt,
