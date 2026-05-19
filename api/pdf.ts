@@ -23,6 +23,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Content-Length', String(buffer.length))
     res.setHeader('Cache-Control', 'private, max-age=300')
     res.setHeader('X-Frame-Options', 'SAMEORIGIN')
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
     return res.status(200).send(buffer)
   } catch {
     return res.status(502).send('Failed to fetch PDF from backend')
