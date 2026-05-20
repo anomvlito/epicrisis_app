@@ -13,6 +13,13 @@ export interface EpicrisisListItem {
   assigneeEmail: string | null
 }
 
+export interface EpicrisisSection {
+  sectionName: string
+  label: string
+  content: string
+  position: number
+}
+
 export interface EpicrisisDetail extends EpicrisisListItem {
   contentMarkdown: string
   llmPredictions: LlmPredictions | null
@@ -23,6 +30,7 @@ export interface EpicrisisDetail extends EpicrisisListItem {
   fechaEgresoUci: string | null
   comentarioFinal: string | null
   clinicalData: ClinicalData | null
+  sections: EpicrisisSection[]
 }
 
 export const useEpicrisisStore = defineStore('epicrisis', () => {

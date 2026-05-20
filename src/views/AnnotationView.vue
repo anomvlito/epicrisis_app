@@ -9,7 +9,7 @@ import { ApiError } from '@/services/api'
 import { useTextSelection } from '@/composables/useTextSelection'
 import { useAntiScreenCapture } from '@/composables/useAntiScreenCapture'
 import { COMORBIDITIES } from '@/constants/criteria'
-import MarkdownRenderer from '@/components/annotation/MarkdownRenderer.vue'
+import SectionedViewer from '@/components/annotation/SectionedViewer.vue'
 import PdfViewer from '@/components/annotation/PdfViewer.vue'
 import CriterionRow from '@/components/annotation/CriterionRow.vue'
 import ClinicalDataPanel from '@/components/annotation/ClinicalDataPanel.vue'
@@ -105,7 +105,9 @@ const searchMatchCount = computed(() => {
   const q = searchQuery.value.trim()
   if (q.length < 2 || !epicrisisStore.current) return 0
   const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return (epicrisisStore.current.contentMarkdown.match(new RegExp(escaped, 'gi')) ?? []).length
+  const re = new RegExp(escaped, 'gi')
+  const fullText = (epicrisisStore.current.sections ?? []).map((s) => s.content).join('\n')
+  return (fullText.match(re) ?? []).length
 })
 
 async function scrollToActiveMatch() {
@@ -486,10 +488,10 @@ onUnmounted(async () => {
 
           <div
             class="max-w-[680px] mx-auto my-4 sm:my-8 px-4 sm:px-8 lg:px-12 py-6 sm:py-8 lg:py-10 bg-white shadow-md rounded relative z-0"
-            v-memo="[epicrisisStore.current.contentMarkdown, searchQuery, activeMatchIndex]"
+            v-memo="[epicrisisStore.current.sections, searchQuery, activeMatchIndex]"
           >
-            <MarkdownRenderer
-              :content="epicrisisStore.current.contentMarkdown"
+            <SectionedViewer
+              :sections="epicrisisStore.current.sections ?? []"
               :highlight-query="searchQuery || undefined"
               :active-match="activeMatchIndex"
             />
