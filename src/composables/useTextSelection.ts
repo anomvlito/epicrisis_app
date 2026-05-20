@@ -1,18 +1,25 @@
 import { onMounted, onUnmounted, toRef, watch } from 'vue'
 import { useAnnotationStore } from '@/stores/annotation'
 
-export function useTextSelection(containerRef: { value: HTMLElement | null }) {
+type ContainerRef = { value: HTMLElement | null }
+
+function isInsideAny(refs: ContainerRef[], node: Node): boolean {
+  return refs.some(r => r.value && r.value.contains(node))
+}
+
+export function useTextSelection(containerRef: ContainerRef, ...extraRefs: ContainerRef[]) {
   const store = useAnnotationStore()
+  const allRefs = () => [containerRef, ...extraRefs]
 
   function updatePersistentHighlight() {
     if (!('highlights' in CSS)) return;
-    
+
     const selection = window.getSelection()
     if (!selection || selection.rangeCount === 0 || !selection.toString().trim()) return
 
     const range = selection.getRangeAt(0)
-    const isInside = containerRef.value && containerRef.value.contains(range.commonAncestorContainer)
-    
+    const isInside = isInsideAny(allRefs(), range.commonAncestorContainer)
+
     if (isInside) {
       // @ts-ignore
       CSS.highlights.clear()
@@ -43,13 +50,10 @@ export function useTextSelection(containerRef: { value: HTMLElement | null }) {
     const text = selection.toString().trim()
     if (!text) return
 
-    if (containerRef.value) {
-      const range = selection.getRangeAt(0)
-      const isInside = containerRef.value.contains(range.commonAncestorContainer)
-      if (isInside) {
-        store.selectedText = text
-        store.hasSelection = true
-      }
+    const range = selection.getRangeAt(0)
+    if (isInsideAny(allRefs(), range.commonAncestorContainer)) {
+      store.selectedText = text
+      store.hasSelection = true
     }
   }
 
@@ -57,8 +61,8 @@ export function useTextSelection(containerRef: { value: HTMLElement | null }) {
     const selection = window.getSelection()
     const text = selection?.toString().trim()
 
-    const isClickInside = containerRef.value && containerRef.value.contains(e.target as Node)
-    
+    const isClickInside = isInsideAny(allRefs(), e.target as Node)
+
     if (isClickInside && !text) {
       store.selectedText = ''
       store.hasSelection = false

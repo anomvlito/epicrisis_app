@@ -30,9 +30,15 @@ const leftWidthPct = ref(55)
 const isDragging = ref(false)
 const containerRef = ref<HTMLDivElement | null>(null)
 const textPanelRef = ref<HTMLDivElement | null>(null)
+const pdfViewerRef = ref<InstanceType<typeof PdfViewer> | null>(null)
+
+// Proxy ref so useTextSelection sees the PDF viewer's container element
+const pdfContainerProxy = {
+  get value() { return pdfViewerRef.value?.containerRef ?? null }
+}
 
 // Composables
-const { hasSelection, captureAndReturn } = useTextSelection(textPanelRef)
+const { hasSelection, captureAndReturn } = useTextSelection(textPanelRef, pdfContainerProxy)
 const { isObscured } = useAntiScreenCapture(textPanelRef)
 
 // UI state
@@ -426,7 +432,7 @@ onUnmounted(async () => {
               <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
               Protección de Datos Activa
             </span>
-            <span v-if="docTab === 'text'" class="hidden sm:block text-[10px] text-gray-400">Selecciona texto → Capturar evidencia</span>
+            <span class="hidden sm:block text-[10px] text-gray-400">Selecciona texto → Capturar evidencia</span>
           </div>
         </div>
 
@@ -459,6 +465,7 @@ onUnmounted(async () => {
         <!-- PDF viewer -->
         <PdfViewer
           v-if="docTab === 'pdf' && epicrisisStore.current.pdfPath"
+          ref="pdfViewerRef"
           :pdf-path="epicrisisStore.current.pdfPath"
           class="flex-1 min-h-0"
         />
