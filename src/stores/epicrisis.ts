@@ -21,7 +21,7 @@ export interface EpicrisisSection {
 }
 
 export interface EpicrisisDetail extends EpicrisisListItem {
-  contentMarkdown: string
+  contentMarkdown?: string
   llmPredictions: LlmPredictions | null
   pdfPath: string | null
   fechaIngresoHosp: string | null
