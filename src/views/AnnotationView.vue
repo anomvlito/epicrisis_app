@@ -48,6 +48,14 @@ const errorMessage = ref('')
 const lockError = ref('')
 const isLockedByOthers = ref(false)
 
+// Criteria search (Antecedentes section)
+const criteriaSearch = ref('')
+const showCriteriaSearch = ref(false)
+function toggleCriteriaSearch() {
+  showCriteriaSearch.value = !showCriteriaSearch.value
+  if (!showCriteriaSearch.value) criteriaSearch.value = ''
+}
+
 // Date format helpers
 function toISO(dateStr: string) {
   if (!dateStr || !dateStr.includes('/')) return dateStr
@@ -600,8 +608,29 @@ onUnmounted(async () => {
 
           <!-- ── ANTECEDENTES ── -->
           <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
-            <div class="px-3 py-1.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Antecedentes</span>
+            <!-- Section header -->
+            <div class="px-3 py-1.5 bg-gray-50 border-b border-gray-200 flex items-center gap-1.5">
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex-1">Antecedentes</span>
+
+              <!-- Search toggle -->
+              <button
+                v-if="!isReadOnly"
+                :class="[
+                  'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors',
+                  showCriteriaSearch
+                    ? 'text-brand-600 bg-brand-50'
+                    : 'text-gray-400 hover:text-brand-500 hover:bg-gray-100',
+                ]"
+                title="Buscar criterio"
+                @click="toggleCriteriaSearch"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Buscar
+              </button>
+
+              <!-- Clear button -->
               <button
                 v-if="annotationStore.hasCriteriaSelection && !isReadOnly"
                 class="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
@@ -614,7 +643,41 @@ onUnmounted(async () => {
                 Limpiar
               </button>
             </div>
-            <div class="divide-y divide-gray-100">
+
+            <!-- Collapsible search bar -->
+            <Transition
+              enter-active-class="transition-all duration-200 ease-out overflow-hidden"
+              enter-from-class="opacity-0 max-h-0"
+              enter-to-class="opacity-100 max-h-12"
+              leave-active-class="transition-all duration-150 ease-in overflow-hidden"
+              leave-from-class="opacity-100 max-h-12"
+              leave-to-class="opacity-0 max-h-0"
+            >
+              <div v-if="showCriteriaSearch" class="flex items-center gap-2 px-3 py-1.5 border-b border-gray-100 bg-white">
+                <svg class="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  v-model="criteriaSearch"
+                  type="text"
+                  placeholder="Buscar comorbilidad…"
+                  class="flex-1 text-xs bg-transparent outline-none text-gray-700 placeholder-gray-300 min-w-0"
+                  autofocus
+                />
+                <button
+                  v-if="criteriaSearch"
+                  class="text-gray-400 hover:text-gray-600 flex-shrink-0"
+                  @click="criteriaSearch = ''"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </Transition>
+
+            <!-- Criteria list -->
+            <div class="px-3 py-2 space-y-2">
               <CriterionRow
                 v-for="criterion in COMORBIDITIES"
                 :key="criterion.name"
@@ -622,6 +685,7 @@ onUnmounted(async () => {
                 :state="annotationStore.criteria.find(c => c.criterionName === criterion.name)!"
                 :is-active="annotationStore.activeCriterionName === criterion.name"
                 :is-read-only="isReadOnly"
+                :search-query="criteriaSearch"
               />
             </div>
 

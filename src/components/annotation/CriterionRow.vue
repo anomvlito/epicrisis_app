@@ -9,12 +9,12 @@ const props = defineProps<{
   state: CriterionState
   isActive: boolean
   isReadOnly?: boolean
+  searchQuery?: string
 }>()
 
 const annotationStore = useAnnotationStore()
 
 const llm = computed(() => props.state.llm)
-
 const llmConflicto = computed(() => llm.value?.conflicto === true)
 const llmValorLabel = computed(() => {
   if (llm.value?.valor === true) return 'Sí'
@@ -28,12 +28,24 @@ const llmValorColor = computed(() => {
 })
 const confianzaPct = computed(() => Math.round((llm.value?.confianza ?? 0) * 100))
 
+const isFiltered = computed(() => {
+  const q = props.searchQuery?.trim().toLowerCase()
+  if (!q) return false
+  return !props.meta.label.toLowerCase().includes(q) && !props.meta.name.includes(q)
+})
+
+// Show evidence box when there's captured text, a decision, or the row is active
+const showEvidence = computed(() =>
+  props.isActive || props.state.isPresent !== null || !!props.state.evidenceText
+)
+
 const rowClasses = computed(() => [
-  'rounded-lg border p-3 cursor-pointer transition-all',
+  'p-2 rounded-lg border transition-all cursor-pointer',
   llmConflicto.value && 'border-l-4 border-l-orange-400',
+  isFiltered.value && !props.isActive ? 'opacity-40' : '',
   props.isActive
     ? 'border-brand-400 bg-brand-50 shadow-sm'
-    : 'border-gray-200 bg-white hover:border-gray-300',
+    : 'border-gray-100 bg-white hover:border-gray-200',
 ])
 
 function activate() {
@@ -52,7 +64,7 @@ function onCommentsInput(e: Event) {
 <template>
   <div :class="rowClasses" @click="activate">
     <!-- Header -->
-    <div class="flex items-center justify-between gap-2 mb-2">
+    <div class="flex items-center justify-between gap-2">
       <div class="flex-1 min-w-0">
         <p class="text-xs font-semibold text-gray-800 leading-tight truncate">
           {{ meta.label }}
@@ -73,33 +85,29 @@ function onCommentsInput(e: Event) {
       <div class="flex gap-1 flex-shrink-0" @click.stop>
         <button
           :class="[
-            'px-2.5 py-1 rounded text-xs font-semibold transition-colors',
+            'px-2 py-0.5 rounded text-[11px] font-semibold transition-colors',
             state.isPresent === true
               ? 'bg-green-500 text-white'
               : 'bg-gray-100 text-gray-500 hover:bg-green-100',
           ]"
           :disabled="isReadOnly"
           @click="setPresent(true)"
-        >
-          Sí
-        </button>
+        >Sí</button>
         <button
           :class="[
-            'px-2.5 py-1 rounded text-xs font-semibold transition-colors',
+            'px-2 py-0.5 rounded text-[11px] font-semibold transition-colors',
             state.isPresent === false
               ? 'bg-red-500 text-white'
               : 'bg-gray-100 text-gray-500 hover:bg-red-100',
           ]"
           :disabled="isReadOnly"
           @click="setPresent(false)"
-        >
-          No
-        </button>
+        >No</button>
       </div>
     </div>
 
     <!-- LLM reference row -->
-    <div v-if="llm" class="flex items-center gap-2 mb-2 px-2 py-1.5 rounded bg-gray-50 border border-gray-100">
+    <div v-if="llm" class="flex items-center gap-2 mt-1.5 px-2 py-1 rounded bg-gray-50 border border-gray-100">
       <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">LLM</span>
       <span :class="['text-[10px] font-bold px-1.5 py-0.5 rounded', llmValorColor]">
         {{ llmValorLabel }}
@@ -113,25 +121,34 @@ function onCommentsInput(e: Event) {
       <span v-else class="text-[10px] text-gray-300 italic flex-1">No detectado</span>
     </div>
 
-    <!-- Evidence field (always shown) -->
-    <div class="mb-2">
-      <label class="block text-[10px] font-medium text-gray-400 mb-1 uppercase tracking-wider">
-        Tu evidencia (ground truth)
-      </label>
-      <div
-        :class="[
-          'min-h-[32px] rounded border px-2 py-1.5 text-xs font-mono leading-relaxed',
-          state.evidenceText
-            ? 'bg-yellow-50 border-yellow-300 text-gray-800'
-            : 'bg-gray-50 border-gray-200 text-gray-400 italic',
-        ]"
-      >
-        {{ state.evidenceText || 'Selecciona texto en el documento y presiona "Capturar"' }}
+    <!-- Evidence field (shown when active, has decision, or has captured text) -->
+    <Transition
+      enter-active-class="transition-all duration-150 ease-out overflow-hidden"
+      enter-from-class="opacity-0 max-h-0"
+      enter-to-class="opacity-100 max-h-40"
+      leave-active-class="transition-all duration-100 ease-in overflow-hidden"
+      leave-from-class="opacity-100 max-h-40"
+      leave-to-class="opacity-0 max-h-0"
+    >
+      <div v-if="showEvidence" class="mt-1.5">
+        <label class="block text-[10px] font-medium text-gray-400 mb-1 uppercase tracking-wider">
+          Tu evidencia (ground truth)
+        </label>
+        <div
+          :class="[
+            'min-h-[28px] rounded border px-2 py-1.5 text-xs font-mono leading-relaxed',
+            state.evidenceText
+              ? 'bg-yellow-50 border-yellow-300 text-gray-800'
+              : 'bg-gray-50 border-gray-200 text-gray-400 italic',
+          ]"
+        >
+          {{ state.evidenceText || 'Selecciona texto en el documento y presiona "Capturar"' }}
+        </div>
       </div>
-    </div>
+    </Transition>
 
     <!-- Comments (only when active) -->
-    <div v-if="isActive">
+    <div v-if="isActive" class="mt-1.5">
       <label class="block text-[10px] font-medium text-gray-400 mb-1 uppercase tracking-wider">
         Comentarios <span class="normal-case font-normal">(opcional — casos borde, dudas)</span>
       </label>
