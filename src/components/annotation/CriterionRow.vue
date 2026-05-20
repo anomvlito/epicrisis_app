@@ -9,7 +9,6 @@ const props = defineProps<{
   state: CriterionState
   isActive: boolean
   isReadOnly?: boolean
-  searchQuery?: string
 }>()
 
 const annotationStore = useAnnotationStore()
@@ -28,12 +27,6 @@ const llmValorColor = computed(() => {
 })
 const confianzaPct = computed(() => Math.round((llm.value?.confianza ?? 0) * 100))
 
-const isFiltered = computed(() => {
-  const q = props.searchQuery?.trim().toLowerCase()
-  if (!q) return false
-  return !props.meta.label.toLowerCase().includes(q) && !props.meta.name.includes(q)
-})
-
 // Show evidence box when there's captured text, a decision, or the row is active
 const showEvidence = computed(() =>
   props.isActive || props.state.isPresent !== null || !!props.state.evidenceText
@@ -42,7 +35,6 @@ const showEvidence = computed(() =>
 const rowClasses = computed(() => [
   'p-2 rounded-lg border transition-all cursor-pointer',
   llmConflicto.value && 'border-l-4 border-l-orange-400',
-  isFiltered.value && !props.isActive ? 'opacity-40' : '',
   props.isActive
     ? 'border-brand-400 bg-brand-50 shadow-sm'
     : 'border-gray-100 bg-white hover:border-gray-200',
@@ -131,9 +123,17 @@ function onCommentsInput(e: Event) {
       leave-to-class="opacity-0 max-h-0"
     >
       <div v-if="showEvidence" class="mt-1.5">
-        <label class="block text-[10px] font-medium text-gray-400 mb-1 uppercase tracking-wider">
-          Tu evidencia (ground truth)
-        </label>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+            Tu evidencia (ground truth)
+          </label>
+          <button
+            v-if="state.evidenceText && !isReadOnly"
+            class="text-[10px] text-gray-400 hover:text-red-500 transition-colors leading-none"
+            title="Limpiar evidencia capturada"
+            @click.stop="annotationStore.setEvidence(meta.name, '')"
+          >✕ limpiar</button>
+        </div>
         <div
           :class="[
             'min-h-[28px] rounded border px-2 py-1.5 text-xs font-mono leading-relaxed',

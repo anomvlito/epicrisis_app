@@ -48,12 +48,47 @@ const errorMessage = ref('')
 const lockError = ref('')
 const isLockedByOthers = ref(false)
 
-// Criteria search (Antecedentes section)
-const criteriaSearch = ref('')
-const showCriteriaSearch = ref(false)
-function toggleCriteriaSearch() {
-  showCriteriaSearch.value = !showCriteriaSearch.value
-  if (!showCriteriaSearch.value) criteriaSearch.value = ''
+// ── Búsqueda Opción 1: filtro inline que colapsa items que no coinciden ──
+const search1Query = ref('')
+const showSearch1 = ref(false)
+function toggleSearch1() {
+  showSearch1.value = !showSearch1.value
+  if (!showSearch1.value) search1Query.value = ''
+}
+const search1Matches = computed(() => {
+  const q = search1Query.value.trim().toLowerCase()
+  if (!q) return null // null = mostrar todos
+  return new Set(COMORBIDITIES.filter(c => c.label.toLowerCase().includes(q) || c.name.includes(q)).map(c => c.name))
+})
+
+// ── Búsqueda Opción 2: command palette flotante ──
+const showPalette = ref(false)
+const paletteQuery = ref('')
+const paletteActiveIdx = ref(0)
+const paletteInputRef = ref<HTMLInputElement | null>(null)
+const paletteResults = computed(() => {
+  const q = paletteQuery.value.trim().toLowerCase()
+  if (!q) return COMORBIDITIES
+  return COMORBIDITIES.filter(c => c.label.toLowerCase().includes(q) || c.name.includes(q))
+})
+watch(showPalette, (v) => {
+  if (v) { paletteQuery.value = ''; paletteActiveIdx.value = 0; nextTick(() => paletteInputRef.value?.focus()) }
+})
+watch(paletteQuery, () => { paletteActiveIdx.value = 0 })
+function selectPaletteResult(name: string) {
+  annotationStore.setActive(name)
+  showPalette.value = false
+  nextTick(() => {
+    document.querySelector(`[data-criterion="${name}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  })
+}
+function paletteKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') { showPalette.value = false; return }
+  if (e.key === 'ArrowDown') { paletteActiveIdx.value = Math.min(paletteActiveIdx.value + 1, paletteResults.value.length - 1); e.preventDefault() }
+  if (e.key === 'ArrowUp') { paletteActiveIdx.value = Math.max(paletteActiveIdx.value - 1, 0); e.preventDefault() }
+  if (e.key === 'Enter' && paletteResults.value[paletteActiveIdx.value]) {
+    selectPaletteResult(paletteResults.value[paletteActiveIdx.value].name)
+  }
 }
 
 // Date format helpers
@@ -91,8 +126,11 @@ const isReadOnly = computed(() => {
 })
 
 
-// Left panel tab (text vs PDF)
-const docTab = ref<'text' | 'pdf'>('text')
+// Left panel tab — PDF primero si está disponible, si no texto
+const docTab = ref<'text' | 'pdf'>('pdf')
+watch(() => epicrisisStore.current?.pdfPath, (pdfPath) => {
+  if (!pdfPath) docTab.value = 'text'
+}, { immediate: true })
 
 // Mobile responsiveness
 const activeMobilePanel = ref<'doc' | 'form'>('doc')
@@ -419,15 +457,8 @@ onUnmounted(async () => {
       >
         <!-- Left panel header with tabs -->
         <div class="flex-shrink-0 flex items-center justify-between px-2 sm:px-4 py-1.5 bg-gray-50 border-b border-gray-200">
-          <!-- Doc/PDF tab switcher -->
+          <!-- Doc/PDF tab switcher — PDF primero -->
           <div class="flex items-center gap-0.5">
-            <button
-              class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors"
-              :class="docTab === 'text'
-                ? 'bg-white shadow-sm text-brand-600 border border-gray-200'
-                : 'text-gray-400 hover:text-gray-600'"
-              @click="docTab = 'text'"
-            >Texto</button>
             <button
               v-if="epicrisisStore.current.pdfPath"
               class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors"
@@ -436,6 +467,13 @@ onUnmounted(async () => {
                 : 'text-gray-400 hover:text-gray-600'"
               @click="docTab = 'pdf'"
             >PDF</button>
+            <button
+              class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors"
+              :class="docTab === 'text'
+                ? 'bg-white shadow-sm text-brand-600 border border-gray-200'
+                : 'text-gray-400 hover:text-gray-600'"
+              @click="docTab = 'text'"
+            >Texto</button>
           </div>
           <div class="flex items-center gap-2">
             <span v-if="isObscured" class="flex items-center gap-1 text-[10px] text-red-500 font-bold uppercase tracking-wider">
@@ -447,7 +485,7 @@ onUnmounted(async () => {
         </div>
 
         <!-- Search bar (only in text tab) -->
-        <div v-if="docTab === 'text'" class="flex-shrink-0 flex items-center gap-2 px-2 sm:px-4 py-1.5 bg-white border-b border-gray-200">
+        <div v-show="docTab === 'text'" class="flex-shrink-0 flex items-center gap-2 px-2 sm:px-4 py-1.5 bg-white border-b border-gray-200">
           <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -472,9 +510,10 @@ onUnmounted(async () => {
           </template>
         </div>
 
-        <!-- PDF viewer -->
+        <!-- PDF viewer: v-if monta solo si hay PDF, v-show alterna sin re-fetch -->
         <PdfViewer
-          v-if="docTab === 'pdf' && epicrisisStore.current.pdfPath"
+          v-if="epicrisisStore.current.pdfPath"
+          v-show="docTab === 'pdf'"
           ref="pdfViewerRef"
           :pdf-path="epicrisisStore.current.pdfPath"
           class="flex-1 min-h-0"
@@ -482,7 +521,7 @@ onUnmounted(async () => {
 
         <!-- Paper sheet effect: fondo gris, "hoja" blanca centrada -->
         <div
-          v-if="docTab === 'text'"
+          v-show="docTab === 'text'"
           ref="textPanelRef"
           class="flex-1 min-h-0 overflow-y-auto relative"
           style="background: #e8ecf0;"
@@ -612,28 +651,42 @@ onUnmounted(async () => {
             <div class="px-3 py-1.5 bg-gray-50 border-b border-gray-200 flex items-center gap-1.5">
               <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex-1">Antecedentes</span>
 
-              <!-- Search toggle -->
+              <!-- Búsqueda Opción 1: filtro inline -->
               <button
                 v-if="!isReadOnly"
                 :class="[
-                  'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors',
-                  showCriteriaSearch
-                    ? 'text-brand-600 bg-brand-50'
-                    : 'text-gray-400 hover:text-brand-500 hover:bg-gray-100',
+                  'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors border',
+                  showSearch1 ? 'text-brand-600 bg-brand-50 border-brand-200' : 'text-gray-400 hover:text-brand-500 hover:bg-gray-100 border-gray-200',
                 ]"
-                title="Buscar criterio"
-                @click="toggleCriteriaSearch"
+                title="Buscar filtrando la lista (Opción 1)"
+                @click="toggleSearch1"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h10M4 18h6" />
+                </svg>
+                B1
+              </button>
+
+              <!-- Búsqueda Opción 2: command palette -->
+              <button
+                v-if="!isReadOnly"
+                :class="[
+                  'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors border',
+                  showPalette ? 'text-purple-600 bg-purple-50 border-purple-200' : 'text-gray-400 hover:text-purple-500 hover:bg-gray-100 border-gray-200',
+                ]"
+                title="Buscar con selector flotante (Opción 2)"
+                @click="showPalette = true"
               >
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                Buscar
+                B2
               </button>
 
               <!-- Clear button -->
               <button
                 v-if="annotationStore.hasCriteriaSelection && !isReadOnly"
-                class="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                class="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors border border-gray-200"
                 title="Limpiar todas las selecciones de antecedentes"
                 @click="annotationStore.clearCriteria()"
               >
@@ -644,7 +697,7 @@ onUnmounted(async () => {
               </button>
             </div>
 
-            <!-- Collapsible search bar -->
+            <!-- Search 1: filtro inline colapsable -->
             <Transition
               enter-active-class="transition-all duration-200 ease-out overflow-hidden"
               enter-from-class="opacity-0 max-h-0"
@@ -653,22 +706,21 @@ onUnmounted(async () => {
               leave-from-class="opacity-100 max-h-12"
               leave-to-class="opacity-0 max-h-0"
             >
-              <div v-if="showCriteriaSearch" class="flex items-center gap-2 px-3 py-1.5 border-b border-gray-100 bg-white">
-                <svg class="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <div v-if="showSearch1" class="flex items-center gap-2 px-3 py-1.5 border-b border-brand-100 bg-brand-50/40">
+                <svg class="w-3 h-3 text-brand-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h10M4 18h6" />
                 </svg>
                 <input
-                  v-model="criteriaSearch"
+                  v-model="search1Query"
                   type="text"
-                  placeholder="Buscar comorbilidad…"
-                  class="flex-1 text-xs bg-transparent outline-none text-gray-700 placeholder-gray-300 min-w-0"
+                  placeholder="Filtrar comorbilidades…"
+                  class="flex-1 text-xs bg-transparent outline-none text-gray-700 placeholder-gray-400 min-w-0"
                   autofocus
                 />
-                <button
-                  v-if="criteriaSearch"
-                  class="text-gray-400 hover:text-gray-600 flex-shrink-0"
-                  @click="criteriaSearch = ''"
-                >
+                <span v-if="search1Matches" class="text-[10px] text-brand-500 font-semibold whitespace-nowrap">
+                  {{ search1Matches.size }}/{{ COMORBIDITIES.length }}
+                </span>
+                <button v-if="search1Query" class="text-gray-400 hover:text-gray-600" @click="search1Query = ''">
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -680,12 +732,13 @@ onUnmounted(async () => {
             <div class="px-3 py-2 space-y-2">
               <CriterionRow
                 v-for="criterion in COMORBIDITIES"
+                v-show="!search1Matches || search1Matches.has(criterion.name)"
                 :key="criterion.name"
+                :data-criterion="criterion.name"
                 :meta="criterion"
                 :state="annotationStore.criteria.find(c => c.criterionName === criterion.name)!"
                 :is-active="annotationStore.activeCriterionName === criterion.name"
                 :is-read-only="isReadOnly"
-                :search-query="criteriaSearch"
               />
             </div>
 
@@ -792,6 +845,84 @@ onUnmounted(async () => {
         </BaseButton>
       </div>
     </BaseModal>
+
+    <!-- ── Búsqueda Opción 2: Command Palette ── -->
+    <Transition
+      enter-active-class="transition duration-150 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-100 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="showPalette"
+        class="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4"
+        style="background: rgba(15,23,42,0.5); backdrop-filter: blur(2px);"
+        @click.self="showPalette = false"
+      >
+        <div class="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200">
+          <!-- Input -->
+          <div class="flex items-center gap-2.5 px-4 py-3 border-b border-gray-100">
+            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              ref="paletteInputRef"
+              v-model="paletteQuery"
+              type="text"
+              placeholder="Buscar comorbilidad…"
+              class="flex-1 text-sm bg-transparent outline-none text-gray-800 placeholder-gray-400"
+              @keydown="paletteKeydown"
+            />
+            <kbd class="text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5 font-mono">Esc</kbd>
+          </div>
+
+          <!-- Results -->
+          <ul class="max-h-72 overflow-y-auto py-1">
+            <li v-if="paletteResults.length === 0" class="px-4 py-3 text-sm text-gray-400 text-center">
+              Sin resultados
+            </li>
+            <li
+              v-for="(criterion, idx) in paletteResults"
+              :key="criterion.name"
+              :class="[
+                'flex items-center justify-between gap-3 px-4 py-2.5 cursor-pointer transition-colors',
+                idx === paletteActiveIdx ? 'bg-purple-50 text-purple-700' : 'text-gray-700 hover:bg-gray-50',
+              ]"
+              @click="selectPaletteResult(criterion.name)"
+              @mouseenter="paletteActiveIdx = idx"
+            >
+              <div class="flex-1 min-w-0">
+                <span class="text-sm font-medium truncate block">{{ criterion.label }}</span>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-[10px] font-mono text-gray-400">{{ criterion.icd10Hint }}</span>
+                <span
+                  :class="[
+                    'text-[10px] font-semibold px-1.5 py-0.5 rounded',
+                    annotationStore.criteria.find(c => c.criterionName === criterion.name)?.isPresent === true ? 'bg-green-100 text-green-700'
+                    : annotationStore.criteria.find(c => c.criterionName === criterion.name)?.isPresent === false ? 'bg-red-100 text-red-700'
+                    : 'bg-gray-100 text-gray-400',
+                  ]"
+                >
+                  {{ annotationStore.criteria.find(c => c.criterionName === criterion.name)?.isPresent === true ? 'Sí'
+                    : annotationStore.criteria.find(c => c.criterionName === criterion.name)?.isPresent === false ? 'No'
+                    : '—' }}
+                </span>
+              </div>
+            </li>
+          </ul>
+
+          <!-- Footer -->
+          <div class="px-4 py-2 border-t border-gray-100 flex items-center gap-3 text-[10px] text-gray-400">
+            <span><kbd class="border border-gray-200 rounded px-1 font-mono">↑↓</kbd> navegar</span>
+            <span><kbd class="border border-gray-200 rounded px-1 font-mono">↵</kbd> ir al criterio</span>
+            <span class="ml-auto">{{ paletteResults.length }} resultado{{ paletteResults.length !== 1 ? 's' : '' }}</span>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Success modal -->
     <BaseModal title="Anotación registrada" :open="showSuccessModal" @close="goToDashboard">
