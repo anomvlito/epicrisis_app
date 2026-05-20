@@ -60,8 +60,17 @@ SURGEON_RE = re.compile(
     re.MULTILINE,
 )
 
+# Name tokens: capitalized word (with optional hyphen), name initial (L.), or preposition (De, La, Del…)
+# _NAME_PREP requires uppercase-initial to avoid matching lowercase "de"/"la" in clinical phrases
+_NAME_CAP   = r'[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:-[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)?'
+_NAME_INIT  = r'[A-ZÁÉÍÓÚÑ]\.'
+_NAME_PREP  = r'(?:D(?:el?|i)|La|Los|Van|Von|El)'
+_NAME_TOKEN = rf'(?:{_NAME_CAP}|{_NAME_INIT}|{_NAME_PREP})'
+
+# Matches a standalone line that looks like a person's name (≥3 tokens)
+# Handles: "Simon De La Maza Fontecilla", "Maria L. Lisbona Torres", "Garcia-Atance"
 LONE_NAME_RE = re.compile(
-    r'^\s*[A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,}(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,})+\s*$',
+    rf'^\s*{_NAME_TOKEN}(?:\s+{_NAME_TOKEN}){{2,}}\s*$',
     re.MULTILINE,
 )
 
@@ -70,7 +79,8 @@ MEDICAL_RE = re.compile(
     r'Anamnesis|Laboratorio|Ingreso|Egreso|Indicaciones?|Controles?|'
     r'Régimen|Alimentario|Medicamentos?|Reposo|Hospitalización|'
     r'Intervenciones?|Quirúrgicas?|Epidemiología|Comorbilidades?|'
-    r'Paciente|Fallecido|Alta|Traslado|Urgencia|INTERNO|STAFF)',
+    r'Paciente|Fallecido|Alta|Traslado|Urgencia|INTERNO|STAFF|'
+    r'Hospital|Clínica|Servicio|Unidad|Departamento|Instituto)',
     re.IGNORECASE,
 )
 
@@ -96,10 +106,10 @@ def anonymize(text: str, stem: str) -> str:
     text = FIRMA_RE.sub('[FIRMA MÉDICO ANONIMIZADA]', text)
     text = SURGEON_RE.sub('', text)
 
-    # Nombres solos en línea (que no sean términos médicos)
+    # Nombres solitarios en línea (médicos firmantes, residentes, becados)
     def _remove_lone(m):
         line = m.group(0).strip()
-        return m.group(0) if MEDICAL_RE.search(line) else ''
+        return m.group(0) if MEDICAL_RE.search(line) else '[ANONIMIZADO]'
     text = LONE_NAME_RE.sub(_remove_lone, text)
 
     return re.sub(r'\n{3,}', '\n\n', text).strip()
