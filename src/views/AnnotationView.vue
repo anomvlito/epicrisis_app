@@ -52,17 +52,30 @@ const errorMessage = ref('')
 const lockError = ref('')
 const isLockedByOthers = ref(false)
 
-// ── Búsqueda Opción 1: filtro inline que colapsa items que no coinciden ──
+// ── Búsqueda Opción 1: filtro global del panel derecho ──
 const search1Query = ref('')
 const showSearch1 = ref(false)
+const search1InputRef = ref<HTMLInputElement | null>(null)
 function toggleSearch1() {
   showSearch1.value = !showSearch1.value
-  if (!showSearch1.value) search1Query.value = ''
+  if (!showSearch1.value) {
+    search1Query.value = ''
+  } else {
+    nextTick(() => search1InputRef.value?.focus())
+  }
 }
 const search1Matches = computed(() => {
   const q = normalizeSearch(search1Query.value.trim())
   if (!q) return null
   return new Set(COMORBIDITIES.filter(c => normalizeSearch(c.label).includes(q)).map(c => c.name))
+})
+const search1TotalCount = computed(() => {
+  const q = normalizeSearch(search1Query.value.trim())
+  if (!q) return null
+  const criteriaCount = search1Matches.value?.size ?? 0
+  const focoCount    = FOCOS.filter(f => normalizeSearch(f.label).includes(q)).length
+  const organoCount  = ORGANOS.filter(o => normalizeSearch(o.label).includes(q)).length
+  return criteriaCount + focoCount + organoCount
 })
 
 // ── Búsqueda Opción 2: command palette flotante (agrupada) ──
@@ -633,19 +646,77 @@ onUnmounted(async () => {
             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
               Progreso de la Anotación
             </span>
-            <span class="text-[10px] text-gray-500 font-medium">
-              {{ annotationStore.totalProgress.completed }}/{{ annotationStore.totalProgress.total }} ({{ annotationStore.totalProgress.percentage }}%)
-            </span>
+            <div class="flex items-center gap-2">
+              <!-- B1: Filtro global del panel derecho -->
+              <button
+                v-if="!isReadOnly"
+                :class="[
+                  'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors border',
+                  showSearch1
+                    ? 'text-brand-600 bg-brand-50 border-brand-200'
+                    : 'text-gray-400 hover:text-brand-500 hover:bg-gray-100 border-gray-200',
+                ]"
+                title="Filtrar todo el formulario"
+                @click="toggleSearch1"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm3 4a1 1 0 011-1h10a1 1 0 010 2H7a1 1 0 01-1-1zm3 4a1 1 0 011-1h4a1 1 0 010 2h-4a1 1 0 01-1-1z" />
+                </svg>
+                Filtrar
+              </button>
+              <span class="text-[10px] text-gray-500 font-medium">
+                {{ annotationStore.totalProgress.completed }}/{{ annotationStore.totalProgress.total }} ({{ annotationStore.totalProgress.percentage }}%)
+              </span>
+            </div>
           </div>
           <div class="h-1 bg-gray-200 rounded-full overflow-hidden">
             <div
               class="h-full bg-brand-500 rounded-full transition-all duration-500"
-              :style="{
-                width: annotationStore.totalProgress.percentage + '%',
-              }"
+              :style="{ width: annotationStore.totalProgress.percentage + '%' }"
             />
           </div>
         </div>
+
+        <!-- B1: barra de filtro global (sticky, fuera del scroll) -->
+        <Transition
+          enter-active-class="transition-all duration-200 ease-out overflow-hidden"
+          enter-from-class="opacity-0 max-h-0"
+          enter-to-class="opacity-100 max-h-14"
+          leave-active-class="transition-all duration-150 ease-in overflow-hidden"
+          leave-from-class="opacity-100 max-h-14"
+          leave-to-class="opacity-0 max-h-0"
+        >
+          <div v-if="showSearch1" class="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-brand-50/60 border-b border-brand-100">
+            <svg class="w-3.5 h-3.5 text-brand-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              ref="search1InputRef"
+              v-model="search1Query"
+              type="text"
+              placeholder="Filtrar todo el formulario…"
+              class="flex-1 text-xs bg-transparent outline-none text-gray-700 placeholder-gray-400 min-w-0"
+            />
+            <span
+              v-if="search1Query && search1TotalCount !== null"
+              class="text-[10px] text-brand-600 font-semibold whitespace-nowrap"
+            >
+              {{ search1TotalCount }} resultado{{ search1TotalCount !== 1 ? 's' : '' }}
+            </span>
+            <span v-else-if="search1Query" class="text-[10px] text-red-400 font-semibold whitespace-nowrap">
+              Sin resultados
+            </span>
+            <button
+              v-if="search1Query"
+              class="text-gray-400 hover:text-gray-600 flex-shrink-0"
+              @click="search1Query = ''"
+            >
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </Transition>
 
         <!-- Scrollable area: fechas + criteria + comentario -->
         <div class="flex-1 min-h-0 overflow-y-auto px-2 py-2 space-y-1.5">
@@ -718,22 +789,6 @@ onUnmounted(async () => {
             <div class="px-3 py-1.5 bg-gray-50 border-b border-gray-200 flex items-center gap-1.5">
               <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex-1">Antecedentes</span>
 
-              <!-- Búsqueda Opción 1: filtro inline -->
-              <button
-                v-if="!isReadOnly"
-                :class="[
-                  'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors border',
-                  showSearch1 ? 'text-brand-600 bg-brand-50 border-brand-200' : 'text-gray-400 hover:text-brand-500 hover:bg-gray-100 border-gray-200',
-                ]"
-                title="Buscar filtrando la lista (Opción 1)"
-                @click="toggleSearch1"
-              >
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h10M4 18h6" />
-                </svg>
-                B1
-              </button>
-
               <!-- Búsqueda Opción 2: command palette -->
               <button
                 v-if="!isReadOnly"
@@ -763,37 +818,6 @@ onUnmounted(async () => {
                 Limpiar
               </button>
             </div>
-
-            <!-- Search 1: filtro inline colapsable -->
-            <Transition
-              enter-active-class="transition-all duration-200 ease-out overflow-hidden"
-              enter-from-class="opacity-0 max-h-0"
-              enter-to-class="opacity-100 max-h-12"
-              leave-active-class="transition-all duration-150 ease-in overflow-hidden"
-              leave-from-class="opacity-100 max-h-12"
-              leave-to-class="opacity-0 max-h-0"
-            >
-              <div v-if="showSearch1" class="flex items-center gap-2 px-3 py-1.5 border-b border-brand-100 bg-brand-50/40">
-                <svg class="w-3 h-3 text-brand-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h10M4 18h6" />
-                </svg>
-                <input
-                  v-model="search1Query"
-                  type="text"
-                  placeholder="Filtrar comorbilidades…"
-                  class="flex-1 text-xs bg-transparent outline-none text-gray-700 placeholder-gray-400 min-w-0"
-                  autofocus
-                />
-                <span v-if="search1Matches" class="text-[10px] text-brand-500 font-semibold whitespace-nowrap">
-                  {{ search1Matches.size }}/{{ COMORBIDITIES.length }}
-                </span>
-                <button v-if="search1Query" class="text-gray-400 hover:text-gray-600" @click="search1Query = ''">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </Transition>
 
             <!-- Criteria list -->
             <div class="px-3 py-2 space-y-2">
