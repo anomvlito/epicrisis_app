@@ -93,6 +93,20 @@ export const annotations = pgTable('annotations', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+export const epicrisisSections = pgTable('epicrisis_sections', {
+  epicrisisId: integer('epicrisis_id')
+    .notNull()
+    .references(() => epicrisis.id, { onDelete: 'cascade' }),
+  sectionName: text('section_name').notNull(),
+  label: text('label').notNull(),
+  content: text('content').notNull(),
+  position: integer('position').notNull(),
+})
+
+export const epicrisisSectionsRelations = relations(epicrisisSections, ({ one }) => ({
+  epicrisis: one(epicrisis, { fields: [epicrisisSections.epicrisisId], references: [epicrisis.id] }),
+}))
+
 export const epicrisisClinicalData = pgTable('epicrisis_clinical_data', {
   epicrisisId: integer('epicrisis_id')
     .primaryKey()
@@ -235,6 +249,7 @@ export const epicrisisRelations = relations(epicrisis, ({ one, many }) => ({
   assignee: one(users, { fields: [epicrisis.assigneeId], references: [users.id] }),
   annotations: many(annotations),
   clinicalData: one(epicrisisClinicalData),
+  sections: many(epicrisisSections),
 }))
 
 export const epicrisisClinicalDataRelations = relations(epicrisisClinicalData, ({ one }) => ({

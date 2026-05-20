@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { eq, and, getTableColumns } from 'drizzle-orm'
-import { db, epicrisis, users, epicrisisClinicalData } from './_lib/db.js'
+import { eq, and, getTableColumns, asc } from 'drizzle-orm'
+import { db, epicrisis, users, epicrisisClinicalData, epicrisisSections } from './_lib/db.js'
 import { getAuthUser } from './_lib/auth.js'
 import { cors } from './_lib/cors.js'
 
@@ -37,10 +37,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (result.length === 0) return res.status(404).json({ error: 'Epicrisis no encontrada' })
 
+    const sections = await db
+      .select({
+        sectionName: epicrisisSections.sectionName,
+        label: epicrisisSections.label,
+        content: epicrisisSections.content,
+        position: epicrisisSections.position,
+      })
+      .from(epicrisisSections)
+      .where(eq(epicrisisSections.epicrisisId, epicrisisId))
+      .orderBy(asc(epicrisisSections.position))
+
     const row = result[0]
     const fullDoc = {
       ...row.epicrisis,
-      clinicalData: row.epicrisis_clinical_data || null
+      clinicalData: row.epicrisis_clinical_data || null,
+      sections,
     }
 
     return res.status(200).json({ epicrisis: fullDoc })
