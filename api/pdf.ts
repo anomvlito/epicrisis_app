@@ -7,11 +7,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Missing PDF ID' })
   }
 
-  // El backend reside en el VPS de Hostinger con HTTPS habilitado
-  const backendUrl = `https://epicrisis.2.24.69.49.nip.io/uploads/${id}`
+  const backendBase = process.env.BACKEND_URL || 'https://carmela-unadjacent-unpreventively.ngrok-free.dev'
+  const backendUrl = `${backendBase}/uploads/${id}`
 
   try {
-    const response = await fetch(backendUrl)
+    const response = await fetch(backendUrl, {
+      headers: { 'ngrok-skip-browser-warning': '1' }
+    })
 
     if (!response.ok) {
       return res.status(response.status).json({ error: `Backend returned ${response.statusText}` })
