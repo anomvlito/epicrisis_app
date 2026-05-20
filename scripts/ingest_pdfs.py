@@ -131,14 +131,22 @@ SECTION_DEFS = [
     ('indicaciones',       'Indicaciones',                    ['INDICACIONES']),
     ('controles',          'Controles',                       ['CONTROLES']),
     ('tipo_reposo',        'Tipo de Reposo',                  ['TIPO DE REPOSO']),
-    ('egreso_cateter',     'Egreso con Catéter Doble J',      ['EGRESO CON CATÉTER DOBLE J', 'EGRESO CON CATETER DOBLE J']),
+    # egreso_cateter se extrae via regex (campo SI/NO en columna del PDF, no sección)
 ]
+
+# Regex para campo inline de doble columna en el formulario
+CATETER_RE = re.compile(
+    r'Egreso\s+con\s+Cat[eé]ter\s+Doble\s+J\s*:\s*(SI|NO|S[ií])',
+    re.IGNORECASE,
+)
 
 ALL_MARKERS     = [m for _, _, markers in SECTION_DEFS for m in markers]
 MARKER_RE       = re.compile(r'^(' + '|'.join(re.escape(m) for m in ALL_MARKERS) + r')\s*$', re.MULTILINE | re.IGNORECASE)
 MARKER_TO_NAME  = {m.upper(): name for name, _, markers in SECTION_DEFS for m in markers}
 NAME_TO_POS     = {name: i + 1 for i, (name, _, _) in enumerate(SECTION_DEFS)}
 NAME_TO_LABEL   = {name: label for name, label, _ in SECTION_DEFS}
+NAME_TO_POS['egreso_cateter']   = 14
+NAME_TO_LABEL['egreso_cateter'] = 'Egreso con Catéter Doble J'
 
 def is_meaningful(text: str) -> bool:
     return len(re.sub(r'[\[\]\(\)\-:.,\s\n]', '', text)) >= 8
@@ -161,6 +169,12 @@ def extract_sections(markdown: str) -> list[dict]:
             if name and is_meaningful(content) and name not in result:
                 result[name] = re.sub(r'\n{3,}', '\n\n', content).strip()
             i += 2
+
+    # Campo egreso_cateter: SI/NO inline en columna del formulario
+    m = CATETER_RE.search(markdown)
+    if m:
+        valor = m.group(1).upper()
+        result['egreso_cateter'] = 'Sí' if valor in ('SI', 'SÍ') else 'No'
 
     return [
         {'name': name, 'label': NAME_TO_LABEL[name], 'content': content, 'position': NAME_TO_POS[name]}

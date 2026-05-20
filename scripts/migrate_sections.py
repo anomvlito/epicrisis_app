@@ -26,8 +26,13 @@ SECTION_DEFS = [
     ("indicaciones",             "Indicaciones",                      ["INDICACIONES"]),
     ("controles",                "Controles",                         ["CONTROLES"]),
     ("tipo_reposo",              "Tipo de Reposo",                    ["TIPO DE REPOSO"]),
-    ("egreso_cateter",           "Egreso con Catéter Doble J",        ["EGRESO CON CATÉTER DOBLE J", "EGRESO CON CATETER DOBLE J"]),
+    # egreso_cateter se extrae via regex (campo SI/NO en columna del PDF, no sección)
 ]
+
+CATETER_RE = re.compile(
+    r'Egreso\s+con\s+Cat[eé]ter\s+Doble\s+J\s*:\s*(SI|NO|S[ií])',
+    re.IGNORECASE,
+)
 
 # Todos los marcadores conocidos (para detectar dónde termina el resumen libre)
 ALL_MARKERS = [m for _, _, markers in SECTION_DEFS for m in markers]
@@ -83,9 +88,14 @@ def extract_sections(markdown: str) -> dict[str, str]:
     for marker, content in pairs:
         name = marker_to_name.get(marker)
         if name and is_meaningful(content):
-            # No sobreescribir si ya existe (toma el primero)
             if name not in result:
                 result[name] = normalize(content)
+
+    # egreso_cateter: campo SI/NO inline en columna del formulario
+    m = CATETER_RE.search(markdown)
+    if m:
+        valor = m.group(1).upper()
+        result["egreso_cateter"] = "Sí" if valor in ("SI", "SÍ") else "No"
 
     return result
 
@@ -103,6 +113,8 @@ def main():
 
     name_to_position = {name: i + 1 for i, (name, _, _) in enumerate(SECTION_DEFS)}
     name_to_label    = {name: label for name, label, _ in SECTION_DEFS}
+    name_to_position["egreso_cateter"] = 14
+    name_to_label["egreso_cateter"]    = "Egreso con Catéter Doble J"
 
     inserted_total = 0
     for epicrisis_id, markdown in rows:
