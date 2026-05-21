@@ -97,6 +97,27 @@ function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('es-CL', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+function getAnnotationTime(id: number): string {
+  try {
+    const raw = localStorage.getItem(`annotation_timer_${id}`)
+    if (!raw) return '—'
+    const state = JSON.parse(raw) as { totalMs: number; lastStartMs: number | null }
+    const totalMs = state.lastStartMs !== null
+      ? state.totalMs + (Date.now() - state.lastStartMs)
+      : state.totalMs
+    if (totalMs < 1000) return '—'
+    const totalSec = Math.floor(totalMs / 1000)
+    const h = Math.floor(totalSec / 3600)
+    const m = Math.floor((totalSec % 3600) / 60)
+    const s = totalSec % 60
+    if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`
+    if (m > 0) return `${m}m ${String(s).padStart(2, '0')}s`
+    return `${s}s`
+  } catch {
+    return '—'
+  }
+}
+
 // ── Data loaders ─────────────────────────────────────────────────────────────
 async function load() {
   loading.value = true
@@ -424,6 +445,7 @@ onMounted(load)
                   <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Estado</th>
                   <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Asignado a</th>
                   <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Progreso</th>
+                  <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Tiempo</th>
                   <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-48">Asignar</th>
                 </tr>
               </thead>
@@ -466,6 +488,11 @@ onMounted(load)
                     <span v-else class="text-gray-300 text-[10px]">—</span>
                   </td>
                   <td class="px-4 py-3">
+                    <span class="font-mono text-xs" :class="getAnnotationTime(row.id) === '—' ? 'text-gray-300' : 'text-gray-700'">
+                      {{ getAnnotationTime(row.id) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
                     <div v-if="row.status !== 'reviewed'" class="flex items-center gap-2">
                       <select
                         :value="row.assigneeId ?? ''"
@@ -484,7 +511,7 @@ onMounted(load)
                   </td>
                 </tr>
                 <tr v-if="filtered.length === 0">
-                  <td colspan="5" class="px-4 py-12 text-center text-sm text-gray-400">
+                  <td colspan="6" class="px-4 py-12 text-center text-sm text-gray-400">
                     No hay epicrisis en esta categoría.
                   </td>
                 </tr>
