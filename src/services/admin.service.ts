@@ -9,6 +9,21 @@ export interface AdminEpicrisisRow {
   createdAt: string
   assigneeEmail: string | null
   annotatedCount: number
+  assignees: { id: number; email: string }[]
+}
+
+export interface IrrCriterionResult {
+  criterion: string
+  total: number
+  agreements: number
+  agreementPct: number
+  kappa: number
+}
+
+export interface IrrResult {
+  results: IrrCriterionResult[]
+  nOverlapped: number
+  avgKappa: number | null
 }
 
 export interface AdminMatrixRow {
@@ -49,8 +64,11 @@ export const adminService = {
   getMatrix: () =>
     api.get<{ matrix: AdminMatrixRow[] }>('/admin?resource=matrix'),
 
-  assign: (epicrisisId: number, userId: number | null) =>
-    api.patch<{ ok: boolean }>('/admin', { epicrisisId, userId }),
+  assign: (epicrisisId: number, userIds: number[]) =>
+    api.patch<{ ok: boolean }>('/admin', { epicrisisId, userIds }),
+
+  getIRR: () =>
+    api.get<IrrResult>('/admin?resource=irr'),
 
   createUser: (email: string, password: string, role: 'admin' | 'annotator') =>
     api.post<{ ok: boolean; user: AdminUser }>('/admin', { action: 'createUser', email, password, role }),

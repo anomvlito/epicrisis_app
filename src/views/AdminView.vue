@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { adminService } from '@/services/admin.service'
-import type { AdminEpicrisisRow, AdminStats, AdminUser, AdminMatrixRow } from '@/services/admin.service'
+import type { AdminEpicrisisRow, AdminStats, AdminUser, AdminMatrixRow, IrrResult } from '@/services/admin.service'
 import { useAuthStore } from '@/stores/auth'
 import { useEpicrisisStore } from '@/stores/epicrisis'
 import BaseLoader from '@/components/ui/BaseLoader.vue'
@@ -13,7 +13,7 @@ import EpicrisisCard from '@/components/EpicrisisCard.vue'
 const auth = useAuthStore()
 const epicrisisStore = useEpicrisisStore()
 
-type AdminTab = 'assignment' | 'matrix' | 'users' | 'my_tasks'
+type AdminTab = 'assignment' | 'matrix' | 'irr' | 'users' | 'my_tasks'
 
 // ── Assignment tab ──────────────────────────────────────────────────────────
 // ── Assignment tab ──────────────────────────────────────────────────────────
@@ -58,10 +58,30 @@ const resettingPassword = ref(false)
 const myTasksLoaded = ref(false)
 const myTasksTab = ref<'pending' | 'in_review' | 'reviewed'>('pending')
 
+// ── Assignment dropdown (multi-select per row) ───────────────────────────────
+const openDropdownId = ref<number | null>(null)
+const overlapPct = ref(15)
+
+function toggleDropdown(epicrisisId: number) {
+  openDropdownId.value = openDropdownId.value === epicrisisId ? null : epicrisisId
+}
+
+function isAssigned(row: AdminEpicrisisRow, userId: number) {
+  return row.assignees?.some(a => a.id === userId) ?? false
+}
+
+async function toggleAssignee(row: AdminEpicrisisRow, userId: number) {
+  const current = row.assignees?.map(a => a.id) ?? []
+  const next = current.includes(userId)
+    ? current.filter(id => id !== userId)
+    : [...current, userId]
+  await assign(row.id, next)
+}
+
 // ── Computed ─────────────────────────────────────────────────────────────────
 const filtered = computed(() => {
   if (filterStatus.value === 'all') return epicrises.value
-  if (filterStatus.value === 'unassigned') return epicrises.value.filter(e => e.assigneeId === null)
+  if (filterStatus.value === 'unassigned') return epicrises.value.filter(e => !e.assignees?.length)
   return epicrises.value.filter(e => e.status === filterStatus.value)
 })
 
@@ -184,7 +204,9 @@ function switchTab(tab: AdminTab) {
   activeTab.value = tab
   errorMsg.value = ''
   confirmDeleteId.value = null
+  openDropdownId.value = null
   if (tab === 'matrix') loadMatrix()
+  if (tab === 'irr') loadIrr()
   if (tab === 'users') loadAllUsers()
   if (tab === 'my_tasks') loadMyTasks()
 }
@@ -198,6 +220,9 @@ function refresh() {
   } else if (activeTab.value === 'users') {
     usersLoaded.value = false
     loadAllUsers()
+  } else if (activeTab.value === 'irr') {
+    irrLoaded.value = false
+    loadIrr()
   } else {
     myTasksLoaded.value = false
     loadMyTasks()
@@ -205,21 +230,22 @@ function refresh() {
 }
 
 // ── Assignment actions ────────────────────────────────────────────────────────
-async function assign(epicrisisId: number, userId: string) {
+async function assign(epicrisisId: number, userIds: number[]) {
   saving.value[epicrisisId] = true
   errorMsg.value = ''
   try {
-    const parsedId = userId === '' ? null : Number(userId)
-    await adminService.assign(epicrisisId, parsedId)
+    await adminService.assign(epicrisisId, userIds)
     const row = epicrises.value.find(e => e.id === epicrisisId)
     if (row) {
-      row.assigneeId = parsedId
-      row.assigneeEmail = parsedId
-        ? (allUsers.value.find(u => u.id === parsedId)?.email ?? null)
-        : null
+      row.assignees = userIds.map(id => ({
+        id,
+        email: allUsers.value.find(u => u.id === id)?.email ?? String(id),
+      }))
+      row.assigneeId = userIds[0] ?? null
+      row.assigneeEmail = row.assignees[0]?.email ?? null
     }
     if (stats.value) {
-      stats.value.unassigned = epicrises.value.filter(e => e.assigneeId === null).length
+      stats.value.unassigned = epicrises.value.filter(e => !e.assignees?.length).length
     }
   } catch (e) {
     errorMsg.value = e instanceof Error ? e.message : 'Error al asignar'
@@ -230,10 +256,42 @@ async function assign(epicrisisId: number, userId: string) {
 
 async function quickAssign() {
   if (!annotators.value.length) return
-  const unassigned = epicrises.value.filter(e => e.assigneeId === null && e.status !== 'reviewed')
+  const unassigned = epicrises.value.filter(e => !e.assignees?.length && e.status !== 'reviewed')
+  const overlapCount = Math.round(unassigned.length * (overlapPct.value / 100))
+  // Shuffle indices to pick which epicrisis get double assignment
+  const overlapIndices = new Set(
+    [...Array(unassigned.length).keys()]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, overlapCount)
+  )
+
   for (let i = 0; i < unassigned.length; i++) {
-    const annotator = annotators.value[i % annotators.value.length]!
-    await assign(unassigned[i]!.id, String(annotator.id))
+    const primary = annotators.value[i % annotators.value.length]!
+    const ids = [primary.id]
+    if (overlapIndices.has(i) && annotators.value.length >= 2) {
+      const secondary = annotators.value[(i + 1) % annotators.value.length]!
+      if (secondary.id !== primary.id) ids.push(secondary.id)
+    }
+    await assign(unassigned[i]!.id, ids)
+  }
+}
+
+// ── IRR tab ──────────────────────────────────────────────────────────────────
+const irrData = ref<IrrResult | null>(null)
+const loadingIrr = ref(false)
+const irrLoaded = ref(false)
+
+async function loadIrr() {
+  if (irrLoaded.value) return
+  loadingIrr.value = true
+  errorMsg.value = ''
+  try {
+    irrData.value = await adminService.getIRR()
+    irrLoaded.value = true
+  } catch {
+    errorMsg.value = 'Error cargando métricas IRR'
+  } finally {
+    loadingIrr.value = false
   }
 }
 
@@ -278,13 +336,14 @@ async function handleDeleteUser(user: AdminUser) {
     await adminService.deleteUser(user.id)
     allUsers.value = allUsers.value.filter(u => u.id !== user.id)
     epicrises.value.forEach(e => {
+      e.assignees = e.assignees?.filter(a => a.id !== user.id) ?? []
       if (e.assigneeId === user.id) {
-        e.assigneeId = null
-        e.assigneeEmail = null
+        e.assigneeId = e.assignees[0]?.id ?? null
+        e.assigneeEmail = e.assignees[0]?.email ?? null
       }
     })
     if (stats.value) {
-      stats.value.unassigned = epicrises.value.filter(e => e.assigneeId === null).length
+      stats.value.unassigned = epicrises.value.filter(e => !e.assignees?.length).length
     }
     confirmDeleteId.value = null
   } catch (e) {
@@ -313,8 +372,8 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="flex-1 min-h-0 overflow-y-auto bg-gray-50">
-    <div class="px-4 py-6 sm:px-6 lg:px-8">
+  <div class="flex-1 min-h-0 overflow-y-auto bg-gray-50" @click.self="openDropdownId = null">
+    <div class="px-4 py-6 sm:px-6 lg:px-8" @click="openDropdownId === null ? null : null">
 
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
@@ -352,6 +411,16 @@ onMounted(load)
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
           Matriz de Hallazgos
+        </button>
+        <button
+          class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+          :class="activeTab === 'irr' ? 'bg-white text-brand-600 shadow-md ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
+          @click="switchTab('irr')"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          Acuerdo IRR
         </button>
         <button
           class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
@@ -418,7 +487,7 @@ onMounted(load)
           </div>
 
           <!-- Quick-assign toolbar -->
-          <div class="flex items-center gap-3 mb-4">
+          <div class="flex items-center gap-3 mb-4 flex-wrap">
             <span class="text-xs text-gray-500 font-medium">
               Mostrando {{ filtered.length }} epicrisis
               <span v-if="filterStatus !== 'all'">
@@ -427,13 +496,20 @@ onMounted(load)
               </span>
             </span>
             <div class="flex-1" />
-            <BaseButton
-              v-if="stats && stats.unassigned > 0"
-              size="sm"
-              @click="quickAssign"
-            >
-              Distribuir {{ stats.unassigned }} sin asignar
-            </BaseButton>
+            <template v-if="stats && stats.unassigned > 0">
+              <div class="flex items-center gap-2">
+                <label class="text-xs text-gray-500 whitespace-nowrap">Solapamiento:</label>
+                <input
+                  v-model.number="overlapPct"
+                  type="range" min="0" max="50" step="5"
+                  class="w-24 accent-brand-500"
+                />
+                <span class="text-xs font-semibold text-brand-600 w-8">{{ overlapPct }}%</span>
+              </div>
+              <BaseButton size="sm" @click="quickAssign">
+                Distribuir {{ stats.unassigned }} sin asignar
+              </BaseButton>
+            </template>
           </div>
 
           <!-- Assignment table -->
@@ -469,11 +545,19 @@ onMounted(load)
                     </span>
                   </td>
                   <td class="px-4 py-3">
-                    <span v-if="row.assigneeEmail" class="text-gray-700 text-xs">{{ row.assigneeEmail }}</span>
+                    <div v-if="row.assignees?.length" class="flex flex-wrap gap-1">
+                      <span
+                        v-for="a in row.assignees"
+                        :key="a.id"
+                        class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-brand-50 text-brand-700 border border-brand-200"
+                      >
+                        {{ a.email.split('@')[0] }}
+                      </span>
+                    </div>
                     <span v-else class="text-gray-300 text-xs italic">Sin asignar</span>
                   </td>
                   <td class="px-4 py-3">
-                    <div v-if="row.assigneeId" class="flex flex-col gap-1">
+                    <div v-if="row.assignees?.length" class="flex flex-col gap-1">
                       <div class="flex justify-between text-[10px] text-gray-500 font-medium">
                         <span>{{ row.annotatedCount }}/15</span>
                         <span>{{ Math.round((row.annotatedCount / 15) * 100) }}%</span>
@@ -493,19 +577,52 @@ onMounted(load)
                     </span>
                   </td>
                   <td class="px-4 py-3">
-                    <div v-if="row.status !== 'reviewed'" class="flex items-center gap-2">
-                      <select
-                        :value="row.assigneeId ?? ''"
+                    <div v-if="row.status !== 'reviewed'" class="relative flex items-center gap-2">
+                      <button
                         :disabled="!!saving[row.id]"
-                        class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-brand-400 disabled:opacity-50 max-w-[180px]"
-                        @change="assign(row.id, ($event.target as HTMLSelectElement).value)"
+                        class="flex items-center gap-1.5 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white hover:border-brand-400 focus:outline-none focus:border-brand-400 disabled:opacity-50 transition-colors"
+                        @click="toggleDropdown(row.id)"
                       >
-                        <option value="">— Sin asignar —</option>
-                        <option v-for="u in annotators" :key="u.id" :value="u.id">
-                          {{ u.email.split('@')[0] }}
-                        </option>
-                      </select>
+                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Asignar
+                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
                       <span v-if="saving[row.id]" class="w-3.5 h-3.5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+
+                      <!-- Dropdown -->
+                      <div
+                        v-if="openDropdownId === row.id"
+                        class="absolute top-full left-0 mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[200px]"
+                      >
+                        <div class="px-3 py-1.5 border-b border-gray-100">
+                          <button
+                            class="text-[10px] text-red-500 hover:text-red-700 font-medium"
+                            @click="assign(row.id, [])"
+                          >
+                            Quitar todos
+                          </button>
+                        </div>
+                        <label
+                          v-for="u in annotators"
+                          :key="u.id"
+                          class="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            :checked="isAssigned(row, u.id)"
+                            class="accent-brand-500 w-3.5 h-3.5 flex-shrink-0"
+                            @change="toggleAssignee(row, u.id)"
+                          />
+                          <span class="text-xs text-gray-700">{{ u.email }}</span>
+                        </label>
+                        <div v-if="!annotators.length" class="px-3 py-2 text-xs text-gray-400 italic">
+                          No hay anotadores
+                        </div>
+                      </div>
                     </div>
                     <span v-else class="text-xs text-gray-300 italic">Finalizada</span>
                   </td>
@@ -524,6 +641,97 @@ onMounted(load)
             {{ annotators.map(u => u.email.split('@')[0]).join(', ') }}
           </div>
         </template>
+      </template>
+
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- TAB: ACUERDO IRR                                                   -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <template v-else-if="activeTab === 'irr'">
+        <BaseLoader v-if="loadingIrr" message="Calculando métricas IRR…" />
+
+        <template v-else-if="irrData">
+          <!-- Summary cards -->
+          <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <div class="text-2xl font-bold text-gray-900">{{ irrData.nOverlapped }}</div>
+              <div class="text-xs text-gray-400 mt-0.5">Epicrisis solapadas</div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <div class="text-2xl font-bold" :class="irrData.avgKappa === null ? 'text-gray-300' : irrData.avgKappa >= 0.6 ? 'text-green-600' : irrData.avgKappa >= 0.4 ? 'text-yellow-600' : 'text-red-600'">
+                {{ irrData.avgKappa !== null ? irrData.avgKappa.toFixed(2) : '—' }}
+              </div>
+              <div class="text-xs text-gray-400 mt-0.5">κ promedio</div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <div class="text-2xl font-bold text-brand-600">{{ irrData.results.length }}</div>
+              <div class="text-xs text-gray-400 mt-0.5">Criterios evaluados</div>
+            </div>
+          </div>
+
+          <!-- IRR interpretation legend -->
+          <div class="flex items-center gap-4 mb-4 text-[11px] text-gray-500">
+            <span class="font-medium">Interpretación κ:</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-400 inline-block"></span> &lt;0.4 Pobre</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block"></span> 0.4–0.6 Moderado</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-green-400 inline-block"></span> &gt;0.6 Sustancial</span>
+          </div>
+
+          <!-- Criterion table -->
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm overflow-x-auto">
+            <table class="w-full text-sm min-w-[500px]">
+              <thead>
+                <tr class="bg-gray-50 border-b border-gray-200">
+                  <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Criterio</th>
+                  <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Comparaciones</th>
+                  <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Acuerdo %</th>
+                  <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Cohen's κ</th>
+                  <th class="px-4 py-3 w-32"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr
+                  v-for="r in irrData.results"
+                  :key="r.criterion"
+                  class="hover:bg-gray-50"
+                >
+                  <td class="px-4 py-3 text-sm font-medium text-gray-800">{{ r.criterion }}</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-500">{{ r.total }}</td>
+                  <td class="px-4 py-3 text-right text-sm font-semibold text-gray-700">{{ r.agreementPct }}%</td>
+                  <td class="px-4 py-3 text-right">
+                    <span
+                      class="font-mono text-sm font-bold"
+                      :class="r.kappa >= 0.6 ? 'text-green-600' : r.kappa >= 0.4 ? 'text-yellow-600' : 'text-red-600'"
+                    >
+                      {{ r.kappa.toFixed(2) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        class="h-full rounded-full transition-all"
+                        :class="r.kappa >= 0.6 ? 'bg-green-400' : r.kappa >= 0.4 ? 'bg-yellow-400' : 'bg-red-400'"
+                        :style="{ width: Math.max(0, Math.min(1, r.kappa)) * 100 + '%' }"
+                      />
+                    </div>
+                  </td>
+                </tr>
+                <tr v-if="irrData.results.length === 0">
+                  <td colspan="5" class="px-4 py-12 text-center text-sm text-gray-400">
+                    No hay epicrisis con ≥2 anotadores aún. Asigna una epicrisis a múltiples anotadores para ver métricas.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="mt-3 text-xs text-gray-400">
+            Solo se muestran epicrisis anotadas por ≥2 personas. κ calculado con Pe=0.5 (distribución binaria conservadora).
+          </p>
+        </template>
+
+        <div v-else class="py-16 text-center text-sm text-gray-400">
+          No se pudieron cargar las métricas.
+        </div>
       </template>
 
       <!-- ═══════════════════════════════════════════════════════════════════ -->
