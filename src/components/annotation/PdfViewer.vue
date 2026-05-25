@@ -2,17 +2,39 @@
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
 import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist'
+import { normalizeSearch } from '@/constants/clinicalItems'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
 ).toString()
 
-const props = defineProps<{ pdfPath: string }>()
+const props = defineProps<{ pdfPath: string; searchQuery?: string }>()
 
 // Expose container so AnnotationView can include it in text-selection scope
 const containerRef = ref<HTMLDivElement | null>(null)
-defineExpose({ containerRef })
+const pdfMatchCount = ref(0)
+
+function applyHighlights() {
+  if (!containerRef.value) return
+  const spans = containerRef.value.querySelectorAll<HTMLElement>('.pdfTextLayer span')
+  const q = normalizeSearch(props.searchQuery?.trim() ?? '')
+  let count = 0
+  spans.forEach(span => {
+    const matches = q.length >= 2 && normalizeSearch(span.textContent ?? '').includes(q)
+    span.classList.toggle('search-highlight', matches)
+    if (matches) count++
+  })
+  pdfMatchCount.value = count
+}
+
+function scrollToPdfMatch(index: number) {
+  if (!containerRef.value) return
+  const matches = containerRef.value.querySelectorAll<HTMLElement>('.search-highlight')
+  matches[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+defineExpose({ containerRef, pdfMatchCount, scrollToPdfMatch })
 
 const pdfUrl = computed(() => {
   if (!props.pdfPath) return ''
@@ -99,10 +121,12 @@ async function loadPdf(url: string) {
     error.value = e?.message ?? 'Error cargando PDF'
   } finally {
     loading.value = false
+    applyHighlights()
   }
 }
 
 watch(pdfUrl, (url) => { loadPdf(url) }, { immediate: true })
+watch(() => props.searchQuery, applyHighlights)
 
 onBeforeUnmount(async () => {
   if (currentDoc) await currentDoc.destroy()
@@ -152,5 +176,10 @@ onBeforeUnmount(async () => {
   padding: 1px;
   background-color: rgba(180, 0, 170, 0.2);
   border-radius: 4px;
+}
+.pdfTextLayer .search-highlight {
+  background-color: rgba(250, 200, 0, 0.5);
+  border-radius: 2px;
+  outline: 1px solid rgba(200, 150, 0, 0.5);
 }
 </style>

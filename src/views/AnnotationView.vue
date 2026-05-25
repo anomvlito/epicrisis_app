@@ -219,10 +219,11 @@ const rightPanelStyle = computed(() =>
 )
 function updateWindowWidth() { windowWidth.value = window.innerWidth }
 
-// Search within document
+// Search within document (text + PDF)
 const searchQuery = ref('')
 const activeMatchIndex = ref(0)
-const searchMatchCount = computed(() => {
+
+const textMatchCount = computed(() => {
   const q = searchQuery.value.trim()
   if (q.length < 2 || !epicrisisStore.current) return 0
   const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -231,7 +232,17 @@ const searchMatchCount = computed(() => {
   return (fullText.match(re) ?? []).length
 })
 
+const searchMatchCount = computed(() =>
+  docTab.value === 'pdf'
+    ? (pdfViewerRef.value?.pdfMatchCount ?? 0)
+    : textMatchCount.value
+)
+
 async function scrollToActiveMatch() {
+  if (docTab.value === 'pdf') {
+    pdfViewerRef.value?.scrollToPdfMatch(activeMatchIndex.value)
+    return
+  }
   await nextTick()
   textPanelRef.value
     ?.querySelector(`[data-match="${activeMatchIndex.value}"]`)
@@ -251,6 +262,7 @@ watch(searchQuery, () => {
   activeMatchIndex.value = 0
   nextTick(scrollToActiveMatch)
 })
+watch(docTab, () => { activeMatchIndex.value = 0 })
 
 // Drag-to-resize split pane
 function startDrag(e: MouseEvent) {
@@ -564,15 +576,15 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Search bar (only in text tab) -->
-        <div v-show="docTab === 'text'" class="flex-shrink-0 flex items-center gap-2 px-2 sm:px-4 py-1.5 bg-white border-b border-gray-200">
+        <!-- Search bar (text + PDF) -->
+        <div class="flex-shrink-0 flex items-center gap-2 px-2 sm:px-4 py-1.5 bg-white border-b border-gray-200">
           <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Buscar en documento…"
+            :placeholder="docTab === 'pdf' ? 'Buscar en PDF…' : 'Buscar en documento…'"
             class="flex-1 text-xs bg-transparent outline-none text-gray-700 placeholder-gray-300 min-w-0"
           />
           <template v-if="searchQuery">
@@ -596,6 +608,7 @@ onUnmounted(() => {
           v-show="docTab === 'pdf'"
           ref="pdfViewerRef"
           :pdf-path="epicrisisStore.current.pdfPath"
+          :search-query="docTab === 'pdf' ? searchQuery : ''"
           class="flex-1 min-h-0"
         />
 
