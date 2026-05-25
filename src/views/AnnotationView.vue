@@ -5,7 +5,6 @@ import { useEpicrisisStore } from '@/stores/epicrisis'
 import { useAuthStore } from '@/stores/auth'
 import { useAnnotationStore } from '@/stores/annotation'
 import { annotationService } from '@/services/annotation.service'
-import { ApiError } from '@/services/api'
 import { useTextSelection } from '@/composables/useTextSelection'
 import { useAntiScreenCapture } from '@/composables/useAntiScreenCapture'
 import { useAnnotationTimer } from '@/composables/useAnnotationTimer'
@@ -50,7 +49,7 @@ const showConfirmModal = ref(false)
 const showSuccessModal = ref(false)
 const errorMessage = ref('')
 const lockError = ref('')
-const isLockedByOthers = ref(false)
+const isLockedByOthers = ref(false) // kept for isReadOnly compat — always false now
 
 // ── Búsqueda Opción 1: filtro global del panel derecho ──
 const search1Query = ref('')
@@ -323,17 +322,6 @@ onMounted(async () => {
   // Esto evita que la pantalla se vea vacía si falla la red
   annotationStore.initForEpicrisis(epicrisisId, null)
 
-  // Intentar bloquear para edición (no bloqueante)
-  try {
-    await annotationService.lock(epicrisisId)
-    isLockedByOthers.value = false
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 423) {
-      isLockedByOthers.value = true
-      lockError.value = `Este documento está siendo editado por ${e.data?.lockedBy ?? 'otro usuario'}. Solo puedes verlo.`
-    }
-  }
-
   // Cargar datos de la epicrisis
   try {
     await epicrisisStore.fetchOne(epicrisisId)
@@ -359,11 +347,8 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(async () => {
+onUnmounted(() => {
   window.removeEventListener('resize', updateWindowWidth)
-  if (!isLockedByOthers.value) {
-    await annotationService.unlock(epicrisisId)
-  }
   annotationStore.reset()
 })
 </script>
