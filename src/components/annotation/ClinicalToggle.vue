@@ -1,12 +1,12 @@
 <script setup lang="ts">
 defineProps<{
   label: string
-  modelValue: boolean | null
+  modelValue: boolean | null | 'unknown'
   isReadOnly?: boolean
   size?: 'sm' | 'md'
 }>()
 
-const emit = defineEmits<{ 'update:modelValue': [v: boolean | null] }>()
+const emit = defineEmits<{ 'update:modelValue': [v: boolean | null | 'unknown'] }>()
 </script>
 
 <template>
@@ -34,9 +34,12 @@ const emit = defineEmits<{ 'update:modelValue': [v: boolean | null] }>()
         >No</button>
         <button
           :disabled="isReadOnly"
-          :class="['px-2 py-0.5 rounded text-[11px] font-semibold transition-colors bg-gray-100 text-gray-400 hover:bg-gray-200']"
+          :class="[
+            'px-2 py-0.5 rounded text-[11px] font-semibold transition-colors',
+            modelValue === 'unknown' ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200',
+          ]"
           title="No se puede determinar a partir de la epicrisis"
-          @click="emit('update:modelValue', null)"
+          @click="emit('update:modelValue', modelValue === 'unknown' ? null : 'unknown')"
         >?</button>
       </div>
     </div>

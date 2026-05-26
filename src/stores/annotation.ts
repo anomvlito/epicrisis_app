@@ -9,8 +9,8 @@ import type { ClinicalData } from '@/types/clinical'
 
 export interface CriterionState {
   criterionName: string
-  // Ground truth provided by the annotator
-  isPresent: boolean | null
+  // Ground truth provided by the annotator (null = sin responder, 'unknown' = no se puede determinar)
+  isPresent: boolean | null | 'unknown'
   evidenceText: string
   comments: string
   // LLM prediction (read-only reference)
@@ -160,7 +160,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
     // clinicalData always loads from server when available — localStorage is only a
     // warm-start cache; the server is the source of truth for cleared/saved fields.
     if (epicrisisData?.clinicalData) {
-      clinicalData.value = { ...defaultClinicalData(), ...epicrisisData.clinicalData }
+      const { unknownFields, ...rest } = epicrisisData.clinicalData as any
+      clinicalData.value = { ...defaultClinicalData(), ...rest, _unknowns: unknownFields ?? [] }
     }
   }
 
@@ -168,6 +169,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     serverAnnotations: Array<{
       criterionName: string
       isPresent: boolean | null
+      isUnknown?: boolean
       evidenceText: string | null
       comments: string | null
     }>,
@@ -178,7 +180,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
       const found = serverAnnotations.find((a) => a.criterionName === c.name)
       return {
         criterionName: c.name,
-        isPresent: found?.isPresent ?? null,
+        isPresent: found?.isUnknown ? 'unknown' : (found?.isPresent ?? null),
         evidenceText: found?.evidenceText ?? '',
         comments: found?.comments ?? '',
         llm: llmPredictions?.[c.name] ?? null,
@@ -204,7 +206,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     activeClinicalField.value = null
   }
 
-  function setIsPresent(name: string, value: boolean | null) {
+  function setIsPresent(name: string, value: boolean | null | 'unknown') {
     const c = criteria.value.find((c) => c.criterionName === name)
     if (c) {
       c.isPresent = value

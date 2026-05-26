@@ -137,6 +137,9 @@ export interface ClinicalData {
   hfav: boolean | null
   hfavEvidencia: string
   hfavComments: string
+
+  // Claves de campos booleanos marcados explícitamente como "No sé"
+  _unknowns: string[]
 }
 
 export function defaultClinicalData(): ClinicalData {
@@ -246,5 +249,6 @@ export function defaultClinicalData(): ClinicalData {
     hfav: null,
     hfavEvidencia: '',
     hfavComments: '',
+    _unknowns: [],
   }
 }

@@ -2,7 +2,7 @@ import { api } from './api'
 
 export interface CriterionPayload {
   criterionName: string
-  isPresent: boolean | null
+  isPresent: boolean | null | 'unknown'
   evidenceText: string | null
   comments: string | null
 }
@@ -25,6 +25,7 @@ export interface SubmitPayload {
 export interface ServerAnnotation {
   criterionName: string
   isPresent: boolean | null
+  isUnknown: boolean
   evidenceText: string | null
   comments: string | null
 }

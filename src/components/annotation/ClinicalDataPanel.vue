@@ -39,8 +39,23 @@ function organoVisible(label: string): boolean {
   return normalizeSearch(label).includes(q.value)
 }
 
-function bool(key: keyof ClinicalData): boolean | null {
-  return store.clinicalData[key] as boolean | null
+function bool(key: keyof ClinicalData): boolean | null | 'unknown' {
+  const val = store.clinicalData[key] as boolean | null
+  if (val === null && store.clinicalData._unknowns.includes(key as string)) return 'unknown'
+  return val
+}
+
+function setBool(key: keyof ClinicalData, value: boolean | null | 'unknown') {
+  if (value === 'unknown') {
+    store.setClinical(key, null as ClinicalData[typeof key])
+    const u = store.clinicalData._unknowns
+    if (!u.includes(key as string)) {
+      store.setClinical('_unknowns', [...u, key as string] as ClinicalData['_unknowns'])
+    }
+  } else {
+    store.setClinical(key, value as ClinicalData[typeof key])
+    store.setClinical('_unknowns', store.clinicalData._unknowns.filter(k => k !== (key as string)) as ClinicalData['_unknowns'])
+  }
 }
 function str(key: keyof ClinicalData): string {
   return (store.clinicalData[key] as string) ?? ''
@@ -55,8 +70,8 @@ function numInput(key: keyof ClinicalData, raw: string) {
   const n = raw === '' ? null : Number(raw)
   setVal(key, isNaN(n as number) ? null : n)
 }
-function handleToggle(key: keyof ClinicalData, value: boolean | null, evidenciaKey: keyof ClinicalData) {
-  setVal(key, value)
+function handleToggle(key: keyof ClinicalData, value: boolean | null | 'unknown', evidenciaKey: keyof ClinicalData) {
+  setBool(key, value)
   if (value === true) {
     store.setActiveClinical(evidenciaKey)
   }
@@ -76,7 +91,7 @@ function handleToggle(key: keyof ClinicalData, value: boolean | null, evidenciaK
           label="Ventilación mecánica invasiva (VMI)"
           :model-value="bool('vmi')"
           :is-read-only="isReadOnly"
-          @update:model-value="setVal('vmi', $event)"
+          @update:model-value="setBool('vmi', $event)"
         >
           <textarea
             :value="str('vmiEvidencia')" :readonly="isReadOnly" rows="2"
@@ -93,14 +108,14 @@ function handleToggle(key: keyof ClinicalData, value: boolean | null, evidenciaK
             :model-value="bool('vmiUrgente')"
             :is-read-only="isReadOnly"
             size="sm"
-            @update:model-value="setVal('vmiUrgente', $event)"
+            @update:model-value="setBool('vmiUrgente', $event)"
           />
           <ClinicalToggle
             label="Posición prono"
             :model-value="bool('vmiProno')"
             :is-read-only="isReadOnly"
             size="sm"
-            @update:model-value="setVal('vmiProno', $event)"
+            @update:model-value="setBool('vmiProno', $event)"
           />
           <div class="grid grid-cols-2 gap-x-3 gap-y-1 pt-0.5">
             <div>
@@ -173,7 +188,7 @@ function handleToggle(key: keyof ClinicalData, value: boolean | null, evidenciaK
           label="Hubo transfusión"
           :model-value="bool('transfusion')"
           :is-read-only="isReadOnly"
-          @update:model-value="setVal('transfusion', $event)"
+          @update:model-value="setBool('transfusion', $event)"
         >
           <textarea
             :value="str('transfusionEvidencia')" :readonly="isReadOnly" rows="2"
@@ -202,7 +217,7 @@ function handleToggle(key: keyof ClinicalData, value: boolean | null, evidenciaK
           label="Uso de drogas vasoactivas"
           :model-value="bool('drogasVasoactivas')"
           :is-read-only="isReadOnly"
-          @update:model-value="setVal('drogasVasoactivas', $event)"
+          @update:model-value="setBool('drogasVasoactivas', $event)"
         >
           <textarea
             :value="str('drogasVasoactivasEvidencia')" :readonly="isReadOnly" rows="2"
@@ -214,7 +229,7 @@ function handleToggle(key: keyof ClinicalData, value: boolean | null, evidenciaK
             :model-value="bool('drogasVasoactivasMultiples')"
             :is-read-only="isReadOnly"
             size="sm"
-            @update:model-value="setVal('drogasVasoactivasMultiples', $event)"
+            @update:model-value="setBool('drogasVasoactivasMultiples', $event)"
           />
         </ClinicalToggle>
       </div>
@@ -255,7 +270,7 @@ function handleToggle(key: keyof ClinicalData, value: boolean | null, evidenciaK
           label="Terapia de reemplazo renal (TRR)"
           :model-value="bool('trr')"
           :is-read-only="isReadOnly"
-          @update:model-value="setVal('trr', $event)"
+          @update:model-value="setBool('trr', $event)"
         >
           <textarea
             :value="str('trrEvidencia')" :readonly="isReadOnly" rows="2"
@@ -459,7 +474,7 @@ function handleToggle(key: keyof ClinicalData, value: boolean | null, evidenciaK
           label="Mortalidad"
           :model-value="bool('mortalidad')"
           :is-read-only="isReadOnly"
-          @update:model-value="setVal('mortalidad', $event)"
+          @update:model-value="setBool('mortalidad', $event)"
         >
           <textarea
             :value="str('mortalidadEvidencia')" :readonly="isReadOnly" rows="2"
@@ -471,7 +486,7 @@ function handleToggle(key: keyof ClinicalData, value: boolean | null, evidenciaK
           label="Hemofiltración de alto volumen (HFAV)"
           :model-value="bool('hfav')"
           :is-read-only="isReadOnly"
-          @update:model-value="setVal('hfav', $event)"
+          @update:model-value="setBool('hfav', $event)"
         >
           <textarea
             :value="str('hfavEvidencia')" :readonly="isReadOnly" rows="2"
