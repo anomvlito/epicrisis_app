@@ -32,6 +32,12 @@ const emit = defineEmits<{ 'update:modelValue': [v: boolean | null] }>()
           ]"
           @click="emit('update:modelValue', modelValue === false ? null : false)"
         >No</button>
+        <button
+          :disabled="isReadOnly"
+          :class="['px-2 py-0.5 rounded text-[11px] font-semibold transition-colors bg-gray-100 text-gray-400 hover:bg-gray-200']"
+          title="No se puede determinar a partir de la epicrisis"
+          @click="emit('update:modelValue', null)"
+        >?</button>
       </div>
     </div>
 

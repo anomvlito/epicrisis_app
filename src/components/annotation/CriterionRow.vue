@@ -44,7 +44,7 @@ function activate() {
   if (!props.isReadOnly) annotationStore.setActive(props.meta.name)
 }
 
-function setPresent(value: boolean) {
+function setPresent(value: boolean | null) {
   if (!props.isReadOnly) annotationStore.setIsPresent(props.meta.name, value)
 }
 
@@ -83,7 +83,7 @@ function onCommentsInput(e: Event) {
               : 'bg-gray-100 text-gray-500 hover:bg-green-100',
           ]"
           :disabled="isReadOnly"
-          @click="setPresent(true)"
+          @click="setPresent(state.isPresent === true ? null : true)"
         >Sí</button>
         <button
           :class="[
@@ -93,8 +93,17 @@ function onCommentsInput(e: Event) {
               : 'bg-gray-100 text-gray-500 hover:bg-red-100',
           ]"
           :disabled="isReadOnly"
-          @click="setPresent(false)"
+          @click="setPresent(state.isPresent === false ? null : false)"
         >No</button>
+        <button
+          :class="[
+            'px-2 py-0.5 rounded text-[11px] font-semibold transition-colors',
+            'bg-gray-100 text-gray-400 hover:bg-gray-200',
+          ]"
+          :disabled="isReadOnly"
+          title="No se puede determinar a partir de la epicrisis"
+          @click="setPresent(null)"
+        >?</button>
       </div>
     </div>
 

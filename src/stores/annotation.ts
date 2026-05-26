@@ -204,12 +204,12 @@ export const useAnnotationStore = defineStore('annotation', () => {
     activeClinicalField.value = null
   }
 
-  function setIsPresent(name: string, value: boolean) {
+  function setIsPresent(name: string, value: boolean | null) {
     const c = criteria.value.find((c) => c.criterionName === name)
     if (c) {
       c.isPresent = value
-      // Auto-capture selection if present
-      if (hasSelection.value && selectedText.value) {
+      // Auto-capture selection only when marking as present
+      if (value === true && hasSelection.value && selectedText.value) {
         c.evidenceText = selectedText.value
         clearGlobalSelection()
       }
