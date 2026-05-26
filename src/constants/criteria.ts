@@ -20,4 +20,5 @@ export const COMORBIDITIES: Criterion[] = [
   { name: 'epoc',                          label: 'EPOC',                              icd10Hint: 'J44' },
   { name: 'accidente_cerebrovascular',     label: 'Accidente Cerebrovascular',         icd10Hint: 'I63-I64' },
   { name: 'postracion',                    label: 'Postración',                        icd10Hint: 'R53' },
+  { name: 'infecciones_previas',           label: 'Infecciones Previas',               icd10Hint: 'Z87.3' },
 ]
