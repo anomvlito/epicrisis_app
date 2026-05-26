@@ -43,7 +43,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const result = await db
       .select({ epicrisis: epicrisisColumns, epicrisis_clinical_data: getTableColumns(epicrisisClinicalData) })
       .from(epicrisis)
-      .leftJoin(epicrisisClinicalData, eq(epicrisis.id, epicrisisClinicalData.epicrisisId))
+      .leftJoin(epicrisisClinicalData, and(
+        eq(epicrisis.id, epicrisisClinicalData.epicrisisId),
+        eq(epicrisisClinicalData.userId, userId),
+      ))
       .where(and(...conditions))
       .limit(1)
 

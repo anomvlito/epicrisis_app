@@ -119,8 +119,11 @@ export const epicrisisSectionsRelations = relations(epicrisisSections, ({ one })
 
 export const epicrisisClinicalData = pgTable('epicrisis_clinical_data', {
   epicrisisId: integer('epicrisis_id')
-    .primaryKey()
+    .notNull()
     .references(() => epicrisis.id, { onDelete: 'cascade' }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   
   // Antecedentes
   cirugiaPrevias: boolean('cirugia_previas'),

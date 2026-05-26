@@ -20,7 +20,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rows = await db
       .select()
       .from(annotations)
-      .where(eq(annotations.epicrisisId, Number(epicrisisId)))
+      .where(and(
+        eq(annotations.epicrisisId, Number(epicrisisId)),
+        eq(annotations.userId, userId),
+      ))
 
     return res.status(200).json({ annotations: rows })
   }
@@ -92,40 +95,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
       .where(eq(epicrisis.id, Number(epicrisisId)))
 
-    // Save clinical data to the new table if present
+    // Save clinical data per-user (each annotator has their own clinical data row)
     if (epicrisisMetadata && epicrisisMetadata.clinicalData) {
-      const { epicrisisId: _, ...clinicalDataToSave } = epicrisisMetadata.clinicalData
-      
-      // Filter valid keys based on schema columns
       const columns = getTableColumns(epicrisisClinicalData)
       const validKeys = Object.keys(columns)
-      
+
       const filteredData: Record<string, any> = {}
-      for (const key of Object.keys(clinicalDataToSave)) {
-        if (validKeys.includes(key) && key !== 'epicrisisId') {
-          filteredData[key] = clinicalDataToSave[key]
+      for (const [key, val] of Object.entries(epicrisisMetadata.clinicalData as Record<string, any>)) {
+        if (validKeys.includes(key) && key !== 'epicrisisId' && key !== 'userId') {
+          filteredData[key] = val
         }
       }
 
-      if (Object.keys(filteredData).length > 0) {
-        await db
-          .insert(epicrisisClinicalData)
-          .values({
-            epicrisisId: Number(epicrisisId),
-            ...filteredData,
-          })
-          .onConflictDoUpdate({
-            target: epicrisisClinicalData.epicrisisId,
-            set: filteredData,
-          })
-      } else {
-        await db
-          .insert(epicrisisClinicalData)
-          .values({
-            epicrisisId: Number(epicrisisId),
-          })
-          .onConflictDoNothing()
-      }
+      await db
+        .insert(epicrisisClinicalData)
+        .values({ epicrisisId: Number(epicrisisId), userId, ...filteredData })
+        .onConflictDoUpdate({
+          target: [epicrisisClinicalData.epicrisisId, epicrisisClinicalData.userId],
+          set: filteredData,
+        })
     }
 
     return res.status(200).json({ ok: true, status: newStatus })
