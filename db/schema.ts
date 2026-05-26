@@ -86,6 +86,9 @@ export const annotations = pgTable('annotations', {
     .references(() => users.id, { onDelete: 'cascade' }),
   criterionName: text('criterion_name').notNull(),
   isPresent: boolean('is_present'),
+  isUnknown: boolean('is_unknown').notNull().default(false),
+  difficulty: text('difficulty'),        // 'easy' | 'medium' | 'hard'
+  difficultyNotes: text('difficulty_notes'),
   evidenceText: text('evidence_text'),
   comments: text('comments'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -101,6 +104,7 @@ export const epicrisisAssignments = pgTable('epicrisis_assignments', {
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   assignedAt: timestamp('assigned_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),  // set when annotator submits final; null = in progress
 })
 
 export const epicrisisSections = pgTable('epicrisis_sections', {
@@ -136,6 +140,8 @@ export const epicrisisClinicalData = pgTable('epicrisis_clinical_data', {
   vmiMotivo: text('vmi_motivo'),
   vmiUrgente: boolean('vmi_urgente'),
   vmiProno: boolean('vmi_prono'),
+  vmiInicio: text('vmi_inicio'),
+  vmiFin: text('vmi_fin'),
   vmiComments: text('vmi_comments'),
 
   // Reanimación
@@ -215,6 +221,16 @@ export const epicrisisClinicalData = pgTable('epicrisis_clinical_data', {
   infeccionGeneralGermen: text('infeccion_general_germen'),
   infeccionGeneralComments: text('infeccion_general_comments'),
 
+  // Estado desconocido explícito para campos booleanos
+  unknownFields: json('unknown_fields').$type<string[]>(),
+
+  // Fechas clínicas capturadas por el anotador (per-user, no sobreescriben la extracción automática)
+  fechaIngresoHosp: text('fecha_ingreso_hosp'),
+  fechaEgresoHosp: text('fecha_egreso_hosp'),
+  fechaIngresoUci: text('fecha_ingreso_uci'),
+  fechaEgresoUci: text('fecha_egreso_uci'),
+  comentarioFinal: text('comentario_final'),
+
   // TRR
   trr: boolean('trr'),
   trrEvidencia: text('trr_evidencia'),
@@ -288,6 +304,15 @@ export const epicrisisAssignmentsRelations = relations(epicrisisAssignments, ({ 
   epicrisis: one(epicrisis, { fields: [epicrisisAssignments.epicrisisId], references: [epicrisis.id] }),
   user: one(users, { fields: [epicrisisAssignments.userId], references: [users.id] }),
 }))
+
+export const annotationClinicalDifficulty = pgTable('annotation_clinical_difficulty', {
+  id: serial('id').primaryKey(),
+  epicrisisId: integer('epicrisis_id').notNull().references(() => epicrisis.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  sectionName: text('section_name').notNull(),
+  difficulty: text('difficulty'),        // 'easy' | 'medium' | 'hard'
+  difficultyNotes: text('difficulty_notes'),
+})
 
 export type User = typeof users.$inferSelect
 export type Epicrisis = typeof epicrisis.$inferSelect

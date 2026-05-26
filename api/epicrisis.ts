@@ -64,9 +64,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .orderBy(asc(epicrisisSections.position))
 
     const row = result[0]
+    const cd = row.epicrisis_clinical_data
+
+    // Fechas: preferir el valor capturado por el anotador (per-user) sobre la extracción automática.
+    // Esto garantiza que dos anotadores vean y guarden sus propias fechas sin pisarse.
     const fullDoc = {
       ...row.epicrisis,
-      clinicalData: row.epicrisis_clinical_data || null,
+      fechaIngresoHosp: cd?.fechaIngresoHosp ?? row.epicrisis.fechaIngresoHosp,
+      fechaEgresoHosp:  cd?.fechaEgresoHosp  ?? row.epicrisis.fechaEgresoHosp,
+      fechaIngresoUci:  cd?.fechaIngresoUci  ?? row.epicrisis.fechaIngresoUci,
+      fechaEgresoUci:   cd?.fechaEgresoUci   ?? row.epicrisis.fechaEgresoUci,
+      comentarioFinal:  cd?.comentarioFinal  ?? row.epicrisis.comentarioFinal,
+      clinicalData: cd || null,
       sections,
     }
 

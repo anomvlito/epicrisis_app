@@ -41,7 +41,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const authUser = await getAuthUser(req)
   if (!authUser) return res.status(401).json({ error: 'No autenticado' })
-  if (authUser.role !== 'admin') return res.status(403).json({ error: 'Solo administradores' })
+
+  // Verificar rol directamente en DB — el JWT puede estar desactualizado si el rol cambió
+  const [freshUser] = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, Number(authUser.sub)))
+    .limit(1)
+
+  if (!freshUser || freshUser.role !== 'admin') {
+    return res.status(403).json({ error: 'Solo administradores' })
+  }
 
   // ── GET ──────────────────────────────────────────────────────────────────────
   if (req.method === 'GET') {
@@ -63,40 +73,71 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ users: rows })
     }
 
+    // ── Matrix — todos los anotadores por epicrisis, no solo el primario ───────
     if (resource === 'matrix') {
-      const rows = await db
+      // Query 1: metadatos de cada epicrisis
+      const epicrisisRows = await db
         .select({
           id: epicrisis.id,
           patientId: epicrisis.patientId,
           status: epicrisis.status,
           assigneeEmail: users.email,
           llmPredictions: epicrisis.llmPredictions,
-          annotations: sql<Record<string, { isPresent: boolean | null; evidenceText: string | null }>>`
-            COALESCE(
-              json_object_agg(
-                ${annotations.criterionName},
-                json_build_object(
-                  'isPresent', ${annotations.isPresent},
-                  'evidenceText', ${annotations.evidenceText}
-                )
-              ) FILTER (WHERE ${annotations.criterionName} IS NOT NULL),
-              '{}'::json
-            )
-          `.as('annotations'),
         })
         .from(epicrisis)
         .leftJoin(users, eq(epicrisis.assigneeId, users.id))
-        .leftJoin(
-          annotations,
-          sql`${epicrisis.id} = ${annotations.epicrisisId} AND (${epicrisis.assigneeId} = ${annotations.userId} OR ${epicrisis.assigneeId} IS NULL)`
-        )
-        .groupBy(epicrisis.id, users.email)
         .orderBy(epicrisis.id)
 
-      return res.status(200).json({ matrix: rows })
+      // Query 2: TODAS las anotaciones con email del anotador
+      const annotationRows = await db
+        .select({
+          epicrisisId: annotations.epicrisisId,
+          userId:      annotations.userId,
+          userEmail:   users.email,
+          criterionName: annotations.criterionName,
+          isPresent:   annotations.isPresent,
+          isUnknown:   annotations.isUnknown,
+          evidenceText: annotations.evidenceText,
+          difficulty:  annotations.difficulty,
+        })
+        .from(annotations)
+        .leftJoin(users, eq(annotations.userId, users.id))
+
+      // Merge en JS: Record<epicrisisId, Record<criterionName, AnnotatorEntry[]>>
+      type AnnotatorEntry = {
+        userId: number
+        email: string | null
+        isPresent: boolean | null
+        isUnknown: boolean
+        evidenceText: string | null
+        difficulty: string | null
+      }
+      const byEpic: Record<number, Record<string, AnnotatorEntry[]>> = {}
+
+      for (const row of annotationRows) {
+        if (!byEpic[row.epicrisisId]) byEpic[row.epicrisisId] = {}
+        const crit = byEpic[row.epicrisisId]
+        if (!crit[row.criterionName]) crit[row.criterionName] = []
+        crit[row.criterionName].push({
+          userId:      row.userId,
+          email:       row.userEmail,
+          isPresent:   row.isPresent,
+          isUnknown:   row.isUnknown ?? false,
+          evidenceText: row.evidenceText,
+          difficulty:  row.difficulty,
+        })
+      }
+
+      const matrix = epicrisisRows.map(row => ({
+        ...row,
+        annotations: byEpic[row.id] ?? {},
+      }))
+
+      return res.status(200).json({ matrix })
     }
 
     if (resource === 'epicrisis' || !resource) {
+      // Query 1: epicrisis con asignados (sin contar anotaciones)
       const rows = await db
         .select({
           id: epicrisis.id,
@@ -104,7 +145,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           status: epicrisis.status,
           assigneeId: epicrisis.assigneeId,
           createdAt: epicrisis.createdAt,
-          annotatedCount: sql<number>`count(distinct ${annotations.id})`.mapWith(Number),
           assignees: sql<{ id: number; email: string }[]>`
             COALESCE(
               json_agg(
@@ -117,32 +157,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from(epicrisis)
         .leftJoin(epicrisisAssignments, eq(epicrisis.id, epicrisisAssignments.epicrisisId))
         .leftJoin(users, eq(epicrisisAssignments.userId, users.id))
-        .leftJoin(annotations, eq(epicrisis.id, annotations.epicrisisId))
         .groupBy(epicrisis.id)
         .orderBy(epicrisis.id)
 
-      const total = rows.length
+      // Query 2: conteo de anotaciones por (epicrisis, usuario) — evita mezclar anotadores
+      const annotCounts = await db
+        .select({
+          epicrisisId: annotations.epicrisisId,
+          userId:      annotations.userId,
+          cnt:         sql<number>`count(*)`.mapWith(Number),
+        })
+        .from(annotations)
+        .groupBy(annotations.epicrisisId, annotations.userId)
+
+      // Lookup: epicrisisId → userId → count
+      const countMap: Record<number, Record<number, number>> = {}
+      for (const ac of annotCounts) {
+        if (!countMap[ac.epicrisisId]) countMap[ac.epicrisisId] = {}
+        countMap[ac.epicrisisId][ac.userId] = ac.cnt
+      }
+
+      // Enriquecer asignados con su conteo individual
+      const epicrises = rows.map(row => ({
+        ...row,
+        assignees: (row.assignees as { id: number; email: string }[]).map(a => ({
+          ...a,
+          annotatedCount: countMap[row.id]?.[a.id] ?? 0,
+        })),
+      }))
+
+      const total = epicrises.length
       const byStatus = { pending: 0, in_review: 0, reviewed: 0 }
-      const unassigned = rows.filter((r) => (r.assignees as any[]).length === 0).length
-      rows.forEach((r) => byStatus[r.status]++)
+      const unassigned = epicrises.filter((r) => r.assignees.length === 0).length
+      epicrises.forEach((r) => byStatus[r.status]++)
 
       return res.status(200).json({
-        epicrises: rows,
+        epicrises,
         stats: { total, unassigned, ...byStatus },
       })
     }
 
+    // ── IRR — Cohen's κ por criterio con fórmula correcta ───────────────────
     if (resource === 'irr') {
-      // Cohen's κ por criterio para pares de anotadores con epicrisis solapadas
       const rows = await db
         .select({
-          epicrisisId: annotations.epicrisisId,
-          userId: annotations.userId,
+          epicrisisId:   annotations.epicrisisId,
+          userId:        annotations.userId,
           criterionName: annotations.criterionName,
-          isPresent: annotations.isPresent,
+          isPresent:     annotations.isPresent,
+          isUnknown:     annotations.isUnknown,
         })
         .from(annotations)
-        // Solo epicrisis con ≥2 anotadores distintos
         .where(
           inArray(
             annotations.epicrisisId,
@@ -154,45 +219,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           )
         )
 
-      // Agrupar por epicrisis y criterio
-      type AnnotationRow = { epicrisisId: number; userId: number; criterionName: string; isPresent: boolean | null }
-      const data = rows as AnnotationRow[]
+      // Estructura: epicrisisId → criterionName → userId → { isPresent, isUnknown }
+      type VoteData = { isPresent: boolean | null; isUnknown: boolean }
+      const byEpicrisis: Record<number, Record<string, Record<number, VoteData>>> = {}
 
-      // Obtener pares únicos de anotadores
-      const byEpicrisis: Record<number, Record<string, Record<number, boolean | null>>> = {}
-      for (const row of data) {
+      for (const row of rows) {
         if (!byEpicrisis[row.epicrisisId]) byEpicrisis[row.epicrisisId] = {}
         if (!byEpicrisis[row.epicrisisId][row.criterionName]) byEpicrisis[row.epicrisisId][row.criterionName] = {}
-        byEpicrisis[row.epicrisisId][row.criterionName][row.userId] = row.isPresent
-      }
-
-      // Recopilar todos los criterios y pares
-      const criterionMap: Record<string, { agreements: number; total: number; pa: number; pe: number }> = {}
-
-      for (const epicId of Object.keys(byEpicrisis)) {
-        const criteria = byEpicrisis[Number(epicId)]
-        for (const criterion of Object.keys(criteria)) {
-          const annotatorVotes = criteria[criterion]
-          const userIds = Object.keys(annotatorVotes)
-          if (userIds.length < 2) continue
-
-          // Tomar primer par
-          const [u1, u2] = userIds.map(Number)
-          const v1 = annotatorVotes[u1]
-          const v2 = annotatorVotes[u2]
-
-          if (!criterionMap[criterion]) criterionMap[criterion] = { agreements: 0, total: 0, pa: 0, pe: 0 }
-          criterionMap[criterion].total++
-          if (v1 === v2) criterionMap[criterion].agreements++
+        byEpicrisis[row.epicrisisId][row.criterionName][row.userId] = {
+          isPresent: row.isPresent,
+          isUnknown: row.isUnknown ?? false,
         }
       }
 
-      // Calcular κ por criterio
-      const results = Object.entries(criterionMap).map(([criterion, { agreements, total }]) => {
+      // Acumular pares de votos por criterio (todos los pares, no solo el primero)
+      type VotePair = [boolean | null, boolean | null]
+      const pairsByCriterion: Record<string, VotePair[]> = {}
+
+      for (const epicId of Object.keys(byEpicrisis)) {
+        const criteriaData = byEpicrisis[Number(epicId)]
+        for (const criterion of Object.keys(criteriaData)) {
+          const votes = criteriaData[criterion]
+          const userIds = Object.keys(votes).map(Number)
+          if (userIds.length < 2) continue
+
+          // Generar todos los pares posibles entre anotadores
+          for (let i = 0; i < userIds.length; i++) {
+            for (let j = i + 1; j < userIds.length; j++) {
+              const v1 = votes[userIds[i]]
+              const v2 = votes[userIds[j]]
+              // Excluir pares donde alguno dijo "No sé" (no se puede forzar acuerdo/desacuerdo)
+              if (v1.isUnknown || v2.isUnknown) continue
+
+              if (!pairsByCriterion[criterion]) pairsByCriterion[criterion] = []
+              pairsByCriterion[criterion].push([v1.isPresent, v2.isPresent])
+            }
+          }
+        }
+      }
+
+      // Cohen's κ con frecuencias marginales reales (Pe correcto, no 0.5 fijo)
+      const results = Object.entries(pairsByCriterion).map(([criterion, pairs]) => {
+        const total = pairs.length
+        const agreements = pairs.filter(([v1, v2]) => v1 === v2).length
         const po = total > 0 ? agreements / total : 0
-        // Pe simple: asume distribución 50/50 para binary (conservador)
-        const pe = 0.5
+
+        // Frecuencias marginales de cada anotador para Pe
+        const r1_yes = pairs.filter(([v1]) => v1 === true).length / total
+        const r2_yes = pairs.filter(([, v2]) => v2 === true).length / total
+        const pe = r1_yes * r2_yes + (1 - r1_yes) * (1 - r2_yes)
+
+        // κ = (Po - Pe) / (1 - Pe); Pe = 1 solo si todos votan igual (kappa indeterm.)
         const kappa = pe < 1 ? (po - pe) / (1 - pe) : 1
+
         return {
           criterion,
           total,
@@ -268,7 +347,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(403).json({ error: 'No puedes eliminar tu propia cuenta' })
       }
 
-      // Limpieza manual de todas las referencias para evitar errores de FK
+      // Limpieza en orden inverso de FKs; annotation_clinical_difficulty
+      // cascadea automáticamente al borrar el user, pero las demás referencias explícitas
       await db.delete(annotations).where(eq(annotations.userId, userId))
       await db.delete(epicrisisAssignments).where(eq(epicrisisAssignments.userId, userId))
       await db.update(epicrisis)
@@ -277,7 +357,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await db.update(epicrisis)
         .set({ lockedBy: null })
         .where(eq(epicrisis.lockedBy, userId))
-      
+
       await db.delete(users).where(eq(users.id, userId))
       return res.status(200).json({ ok: true })
     }
@@ -316,16 +396,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(409).json({ error: 'No se puede reasignar una epicrisis ya revisada' })
     }
 
-    // Reemplazar todas las asignaciones de esta epicrisis
+    // Reemplazar todas las asignaciones y resetear completedAt
     await db.delete(epicrisisAssignments).where(eq(epicrisisAssignments.epicrisisId, epicrisisId))
 
     if (userIds.length > 0) {
       await db.insert(epicrisisAssignments).values(
-        userIds.map((uid) => ({ epicrisisId, userId: uid }))
+        userIds.map((uid) => ({ epicrisisId, userId: uid, completedAt: null }))
       )
     }
 
-    // Mantener assigneeId = primer asignado (para status tracking y matrix legacy)
+    // Mantener assigneeId = primer asignado (para display legacy y status tracking)
     await db
       .update(epicrisis)
       .set({ assigneeId: userIds.length > 0 ? userIds[0] : null })
