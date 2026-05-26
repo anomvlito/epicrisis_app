@@ -26,6 +26,8 @@ export const FOCOS: FocoItem[] = [
   { key: 'infeccionQuirurgico',       label: 'Quirúrgico',             evidenciaKey: 'infeccionQuirurgicoEvidencia',       germenKey: 'infeccionQuirurgicoGermen',       commentsKey: 'infeccionQuirurgicoComments' },
   { key: 'infeccionGastrointestinal', label: 'Gastrointestinal',       evidenciaKey: 'infeccionGastrointestinalEvidencia', germenKey: 'infeccionGastrointestinalGermen', commentsKey: 'infeccionGastrointestinalComments' },
   { key: 'infeccionPielTejidos',      label: 'Piel y tejidos blandos', evidenciaKey: 'infeccionPielTejidosEvidencia',      germenKey: 'infeccionPielTejidosGermen',      commentsKey: 'infeccionPielTejidosComments' },
+  { key: 'infeccionOsea',            label: 'Ósea',                   evidenciaKey: 'infeccionOseaEvidencia',            germenKey: 'infeccionOseaGermen',            commentsKey: 'infeccionOseaComments' },
+  { key: 'infeccionGeneral',         label: 'General',                evidenciaKey: 'infeccionGeneralEvidencia',         germenKey: 'infeccionGeneralGermen',         commentsKey: 'infeccionGeneralComments' },
 ]
 
 export const ORGANOS: OrganItem[] = [

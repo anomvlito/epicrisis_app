@@ -79,6 +79,16 @@ export interface ClinicalData {
   infeccionPielTejidosGermen: string
   infeccionPielTejidosComments: string
 
+  infeccionOsea: boolean | null
+  infeccionOseaEvidencia: string
+  infeccionOseaGermen: string
+  infeccionOseaComments: string
+
+  infeccionGeneral: boolean | null
+  infeccionGeneralEvidencia: string
+  infeccionGeneralGermen: string
+  infeccionGeneralComments: string
+
   // ── TERAPIA DE REEMPLAZO RENAL ──
   trr: boolean | null
   trrEvidencia: string
@@ -187,6 +197,16 @@ export function defaultClinicalData(): ClinicalData {
     infeccionPielTejidosEvidencia: '',
     infeccionPielTejidosGermen: '',
     infeccionPielTejidosComments: '',
+
+    infeccionOsea: null,
+    infeccionOseaEvidencia: '',
+    infeccionOseaGermen: '',
+    infeccionOseaComments: '',
+
+    infeccionGeneral: null,
+    infeccionGeneralEvidencia: '',
+    infeccionGeneralGermen: '',
+    infeccionGeneralComments: '',
     trr: null,
     trrEvidencia: '',
     trrTipo: '',
