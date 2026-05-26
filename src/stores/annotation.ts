@@ -156,9 +156,11 @@ export const useAnnotationStore = defineStore('annotation', () => {
       fechaIngresoUci.value = epicrisisData.fechaIngresoUci ?? ''
       fechaEgresoUci.value = epicrisisData.fechaEgresoUci ?? ''
       comentarioFinal.value = epicrisisData.comentarioFinal ?? ''
-      if (epicrisisData.clinicalData) {
-        clinicalData.value = { ...defaultClinicalData(), ...epicrisisData.clinicalData }
-      }
+    }
+    // clinicalData always loads from server when available — localStorage is only a
+    // warm-start cache; the server is the source of truth for cleared/saved fields.
+    if (epicrisisData?.clinicalData) {
+      clinicalData.value = { ...defaultClinicalData(), ...epicrisisData.clinicalData }
     }
   }
 

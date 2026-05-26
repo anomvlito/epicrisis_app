@@ -61,13 +61,12 @@ export function useTextSelection(containerRef: ContainerRef, ...extraRefs: Conta
     const selection = window.getSelection()
     const text = selection?.toString().trim()
 
-    const isClickInside = isInsideAny(allRefs(), e.target as Node)
-
-    if (isClickInside && !text) {
+    if (!text) {
+      // No browser selection regardless of where the click landed → clear store
       store.selectedText = ''
       store.hasSelection = false
       clearPersistentHighlight()
-    } else if (isClickInside && text) {
+    } else if (isInsideAny(allRefs(), e.target as Node)) {
       updatePersistentHighlight()
     }
   }

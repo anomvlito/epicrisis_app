@@ -279,9 +279,17 @@ function handleToggle(key: keyof ClinicalData, value: boolean | null, evidenciaK
         >
           <!-- Evidence field -->
           <div class="mb-2 mt-1.5">
-            <label class="block text-[10px] font-medium text-gray-400 mb-1 uppercase tracking-wider">
-              Tu evidencia (ground truth)
-            </label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+                Tu evidencia (ground truth)
+              </label>
+              <button
+                v-if="str(foco.evidenciaKey) && !isReadOnly"
+                class="text-[10px] text-gray-400 hover:text-red-500 transition-colors leading-none"
+                title="Limpiar evidencia capturada"
+                @click.stop="setVal(foco.evidenciaKey, '')"
+              >✕ limpiar</button>
+            </div>
             <div
               :class="[
                 'min-h-[32px] rounded border px-2 py-1.5 text-xs font-mono leading-relaxed',
@@ -344,9 +352,17 @@ function handleToggle(key: keyof ClinicalData, value: boolean | null, evidenciaK
         >
           <!-- Evidence field -->
           <div class="mb-2 mt-1.5">
-            <label class="block text-[10px] font-medium text-gray-400 mb-1 uppercase tracking-wider">
-              Tu evidencia (ground truth)
-            </label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+                Tu evidencia (ground truth)
+              </label>
+              <button
+                v-if="str(organo.evidenciaKey) && !isReadOnly"
+                class="text-[10px] text-gray-400 hover:text-red-500 transition-colors leading-none"
+                title="Limpiar evidencia capturada"
+                @click.stop="setVal(organo.evidenciaKey, '')"
+              >✕ limpiar</button>
+            </div>
             <div
               :class="[
                 'min-h-[32px] rounded border px-2 py-1.5 text-xs font-mono leading-relaxed',
