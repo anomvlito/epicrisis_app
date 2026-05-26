@@ -9,6 +9,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import AdminMatrix from '@/components/admin/AdminMatrix.vue'
 import EpicrisisCard from '@/components/EpicrisisCard.vue'
+import { COMORBIDITIES } from '@/constants/criteria'
 
 const auth = useAuthStore()
 const epicrisisStore = useEpicrisisStore()
@@ -240,6 +241,7 @@ async function assign(epicrisisId: number, userIds: number[]) {
       row.assignees = userIds.map(id => ({
         id,
         email: allUsers.value.find(u => u.id === id)?.email ?? String(id),
+        annotatedCount: row.assignees.find(a => a.id === id)?.annotatedCount ?? 0,
       }))
       row.assigneeId = userIds[0] ?? null
       row.assigneeEmail = row.assignees[0]?.email ?? null
@@ -556,17 +558,21 @@ onMounted(load)
                     </div>
                     <span v-else class="text-gray-300 text-xs italic">Sin asignar</span>
                   </td>
-                  <td class="px-4 py-3">
-                    <div v-if="row.assignees?.length" class="flex flex-col gap-1">
-                      <div class="flex justify-between text-[10px] text-gray-500 font-medium">
-                        <span>{{ row.annotatedCount }}/15</span>
-                        <span>{{ Math.round((row.annotatedCount / 15) * 100) }}%</span>
-                      </div>
-                      <div class="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          class="h-full bg-brand-500 rounded-full transition-all duration-500"
-                          :style="{ width: (row.annotatedCount / 15) * 100 + '%' }"
-                        />
+                  <td class="px-4 py-3 min-w-[180px]">
+                    <div v-if="row.assignees?.length" class="flex flex-col gap-1.5">
+                      <div v-for="a in row.assignees" :key="a.id" class="flex items-center gap-1.5">
+                        <span class="text-[10px] text-gray-500 w-14 truncate flex-shrink-0" :title="a.email">
+                          {{ a.email.split('@')[0] }}
+                        </span>
+                        <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            class="h-full bg-brand-500 rounded-full transition-all duration-500"
+                            :style="{ width: Math.min((a.annotatedCount / COMORBIDITIES.length) * 100, 100) + '%' }"
+                          />
+                        </div>
+                        <span class="text-[10px] text-gray-400 w-9 text-right flex-shrink-0">
+                          {{ a.annotatedCount }}/{{ COMORBIDITIES.length }}
+                        </span>
                       </div>
                     </div>
                     <span v-else class="text-gray-300 text-[10px]">—</span>
