@@ -26,13 +26,23 @@ export interface IrrResult {
   avgKappa: number | null
 }
 
+export interface MatrixAnnotatorEntry {
+  userId: number
+  email: string | null
+  isPresent: boolean | null
+  isUnknown: boolean
+  evidenceText: string | null
+  difficulty: string | null
+}
+
 export interface AdminMatrixRow {
   id: number
   patientId: string | null
   status: 'pending' | 'in_review' | 'reviewed'
   assigneeEmail: string | null
   llmPredictions: LlmPredictions | null
-  annotations: Record<string, { isPresent: boolean | null; evidenceText: string | null; difficulty: string | null }>
+  // Cada criterio tiene un array de respuestas (una por anotador)
+  annotations: Record<string, MatrixAnnotatorEntry[]>
 }
 
 export interface AdminStats {

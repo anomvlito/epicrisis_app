@@ -1,19 +1,24 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { COMORBIDITIES } from '@/constants/criteria'
-import type { AdminMatrixRow } from '@/services/admin.service'
+import type { AdminMatrixRow, MatrixAnnotatorEntry } from '@/services/admin.service'
 
 const props = defineProps<{
   rows: AdminMatrixRow[]
 }>()
 
 // ── Tooltip ──────────────────────────────────────────────────────────────────
-const hoverData = ref<{ text: string; label: string; x: number; y: number } | null>(null)
+const hoverData = ref<{ content: string; label: string; x: number; y: number } | null>(null)
 
-function handleMouseEnter(e: MouseEvent, text: string, label: string) {
-  if (!text) return
+function handleMouseEnter(e: MouseEvent, annotators: MatrixAnnotatorEntry[], label: string) {
+  if (!annotators?.length) return
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-  hoverData.value = { text, label, x: rect.left + rect.width / 2, y: rect.top }
+  const lines = annotators.map(a => {
+    const name = a.email?.split('@')[0] ?? `U${a.userId}`
+    const val = a.isUnknown ? '?' : a.isPresent === true ? 'Sí' : a.isPresent === false ? 'No' : 'NR'
+    return `${name}: ${val}${a.evidenceText ? ` — "${a.evidenceText.slice(0, 60)}${a.evidenceText.length > 60 ? '…' : ''}"` : ''}`
+  })
+  hoverData.value = { content: lines.join('\n'), label, x: rect.left + rect.width / 2, y: rect.top }
 }
 
 function handleMouseLeave() {
@@ -24,6 +29,27 @@ function maskedId(id: number, patientId?: string | null) {
   return patientId
     ? `EPC-${String(id).padStart(5, '0')} (${patientId})`
     : `EPC-${String(id).padStart(5, '0')}`
+}
+
+// ── Helpers de celda ─────────────────────────────────────────────────────────
+type CellState = 'present' | 'absent' | 'conflict' | 'unknown' | 'nr'
+
+function cellState(annotators: MatrixAnnotatorEntry[] | undefined): CellState {
+  if (!annotators || annotators.length === 0) return 'nr'
+
+  const decided = annotators.filter(a => !a.isUnknown && a.isPresent !== null)
+  if (decided.length === 0) return annotators.some(a => a.isUnknown) ? 'unknown' : 'nr'
+
+  if (decided.length === 1) return decided[0].isPresent === true ? 'present' : 'absent'
+
+  // Múltiples anotadores con respuesta definitiva
+  if (decided.every(a => a.isPresent === true))  return 'present'
+  if (decided.every(a => a.isPresent === false)) return 'absent'
+  return 'conflict'
+}
+
+function primaryEvidence(annotators: MatrixAnnotatorEntry[] | undefined): string {
+  return annotators?.find(a => a.evidenceText)?.evidenceText ?? ''
 }
 
 // ── Stats computation ─────────────────────────────────────────────────────────
@@ -37,6 +63,7 @@ interface CriterionStat {
   icd10: string
   present: number
   absent: number
+  conflict: number
   notEvaluated: number
   total: number
   prevalence: number
@@ -53,6 +80,7 @@ const criterionStats = computed((): CriterionStat[] => {
   const stats = COMORBIDITIES.map(criterion => {
     let present = 0
     let absent = 0
+    let conflict = 0
     let notEvaluated = 0
     let llmAgreements = 0
     let llmComparisons = 0
@@ -61,32 +89,33 @@ const criterionStats = computed((): CriterionStat[] => {
     let diffHard = 0
 
     for (const row of props.rows) {
-      const annotation = row.annotations[criterion.name]
-      if (!annotation) {
-        notEvaluated++
-        continue
+      const annotators = row.annotations[criterion.name]
+      const state = cellState(annotators)
+
+      if (state === 'present')  present++
+      else if (state === 'absent')   absent++
+      else if (state === 'conflict') conflict++
+      else                           notEvaluated++
+
+      // Dificultad: contar de TODOS los anotadores
+      if (annotators) {
+        for (const a of annotators) {
+          if (a.difficulty === 'easy')   diffEasy++
+          else if (a.difficulty === 'medium') diffMedium++
+          else if (a.difficulty === 'hard')   diffHard++
+        }
       }
-      if (annotation.isPresent === true) present++
-      else if (annotation.isPresent === false) absent++
-      else notEvaluated++
 
-      if (annotation.difficulty === 'easy') diffEasy++
-      else if (annotation.difficulty === 'medium') diffMedium++
-      else if (annotation.difficulty === 'hard') diffHard++
-
+      // Acuerdo LLM: usar el primer anotador que tenga respuesta definitiva
+      const primary = annotators?.find(a => !a.isUnknown && a.isPresent !== null)
       const llmPred = row.llmPredictions?.[criterion.name]
-      if (
-        llmPred?.valor !== null &&
-        llmPred?.valor !== undefined &&
-        annotation.isPresent !== null &&
-        annotation.isPresent !== undefined
-      ) {
+      if (llmPred?.valor !== null && llmPred?.valor !== undefined && primary) {
         llmComparisons++
-        if (llmPred.valor === annotation.isPresent) llmAgreements++
+        if (llmPred.valor === primary.isPresent) llmAgreements++
       }
     }
 
-    const total = present + absent
+    const total = present + absent + conflict
     const diffTotal = diffEasy + diffMedium + diffHard
     return {
       name: criterion.name,
@@ -94,6 +123,7 @@ const criterionStats = computed((): CriterionStat[] => {
       icd10: criterion.icd10Hint ?? criterion.name,
       present,
       absent,
+      conflict,
       notEvaluated,
       total,
       prevalence: total > 0 ? (present / total) * 100 : 0,
@@ -110,13 +140,6 @@ const criterionStats = computed((): CriterionStat[] => {
   return stats.sort((a, b) => b.prevalence - a.prevalence)
 })
 
-function llmAccuracyColor(accuracy: number, comparisons: number): string {
-  if (comparisons === 0) return 'text-gray-300'
-  if (accuracy >= 80) return 'text-green-600'
-  if (accuracy >= 60) return 'text-yellow-600'
-  return 'text-red-500'
-}
-
 function llmAccuracyBg(accuracy: number, comparisons: number): string {
   if (comparisons === 0) return 'bg-gray-100 text-gray-400'
   if (accuracy >= 80) return 'bg-green-50 text-green-700'
@@ -129,10 +152,9 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
   <div class="flex flex-col gap-6">
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <!-- PANEL DE ESTADÍSTICAS — siempre visible (mobile + desktop)             -->
+    <!-- PANEL DE ESTADÍSTICAS                                                   -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <!-- Header -->
       <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
         <div>
           <h3 class="text-sm font-bold text-gray-800">Resumen de Hallazgos</h3>
@@ -141,24 +163,17 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
           </p>
         </div>
         <div class="flex items-center gap-4 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-          <span class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-sm bg-green-400 inline-block"></span>Presente
-          </span>
-          <span class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-sm bg-red-300 inline-block"></span>Ausente
-          </span>
-          <span class="hidden sm:flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-sm bg-gray-200 inline-block"></span>Sin evaluar
-          </span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-green-400 inline-block" />Presente</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-red-300 inline-block" />Ausente</span>
+          <span class="hidden sm:flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-orange-300 inline-block" />Conflicto</span>
+          <span class="hidden sm:flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-gray-200 inline-block" />Sin evaluar</span>
         </div>
       </div>
 
-      <!-- Empty state -->
       <div v-if="annotatedCount === 0" class="py-16 text-center text-sm text-gray-400">
         Sin anotaciones registradas aún.
       </div>
 
-      <!-- Stats table -->
       <div v-else class="overflow-x-auto">
         <table class="w-full text-xs">
           <thead>
@@ -167,6 +182,7 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
               <th class="text-left px-3 py-2.5 font-semibold text-gray-500 uppercase tracking-wider w-48">Prevalencia</th>
               <th class="text-right px-3 py-2.5 font-semibold text-gray-500 uppercase tracking-wider w-12 hidden sm:table-cell">Pres.</th>
               <th class="text-right px-3 py-2.5 font-semibold text-gray-500 uppercase tracking-wider w-12 hidden sm:table-cell">Aus.</th>
+              <th class="text-right px-3 py-2.5 font-semibold text-gray-500 uppercase tracking-wider w-12 hidden sm:table-cell text-orange-500">Conf.</th>
               <th class="text-center px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wider w-28">LLM Acuerdo</th>
               <th class="text-center px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wider w-28">Dificultad</th>
             </tr>
@@ -177,7 +193,6 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
               :key="stat.name"
               class="hover:bg-gray-50 transition-colors"
             >
-              <!-- Criterion -->
               <td class="px-5 py-2.5">
                 <div class="flex items-center gap-2">
                   <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-slate-100 text-slate-600 flex-shrink-0">
@@ -187,7 +202,6 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
                 </div>
               </td>
 
-              <!-- Prevalence bar -->
               <td class="px-3 py-2.5">
                 <div class="flex items-center gap-2">
                   <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden min-w-[80px]">
@@ -203,40 +217,27 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
                 </div>
               </td>
 
-              <!-- Present count -->
-              <td class="px-3 py-2.5 text-right text-green-600 font-semibold tabular-nums hidden sm:table-cell">
-                {{ stat.present }}
+              <td class="px-3 py-2.5 text-right text-green-600 font-semibold tabular-nums hidden sm:table-cell">{{ stat.present }}</td>
+              <td class="px-3 py-2.5 text-right text-red-400 font-semibold tabular-nums hidden sm:table-cell">{{ stat.absent }}</td>
+              <td class="px-3 py-2.5 text-right font-semibold tabular-nums hidden sm:table-cell" :class="stat.conflict > 0 ? 'text-orange-500' : 'text-gray-200'">
+                {{ stat.conflict || '—' }}
               </td>
 
-              <!-- Absent count -->
-              <td class="px-3 py-2.5 text-right text-red-400 font-semibold tabular-nums hidden sm:table-cell">
-                {{ stat.absent }}
-              </td>
-
-              <!-- LLM agreement -->
               <td class="px-4 py-2.5 text-center">
                 <span
                   v-if="stat.llmComparisons > 0"
                   :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold', llmAccuracyBg(stat.llmAccuracy, stat.llmComparisons)]"
                 >
                   {{ Math.round(stat.llmAccuracy) }}%
-                  <span :class="['w-1.5 h-1.5 rounded-full inline-block', llmAccuracyColor(stat.llmAccuracy, stat.llmComparisons).replace('text-', 'bg-')]" />
                 </span>
                 <span v-else class="text-gray-300 text-[10px] font-medium">Sin datos</span>
               </td>
 
-              <!-- Difficulty distribution -->
               <td class="px-4 py-2.5 text-center">
                 <div v-if="stat.diffTotal > 0" class="flex items-center justify-center gap-1" :title="`Verde ${stat.diffEasy} · Amarillo ${stat.diffMedium} · Rojo ${stat.diffHard}`">
-                  <span v-if="stat.diffEasy" class="inline-flex items-center gap-0.5 text-[10px] text-green-700 font-semibold">
-                    <span class="w-2 h-2 rounded-full bg-green-400 inline-block" />{{ stat.diffEasy }}
-                  </span>
-                  <span v-if="stat.diffMedium" class="inline-flex items-center gap-0.5 text-[10px] text-yellow-700 font-semibold">
-                    <span class="w-2 h-2 rounded-full bg-yellow-400 inline-block" />{{ stat.diffMedium }}
-                  </span>
-                  <span v-if="stat.diffHard" class="inline-flex items-center gap-0.5 text-[10px] text-red-700 font-semibold">
-                    <span class="w-2 h-2 rounded-full bg-red-400 inline-block" />{{ stat.diffHard }}
-                  </span>
+                  <span v-if="stat.diffEasy"   class="inline-flex items-center gap-0.5 text-[10px] text-green-700 font-semibold"><span class="w-2 h-2 rounded-full bg-green-400 inline-block" />{{ stat.diffEasy }}</span>
+                  <span v-if="stat.diffMedium" class="inline-flex items-center gap-0.5 text-[10px] text-yellow-700 font-semibold"><span class="w-2 h-2 rounded-full bg-yellow-400 inline-block" />{{ stat.diffMedium }}</span>
+                  <span v-if="stat.diffHard"   class="inline-flex items-center gap-0.5 text-[10px] text-red-700 font-semibold"><span class="w-2 h-2 rounded-full bg-red-400 inline-block" />{{ stat.diffHard }}</span>
                 </div>
                 <span v-else class="text-gray-300 text-[10px] font-medium">—</span>
               </td>
@@ -245,7 +246,6 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
         </table>
       </div>
 
-      <!-- LLM accuracy legend -->
       <div
         v-if="annotatedCount > 0"
         class="px-5 py-2.5 border-t border-gray-100 flex flex-wrap gap-4 text-[10px] text-gray-400 font-medium"
@@ -254,28 +254,26 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
         <span class="text-green-600">● ≥80% Alto</span>
         <span class="text-yellow-600">● 60–79% Medio</span>
         <span class="text-red-500">● &lt;60% Bajo</span>
-        <span class="ml-auto hidden sm:block text-gray-300">Prevalencia = casos presentes / casos evaluados</span>
+        <span class="ml-auto hidden sm:block text-gray-300">Conflicto = anotadores solapados en desacuerdo</span>
       </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <!-- TABLA MATRICIAL — solo desktop (md+)                                   -->
+    <!-- TABLA MATRICIAL                                                          -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <div class="hidden md:flex flex-col bg-white rounded-2xl border border-gray-200 shadow-xl shadow-gray-200/50 overflow-hidden" style="max-height: calc(100vh - 26rem)">
       <div class="flex-shrink-0 px-5 py-2.5 border-b border-gray-100 flex items-center gap-2">
         <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Tabla detallada</span>
-        <span class="text-[10px] text-gray-300">· scroll horizontal disponible</span>
+        <span class="text-[10px] text-gray-300">· hover sobre celda para ver evidencia · naranja = conflicto entre anotadores</span>
       </div>
 
       <div class="flex-1 overflow-auto custom-scrollbar bg-gray-50/30">
         <table class="w-full text-[11px] border-separate border-spacing-0">
           <thead>
             <tr class="bg-gray-50">
-              <!-- Sticky patient ID header -->
               <th class="sticky left-0 top-0 z-40 bg-gray-100 border-b border-r border-gray-200 px-5 py-3 text-left font-bold text-gray-500 uppercase tracking-widest min-w-[140px] text-xs">
                 ID Paciente
               </th>
-              <!-- ICD-10 column headers -->
               <th
                 v-for="c in COMORBIDITIES"
                 :key="c.name"
@@ -315,29 +313,50 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
                 class="border-r border-gray-100 p-0 relative"
               >
                 <div
-                  v-if="row.annotations[c.name]"
-                  class="w-full h-10 flex items-center justify-center transition-all relative"
-                  :class="[
-                    row.annotations[c.name].isPresent === true  ? 'bg-green-50  text-green-700' :
-                    row.annotations[c.name].isPresent === false ? 'bg-red-50    text-red-600'   :
-                    'bg-gray-50 text-gray-400',
-                    row.annotations[c.name].evidenceText ? 'cursor-help' : ''
-                  ]"
-                  @mouseenter="handleMouseEnter($event, row.annotations[c.name].evidenceText ?? '', c.label)"
+                  class="w-full h-10 flex items-center justify-center transition-all relative cursor-default"
+                  :class="{
+                    'bg-green-50  text-green-700':  cellState(row.annotations[c.name]) === 'present',
+                    'bg-red-50    text-red-600':    cellState(row.annotations[c.name]) === 'absent',
+                    'bg-orange-50 text-orange-600': cellState(row.annotations[c.name]) === 'conflict',
+                    'bg-gray-50   text-gray-400':   cellState(row.annotations[c.name]) === 'unknown',
+                    'bg-gray-50/30':                cellState(row.annotations[c.name]) === 'nr',
+                    'cursor-help': row.annotations[c.name]?.length > 0,
+                  }"
+                  @mouseenter="handleMouseEnter($event, row.annotations[c.name] ?? [], c.label)"
                   @mouseleave="handleMouseLeave"
                 >
-                  <svg v-if="row.annotations[c.name].isPresent === true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <svg v-else-if="row.annotations[c.name].isPresent === false" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <span v-else class="text-[9px] font-bold opacity-40">NR</span>
-                  <!-- Evidence dot -->
-                  <div v-if="row.annotations[c.name].evidenceText" class="absolute top-1 right-1 w-1 h-1 rounded-full bg-current opacity-50" />
-                </div>
-                <div v-else class="w-full h-10 bg-gray-50/30 flex items-center justify-center">
-                  <span class="text-[9px] text-gray-200 font-black">—</span>
+                  <!-- Icono según estado -->
+                  <template v-if="cellState(row.annotations[c.name]) === 'present'">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </template>
+                  <template v-else-if="cellState(row.annotations[c.name]) === 'absent'">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </template>
+                  <template v-else-if="cellState(row.annotations[c.name]) === 'conflict'">
+                    <span class="text-[10px] font-black">≠</span>
+                  </template>
+                  <template v-else-if="cellState(row.annotations[c.name]) === 'unknown'">
+                    <span class="text-[9px] font-bold opacity-60">?</span>
+                  </template>
+                  <template v-else>
+                    <span class="text-[9px] text-gray-200 font-black">—</span>
+                  </template>
+
+                  <!-- Badge: número de anotadores cuando hay más de 1 -->
+                  <span
+                    v-if="(row.annotations[c.name]?.length ?? 0) > 1"
+                    class="absolute top-0.5 right-0.5 text-[8px] font-black leading-none opacity-50"
+                  >{{ row.annotations[c.name].length }}</span>
+
+                  <!-- Punto de evidencia -->
+                  <div
+                    v-if="primaryEvidence(row.annotations[c.name])"
+                    class="absolute bottom-1 right-1 w-1 h-1 rounded-full bg-current opacity-40"
+                  />
                 </div>
               </td>
             </tr>
@@ -345,45 +364,48 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
         </table>
       </div>
 
-      <!-- Table legend -->
       <div class="flex-shrink-0 bg-white border-t border-gray-200 px-5 py-2.5 flex items-center gap-6 text-[10px] uppercase font-bold tracking-widest text-gray-400">
         <div class="flex items-center gap-1.5">
           <span class="w-3 h-3 bg-green-100 border border-green-200 rounded flex items-center justify-center text-green-600">
             <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7" /></svg>
-          </span>
-          Presente
+          </span>Presente
         </div>
         <div class="flex items-center gap-1.5">
           <span class="w-3 h-3 bg-red-100 border border-red-200 rounded flex items-center justify-center text-red-500">
             <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M6 18L18 6M6 6l12 12" /></svg>
-          </span>
-          Ausente
+          </span>Ausente
         </div>
         <div class="flex items-center gap-1.5">
-          <span class="w-3 h-3 bg-gray-100 border border-gray-200 rounded text-center text-gray-400 text-[8px] leading-none pt-px">NR</span>
-          No evaluado
+          <span class="w-3 h-3 bg-orange-100 border border-orange-200 rounded text-center text-orange-500 text-[10px] leading-none flex items-center justify-center font-black">≠</span>
+          Conflicto
         </div>
-        <div class="flex items-center gap-1.5 ml-2 text-gray-300">
-          <span class="w-1.5 h-1.5 rounded-full bg-gray-400 opacity-50" />
-          Punto = evidencia textual disponible
+        <div class="flex items-center gap-1.5">
+          <span class="text-[8px] font-black text-gray-400">2</span>
+          <span class="text-gray-300 normal-case font-normal tracking-normal">Badge = N° anotadores</span>
         </div>
-        <span class="ml-auto text-brand-400 font-black normal-case tracking-normal">Hover sobre celda para ver evidencia</span>
+        <span class="ml-auto text-brand-400 font-black normal-case tracking-normal">Hover sobre celda para ver todos los anotadores</span>
       </div>
     </div>
 
   </div>
 
-  <!-- Tooltip -->
+  <!-- Tooltip multi-anotador -->
   <Teleport to="body">
     <div
-      v-if="hoverData && hoverData.text"
+      v-if="hoverData && hoverData.content"
       :style="{ left: hoverData.x + 'px', top: hoverData.y + 'px' }"
-      class="fixed -translate-x-1/2 -translate-y-full mb-3 z-[9999] w-72 p-4 bg-gray-900 text-white rounded-2xl shadow-2xl pointer-events-none"
+      class="fixed -translate-x-1/2 -translate-y-full mb-3 z-[9999] w-80 p-4 bg-gray-900 text-white rounded-2xl shadow-2xl pointer-events-none"
     >
       <p class="text-[10px] font-black uppercase tracking-[0.15em] text-brand-400 mb-1.5 border-b border-white/10 pb-1.5">
         {{ hoverData.label }}
       </p>
-      <p class="text-xs leading-relaxed italic text-gray-200">"{{ hoverData.text }}"</p>
+      <div class="space-y-1">
+        <p
+          v-for="(line, i) in hoverData.content.split('\n')"
+          :key="i"
+          class="text-xs leading-relaxed text-gray-200"
+        >{{ line }}</p>
+      </div>
       <div class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900 mt-0" />
     </div>
   </Teleport>
