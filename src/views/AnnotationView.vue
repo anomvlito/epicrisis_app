@@ -377,9 +377,12 @@ onMounted(async () => {
     annotationStore.initForEpicrisis(epicrisisId, llmPredictions, epicrisisStore.current)
 
     // Cargar anotaciones guardadas
-    const { annotations } = await annotationService.getForEpicrisis(epicrisisId)
+    const { annotations, clinicalDifficulty } = await annotationService.getForEpicrisis(epicrisisId)
     if (annotations.length > 0) {
       annotationStore.loadFromServer(annotations, llmPredictions)
+    }
+    if (clinicalDifficulty && Object.keys(clinicalDifficulty).length > 0) {
+      annotationStore.setClinicalDifficultyFromServer(clinicalDifficulty)
     }
   } catch (e) {
     console.error('Error loading epicrisis:', e)

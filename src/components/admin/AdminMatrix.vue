@@ -43,6 +43,10 @@ interface CriterionStat {
   llmAgreements: number
   llmComparisons: number
   llmAccuracy: number
+  diffEasy: number
+  diffMedium: number
+  diffHard: number
+  diffTotal: number
 }
 
 const criterionStats = computed((): CriterionStat[] => {
@@ -52,6 +56,9 @@ const criterionStats = computed((): CriterionStat[] => {
     let notEvaluated = 0
     let llmAgreements = 0
     let llmComparisons = 0
+    let diffEasy = 0
+    let diffMedium = 0
+    let diffHard = 0
 
     for (const row of props.rows) {
       const annotation = row.annotations[criterion.name]
@@ -62,6 +69,10 @@ const criterionStats = computed((): CriterionStat[] => {
       if (annotation.isPresent === true) present++
       else if (annotation.isPresent === false) absent++
       else notEvaluated++
+
+      if (annotation.difficulty === 'easy') diffEasy++
+      else if (annotation.difficulty === 'medium') diffMedium++
+      else if (annotation.difficulty === 'hard') diffHard++
 
       const llmPred = row.llmPredictions?.[criterion.name]
       if (
@@ -76,6 +87,7 @@ const criterionStats = computed((): CriterionStat[] => {
     }
 
     const total = present + absent
+    const diffTotal = diffEasy + diffMedium + diffHard
     return {
       name: criterion.name,
       label: criterion.label,
@@ -88,6 +100,10 @@ const criterionStats = computed((): CriterionStat[] => {
       llmAgreements,
       llmComparisons,
       llmAccuracy: llmComparisons > 0 ? (llmAgreements / llmComparisons) * 100 : 0,
+      diffEasy,
+      diffMedium,
+      diffHard,
+      diffTotal,
     }
   })
 
@@ -152,6 +168,7 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
               <th class="text-right px-3 py-2.5 font-semibold text-gray-500 uppercase tracking-wider w-12 hidden sm:table-cell">Pres.</th>
               <th class="text-right px-3 py-2.5 font-semibold text-gray-500 uppercase tracking-wider w-12 hidden sm:table-cell">Aus.</th>
               <th class="text-center px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wider w-28">LLM Acuerdo</th>
+              <th class="text-center px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wider w-28">Dificultad</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
@@ -206,6 +223,22 @@ function llmAccuracyBg(accuracy: number, comparisons: number): string {
                   <span :class="['w-1.5 h-1.5 rounded-full inline-block', llmAccuracyColor(stat.llmAccuracy, stat.llmComparisons).replace('text-', 'bg-')]" />
                 </span>
                 <span v-else class="text-gray-300 text-[10px] font-medium">Sin datos</span>
+              </td>
+
+              <!-- Difficulty distribution -->
+              <td class="px-4 py-2.5 text-center">
+                <div v-if="stat.diffTotal > 0" class="flex items-center justify-center gap-1" :title="`Verde ${stat.diffEasy} · Amarillo ${stat.diffMedium} · Rojo ${stat.diffHard}`">
+                  <span v-if="stat.diffEasy" class="inline-flex items-center gap-0.5 text-[10px] text-green-700 font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-green-400 inline-block" />{{ stat.diffEasy }}
+                  </span>
+                  <span v-if="stat.diffMedium" class="inline-flex items-center gap-0.5 text-[10px] text-yellow-700 font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-yellow-400 inline-block" />{{ stat.diffMedium }}
+                  </span>
+                  <span v-if="stat.diffHard" class="inline-flex items-center gap-0.5 text-[10px] text-red-700 font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-red-400 inline-block" />{{ stat.diffHard }}
+                  </span>
+                </div>
+                <span v-else class="text-gray-300 text-[10px] font-medium">—</span>
               </td>
             </tr>
           </tbody>

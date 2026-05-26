@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import { useAnnotationStore } from '@/stores/annotation'
 import type { CriterionState } from '@/stores/annotation'
 import type { Criterion } from '@/constants/criteria'
+import DifficultyBadge from './DifficultyBadge.vue'
+import { DIFFICULTY_LEVELS } from '@/types/difficulty'
 
 const props = defineProps<{
   meta: Criterion
@@ -72,6 +74,13 @@ function onCommentsInput(e: Event) {
       >
         ⚠ Conflicto
       </span>
+
+      <!-- Difficulty dot (inactive state — just shows current level) -->
+      <span
+        v-if="state.difficulty && !isActive"
+        :class="['w-2 h-2 rounded-full flex-shrink-0 mt-0.5', DIFFICULTY_LEVELS.find(l => l.value === state.difficulty)?.dot]"
+        :title="`Dificultad: ${DIFFICULTY_LEVELS.find(l => l.value === state.difficulty)?.label}`"
+      />
 
       <!-- Ground truth toggle -->
       <div class="flex gap-1 flex-shrink-0" @click.stop>
@@ -155,6 +164,18 @@ function onCommentsInput(e: Event) {
         </div>
       </div>
     </Transition>
+
+    <!-- Difficulty (when active) -->
+    <div v-if="isActive" class="mt-1.5 flex items-center justify-between">
+      <span class="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Dificultad</span>
+      <DifficultyBadge
+        :model-value="state.difficulty"
+        :notes="state.difficultyNotes"
+        :is-read-only="isReadOnly"
+        @update:model-value="annotationStore.setDifficulty(meta.name, $event)"
+        @update:notes="annotationStore.setDifficultyNotes(meta.name, $event)"
+      />
+    </div>
 
     <!-- Comments (only when active) -->
     <div v-if="isActive" class="mt-1.5">

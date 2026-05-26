@@ -32,7 +32,7 @@ export interface ServerAnnotation {
 
 export const annotationService = {
   getForEpicrisis: (epicrisisId: number) =>
-    api.get<{ annotations: any[] }>(`/annotations?epicrisisId=${epicrisisId}`),
+    api.get<{ annotations: any[]; clinicalDifficulty: Record<string, { difficulty: string | null; notes: string }> }>(`/annotations?epicrisisId=${epicrisisId}`),
 
   submit: (epicrisisId: number, criteria: any[], isFinal: boolean, epicrisisMetadata?: EpicrisisMetadata) =>
     api.post<{ ok: boolean; status: string }>('/annotations', { epicrisisId, criteria, isFinal, epicrisisMetadata }),

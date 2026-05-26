@@ -6,6 +6,7 @@ import type { LlmPrediction, LlmPredictions } from '@/types/db'
 import type { EpicrisisDetail } from '@/stores/epicrisis'
 import { defaultClinicalData } from '@/types/clinical'
 import type { ClinicalData } from '@/types/clinical'
+import type { DifficultyLevel } from '@/types/difficulty'
 
 export interface CriterionState {
   criterionName: string
@@ -13,6 +14,8 @@ export interface CriterionState {
   isPresent: boolean | null | 'unknown'
   evidenceText: string
   comments: string
+  difficulty: DifficultyLevel
+  difficultyNotes: string
   // LLM prediction (read-only reference)
   llm: LlmPrediction | null
 }
@@ -23,6 +26,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
   const activeClinicalField = ref<string | null>(null)
   const activeMetadataField = ref<string | null>(null)
   const criteria = ref<CriterionState[]>([])
+  const clinicalDifficulty = ref<Record<string, { difficulty: DifficultyLevel; notes: string }>>({})
   const saving = ref(false)
   const submitting = ref(false)
 
@@ -87,6 +91,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
         isPresent: null,
         evidenceText: '',
         comments: '',
+        difficulty: null,
+        difficultyNotes: '',
         llm,
       }
     })
@@ -116,6 +122,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
             isPresent: found?.isPresent ?? null,
             evidenceText: found?.evidenceText ?? '',
             comments: found?.comments ?? '',
+            difficulty: found?.difficulty ?? null,
+            difficultyNotes: found?.difficultyNotes ?? '',
             llm: llmPredictions?.[c.name] ?? null,
           }
         })
@@ -130,6 +138,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
           comentarioFinal.value = parsed.comentarioFinal ?? ''
           if (parsed.clinicalData) {
             clinicalData.value = { ...defaultClinicalData(), ...parsed.clinicalData }
+          }
+          if (parsed.clinicalDifficulty) {
+            clinicalDifficulty.value = parsed.clinicalDifficulty
           }
           // Only block DB values if the user actually saved something here.
           // All-empty means the watcher persisted before fetchOne completed.
@@ -183,6 +194,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
         isPresent: found?.isUnknown ? 'unknown' : (found?.isPresent ?? null),
         evidenceText: found?.evidenceText ?? '',
         comments: found?.comments ?? '',
+        difficulty: (found as any)?.difficulty ?? null,
+        difficultyNotes: (found as any)?.difficultyNotes ?? '',
         llm: llmPredictions?.[c.name] ?? null,
       }
     })
@@ -252,6 +265,32 @@ export const useAnnotationStore = defineStore('annotation', () => {
     clinicalData.value[key] = value
   }
 
+  function setClinicalDifficulty(section: string, value: DifficultyLevel) {
+    if (!clinicalDifficulty.value[section]) clinicalDifficulty.value[section] = { difficulty: null, notes: '' }
+    clinicalDifficulty.value[section].difficulty = value
+  }
+
+  function setClinicalDifficultyNotes(section: string, notes: string) {
+    if (!clinicalDifficulty.value[section]) clinicalDifficulty.value[section] = { difficulty: null, notes: '' }
+    clinicalDifficulty.value[section].notes = notes
+  }
+
+  function setClinicalDifficultyFromServer(data: Record<string, { difficulty: string | null; notes: string }>) {
+    for (const [section, val] of Object.entries(data)) {
+      clinicalDifficulty.value[section] = { difficulty: val.difficulty as DifficultyLevel, notes: val.notes }
+    }
+  }
+
+  function setDifficulty(criterionName: string, value: DifficultyLevel) {
+    const c = criteria.value.find((c) => c.criterionName === criterionName)
+    if (c) c.difficulty = value
+  }
+
+  function setDifficultyNotes(criterionName: string, notes: string) {
+    const c = criteria.value.find((c) => c.criterionName === criterionName)
+    if (c) c.difficultyNotes = notes
+  }
+
   function buildMetadata() {
     return {
       fechaIngresoHosp: fechaIngresoHosp.value || undefined,
@@ -260,6 +299,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
       fechaEgresoUci: fechaEgresoUci.value || undefined,
       comentarioFinal: comentarioFinal.value || undefined,
       clinicalData: clinicalData.value,
+      clinicalDifficulty: clinicalDifficulty.value,
     }
   }
 
@@ -316,6 +356,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
       fechaEgresoUci: fechaEgresoUci.value,
       comentarioFinal: comentarioFinal.value,
       clinicalData: clinicalData.value,
+      clinicalDifficulty: clinicalDifficulty.value,
     }
     localStorage.setItem(`annotation_draft_${epicrisisId.value}`, JSON.stringify(toSave))
   }
@@ -339,6 +380,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     activeClinicalField.value = null
     activeMetadataField.value = null
     criteria.value = []
+    clinicalDifficulty.value = {}
     selectedText.value = ''
     hasSelection.value = false
     fechaIngresoHosp.value = ''
@@ -374,8 +416,14 @@ export const useAnnotationStore = defineStore('annotation', () => {
     comentarioFinal,
     clinicalData,
     hasCriteriaSelection,
+    clinicalDifficulty,
     clearCriteria,
     setClinical,
+    setClinicalDifficulty,
+    setClinicalDifficultyNotes,
+    setClinicalDifficultyFromServer,
+    setDifficulty,
+    setDifficultyNotes,
     initForEpicrisis,
     loadFromServer,
     setActive,

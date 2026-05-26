@@ -32,7 +32,7 @@ export interface AdminMatrixRow {
   status: 'pending' | 'in_review' | 'reviewed'
   assigneeEmail: string | null
   llmPredictions: LlmPredictions | null
-  annotations: Record<string, { isPresent: boolean | null; evidenceText: string | null }>
+  annotations: Record<string, { isPresent: boolean | null; evidenceText: string | null; difficulty: string | null }>
 }
 
 export interface AdminStats {
