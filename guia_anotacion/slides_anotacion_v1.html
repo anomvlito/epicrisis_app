@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual Anotación Epicrisis UCI — Slides</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #2563eb; --blue-lt: #eff6ff;
+      --green: #15803d; --green-lt: #dcfce7;
+      --red: #b91c1c; --red-lt: #fee2e2;
+      --amber: #92400e; --amber-lt: #fef3c7;
+      --gray: #475569; --border: #e2e8f0;
+      --text: #0f172a; --text-2: #475569;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Deck ── */
+    #deck { flex: 1; position: relative; overflow: hidden; }
+
+    .slide {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      overflow-y: auto;
+      padding: 32px 48px 72px;
+      animation: fadeIn .22s ease;
+    }
+    .slide.active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Cover slide ── */
+    #s1 {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 60%, #3b82f6 100%);
+      color: #fff;
+      padding: 40px;
+    }
+    #s1.active { display: flex; }
+    #s1 h1 { font-size: 30px; font-weight: 700; color: #fff; margin-bottom: 10px; line-height: 1.2; }
+    #s1 .sub { font-size: 14px; color: #bfdbfe; margin-bottom: 28px; }
+    #s1 .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 32px; }
+    #s1 .chip { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); border-radius: 20px; padding: 4px 14px; font-size: 12px; color: #fff; }
+    #s1 .nav-tip { font-size: 12px; color: #93c5fd; }
+    #s1 .key { display: inline-block; background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.4); border-radius: 4px; padding: 1px 7px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+    /* ── Slide headings ── */
+    .slide-title {
+      font-size: 20px; font-weight: 700; color: var(--text);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 10px; margin-bottom: 18px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .snum {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px;
+      background: var(--blue); color: #fff;
+      border-radius: 50%; font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+    h3.sh { font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; margin: 16px 0 8px; }
+
+    /* ── Nav bar ── */
+    #nav {
+      background: #1e293b; padding: 8px 24px;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+    }
+    #nav button {
+      background: #334155; color: #e2e8f0; border: none; border-radius: 6px;
+      padding: 5px 18px; font-size: 15px; cursor: pointer; transition: background .15s;
+    }
+    #nav button:hover { background: #475569; }
+    #nav button:disabled { opacity: .3; cursor: default; }
+    #counter { font-size: 12px; color: #94a3b8; font-family: 'JetBrains Mono', monospace; min-width: 52px; text-align: center; }
+    #dots { display: flex; gap: 5px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: #334155; cursor: pointer; transition: background .15s; }
+    .dot.active { background: var(--blue); }
+
+    /* ── Two-column layout ── */
+    .two-col { display: grid; grid-template-columns: 1fr 280px; gap: 20px; align-items: start; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    /* ── Panel wrappers ── */
+    .panel-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; margin-bottom: 6px; }
+    .panel-box { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+
+    /* ── Doc panel ── */
+    .doc-text { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.9; color: #334155; }
+    .hl-g { background: #bbf7d0; padding: 1px 3px; border-radius: 3px; border-bottom: 2px solid #16a34a; cursor: pointer; transition: background .15s; }
+    .hl-g:hover { background: #86efac; }
+    .hl-g.captured { background: #86efac; }
+    .hl-y { background: #fef08a; padding: 1px 3px; border-radius: 3px; border-bottom: 2px solid #ca8a04; }
+    .doc-dim { color: #94a3b8; }
+
+    /* ── Field cards ── */
+    .fcard { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; margin-bottom: 8px; transition: border-color .2s; }
+    .fcard.state-si { border-color: #86efac; }
+    .fcard.state-no { border-color: #fca5a5; }
+    .fcard.state-q  { border-color: #fcd34d; }
+
+    .fc-hdr {
+      background: #f8fafc; padding: 5px 10px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .fc-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #64748b; }
+
+    .fc-dots { display: flex; align-items: center; gap: 3px; }
+    .d { border-radius: 50%; display: inline-block; }
+    .d-v { background: #22c55e; width: 9px; height: 9px; }
+    .d-a { background: #f59e0b; width: 9px; height: 9px; }
+    .d-r { background: #ef4444; width: 9px; height: 9px; }
+    .d-dim { opacity: .2 !important; width: 7px !important; height: 7px !important; }
+    .fc-ql { font-size: 10px; color: #94a3b8; margin-left: 4px; }
+
+    .fc-body { padding: 7px 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .fc-lbl  { font-size: 11px; color: #334155; }
+
+    .fc-btns { display: flex; gap: 3px; flex-shrink: 0; }
+    .fb { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 9px; font-size: 11px; cursor: pointer; font-family: inherit; transition: all .15s; }
+    .fb:hover { background: #e2e8f0; }
+    .fb.a-si { background: #22c55e; color: #fff; border-color: #22c55e; font-weight: 600; }
+    .fb.a-no { background: #ef4444; color: #fff; border-color: #ef4444; font-weight: 600; }
+    .fb.a-q  { background: #f59e0b; color: #fff; border-color: #f59e0b; font-weight: 600; }
+
+    .fc-ev { padding: 0 10px 8px; display: none; }
+    .ev-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #166534; min-height: 22px; }
+    .ev-box.empty { color: #94a3b8; font-style: italic; }
+
+    .fc-cm { padding: 0 10px 8px; display: none; }
+    .cm-lbl { font-size: 10px; font-weight: 600; color: #b45309; margin-bottom: 3px; }
+    .cm-lbl em { color: #dc2626; font-style: normal; }
+    .cm-input {
+      width: 100%; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 4px;
+      padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #78350f;
+      min-height: 28px; outline: none; resize: none;
+    }
+
+    .fc-sub { border-top: 1px dashed #e2e8f0; margin: 4px 10px 8px; padding-top: 8px; display: none; flex-direction: column; gap: 6px; }
+
+    /* ── Tables ── */
+    .tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .tbl th { background: #f1f5f9; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #64748b; padding: 7px 10px; text-align: left; border-bottom: 2px solid var(--border); }
+    .tbl td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 12px; }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tr:hover td { background: #f8fafc; }
+
+    /* decision table */
+    .dtbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .dtbl th { padding: 8px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; border-bottom: 2px solid var(--border); }
+    .dtbl th:nth-child(1) { background: #dcfce7; color: #166534; }
+    .dtbl th:nth-child(2) { background: #fee2e2; color: #991b1b; }
+    .dtbl th:nth-child(3) { background: #fef3c7; color: #92400e; }
+    .dtbl td { padding: 8px 10px; vertical-align: top; border-right: 1px solid var(--border); }
+    .dtbl td:last-child { border-right: none; }
+    .dtbl ul { margin: 0; padding-left: 14px; }
+    .dtbl li { margin-bottom: 4px; }
+
+    /* ── Pills ── */
+    .p-si { display: inline-block; background: #dcfce7; color: #166534; border: 1px solid #86efac; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 600; }
+    .p-no { display: inline-block; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 600; }
+    .p-q  { display: inline-block; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 600; }
+
+    /* ── Difficulty chips ── */
+    .dv { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 10px; background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .da { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 10px; background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; }
+    .dr { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 10px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+    /* ── Callouts ── */
+    .c-green { background: #f0fdf4; border-left: 3px solid #22c55e; border-radius: 0 6px 6px 0; padding: 10px 14px; margin: 10px 0; font-size: 13px; }
+    .c-amber  { background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; padding: 10px 14px; margin: 10px 0; font-size: 13px; }
+    .c-blue   { background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 0 6px 6px 0; padding: 10px 14px; margin: 10px 0; font-size: 13px; }
+
+    /* ── Flow (slide 11) ── */
+    .flow { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .flow-row { display: flex; align-items: center; gap: 8px; }
+    .fb-blue { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 7px 12px; font-size: 12px; font-weight: 600; color: var(--blue); flex-shrink: 0; }
+    .fb-box  { background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 7px 12px; font-size: 12px; color: var(--text-2); }
+    .fb-green { background: #dcfce7; border: 1px solid #86efac; border-radius: 6px; padding: 5px 10px; font-size: 12px; color: #15803d; }
+    .fb-red   { background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; padding: 5px 10px; font-size: 12px; color: #b91c1c; }
+    .fb-amb   { background: #fef9c3; border: 1px solid #fde68a; border-radius: 6px; padding: 5px 10px; font-size: 12px; color: #854d0e; }
+    .arrow { color: #94a3b8; font-size: 14px; }
+    .flow-indent { margin-left: 48px; display: flex; flex-direction: column; gap: 4px; }
+
+    /* ── Tip label ── */
+    .tip { font-size: 11px; color: #64748b; margin-top: 8px; }
+    .tip strong { color: var(--text); }
+
+    /* ── Reset btn ── */
+    .reset-btn { background: none; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 10px; font-size: 11px; color: #64748b; cursor: pointer; font-family: inherit; }
+    .reset-btn:hover { background: #f1f5f9; }
+
+    /* ── ICD code chip ── */
+    .cie { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--blue); background: var(--blue-lt); border-radius: 3px; padding: 1px 4px; }
+  </style>
+</head>
+<body>
+
+<div id="deck">
+
+  <!-- ══ SLIDE 1: Portada ══ -->
+  <div class="slide" id="s1">
+    <h1>Manual de Anotación<br>de Epicrisis UCI</h1>
+    <p class="sub">Guía resumida e interactiva para anotadores · Proyecto iHEALTH</p>
+    <div class="chips">
+      <span class="chip">Hospital Sótero del Río</span>
+      <span class="chip">Santiago, Chile · FONASA</span>
+      <span class="chip">Versión 1.0</span>
+    </div>
+    <p class="nav-tip">
+      Navegar: <span class="key">←</span> <span class="key">→</span> o los botones de abajo &nbsp;·&nbsp;
+      Los ejemplos son interactivos — puedes anotarlos
+    </p>
+  </div>
+
+  <!-- ══ SLIDE 2: La plataforma ══ -->
+  <div class="slide" id="s2">
+    <div class="slide-title"><span class="snum">1</span>La Plataforma de Anotación</div>
+    <div class="two-col">
+      <div>
+        <div class="panel-lbl">Panel del documento (izquierda)</div>
+        <div class="panel-box">
+          <div class="doc-text">
+            <p style="margin-bottom:6px"><strong>ANTECEDENTES:</strong></p>
+            <p style="margin-bottom:6px">Paciente masculino 68 años.
+              <span class="hl-y">HTA</span> en tratamiento con losartán.
+              <span class="hl-g" onclick="captureDoc('s2-dm2',this)">DM2 IR, pie de Charcot bilateral.</span>
+              Tabaquismo suspendido.</p>
+            <p style="margin-bottom:6px">Insuficiencia renal crónica etapa 3B.</p>
+            <p class="doc-dim">MOTIVO DE INGRESO: Cetoacidosis diabética...</p>
+          </div>
+        </div>
+        <p class="tip">💡 Haz clic en el texto <span style="background:#bbf7d0;padding:1px 4px;border-radius:3px">verde</span> para capturarlo como evidencia del campo DM2.</p>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div class="panel-lbl" style="margin:0">Formulario (derecha)</div>
+          <button class="reset-btn" onclick="resetSlide('s2')">↺ reiniciar</button>
+        </div>
+        <!-- HTA: Sí preset -->
+        <div class="fcard state-si" id="field-s2-hta">
+          <div class="fc-hdr">
+            <span class="fc-name">Hipertensión Arterial</span>
+            <div class="fc-dots"><span class="d d-v"></span><span class="d d-a d-dim"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+          </div>
+          <div class="fc-body">
+            <span class="fc-lbl">Hipertensión arterial</span>
+            <div class="fc-btns">
+              <button class="fb a-si" data-val="si" onclick="setBtn('s2-hta','si')">Sí ✓</button>
+              <button class="fb" data-val="no" onclick="setBtn('s2-hta','no')">No</button>
+              <button class="fb" data-val="q"  onclick="setBtn('s2-hta','q')">?</button>
+            </div>
+          </div>
+          <div class="fc-ev" id="ev-wrap-s2-hta" style="display:block">
+            <div class="ev-box" id="ev-s2-hta">HTA</div>
+          </div>
+        </div>
+        <!-- DM2 -->
+        <div class="fcard" id="field-s2-dm2">
+          <div class="fc-hdr">
+            <span class="fc-name">Diabetes T2 Complicada</span>
+            <div class="fc-dots"><span class="d d-v d-dim"></span><span class="d d-a"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+          </div>
+          <div class="fc-body">
+            <span class="fc-lbl">Diabetes mellitus tipo 2</span>
+            <div class="fc-btns">
+              <button class="fb" data-val="si" onclick="setBtn('s2-dm2','si')">Sí</button>
+              <button class="fb" data-val="no" onclick="setBtn('s2-dm2','no')">No</button>
+              <button class="fb" data-val="q"  onclick="setBtn('s2-dm2','q')">?</button>
+            </div>
+          </div>
+          <div class="fc-ev" id="ev-wrap-s2-dm2">
+            <div class="ev-box empty" id="ev-s2-dm2">↑ haz clic en el texto verde</div>
+          </div>
+        </div>
+        <!-- ERC -->
+        <div class="fcard" id="field-s2-erc">
+          <div class="fc-hdr">
+            <span class="fc-name">Enfermedad Renal Crónica</span>
+            <div class="fc-dots"><span class="d d-v d-dim"></span><span class="d d-a"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+          </div>
+          <div class="fc-body">
+            <span class="fc-lbl">Enfermedad renal crónica</span>
+            <div class="fc-btns">
+              <button class="fb" data-val="si" onclick="setBtn('s2-erc','si')">Sí</button>
+              <button class="fb" data-val="no" onclick="setBtn('s2-erc','no')">No</button>
+              <button class="fb" data-val="q"  onclick="setBtn('s2-erc','q')">?</button>
+            </div>
+          </div>
+          <div class="fc-ev" id="ev-wrap-s2-erc">
+            <div class="ev-box empty" id="ev-s2-erc">— sin evidencia —</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 3: Semáforo ══ -->
+  <div class="slide" id="s3">
+    <div class="slide-title"><span class="snum">2</span>Semáforo de Dificultad</div>
+    <p style="font-size:13px;margin-bottom:14px">Cada campo muestra tres puntos de color. El punto más grande indica el nivel de dificultad requerido para anotar ese campo.</p>
+    <div class="three-col">
+      <div>
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <span style="width:14px;height:14px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+            <span style="font-size:15px;font-weight:700;color:#15803d">Fácil</span>
+          </div>
+          <p style="font-size:12px;color:#166534;margin-bottom:8px">La información está escrita de forma explícita o usa un sinónimo muy reconocido.</p>
+          <p style="font-size:11px;color:#166534"><em>"HTA"</em> → Hipertensión Arterial<br><em>"ventilación mecánica"</em> → VMI<br><em>"paro cardiorrespiratorio"</em> → RCP</p>
+        </div>
+        <div style="margin-top:8px">
+          <div class="fcard">
+            <div class="fc-hdr">
+              <span class="fc-name">Hipertensión Arterial</span>
+              <div class="fc-dots"><span class="d d-v"></span><span class="d d-a d-dim"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+            </div>
+            <div class="fc-body">
+              <span class="fc-lbl" style="color:#94a3b8;font-size:10.5px">Texto: "HTA en tratamiento con enalapril"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <span style="width:14px;height:14px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
+            <span style="font-size:15px;font-weight:700;color:#854d0e">Media</span>
+          </div>
+          <p style="font-size:12px;color:#78350f;margin-bottom:8px">Requiere conocimiento médico para interpretar una sigla o abreviatura menos obvia.</p>
+          <p style="font-size:11px;color:#78350f"><em>"FA permanente"</em> → Arritmias<br><em>"CAET"</em> → Infección vascular<br><em>"ERC 3B"</em> → Enf. Renal Crónica</p>
+        </div>
+        <div style="margin-top:8px">
+          <div class="fcard">
+            <div class="fc-hdr">
+              <span class="fc-name">Enfermedad Renal Crónica</span>
+              <div class="fc-dots"><span class="d d-v d-dim"></span><span class="d d-a"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+            </div>
+            <div class="fc-body">
+              <span class="fc-lbl" style="color:#94a3b8;font-size:10.5px">Texto: "Creatinina basal 2.1 — ERC 3B conocida"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <span style="width:14px;height:14px;border-radius:50%;background:#ef4444;display:inline-block"></span>
+            <span style="font-size:15px;font-weight:700;color:#b91c1c">Difícil</span>
+          </div>
+          <p style="font-size:12px;color:#991b1b;margin-bottom:8px">Requiere razonamiento clínico: deducir condición por fármacos, laboratorio o escalas clínicas.</p>
+          <p style="font-size:11px;color:#991b1b">Insulinoterapia crónica → Diabetes<br>Creatinina alta + oliguria → Falla Renal<br>IC Clase IV requiere conocer NYHA</p>
+        </div>
+        <div style="margin-top:8px">
+          <div class="fcard">
+            <div class="fc-hdr">
+              <span class="fc-name">Insuficiencia Cardíaca Cl. IV</span>
+              <div class="fc-dots"><span class="d d-v d-dim"></span><span class="d d-a d-dim"></span><span class="d d-r"></span><span class="fc-ql">¿Qué costó?</span></div>
+            </div>
+            <div class="fc-body">
+              <span class="fc-lbl" style="color:#94a3b8;font-size:10.5px">Texto: "IC con disnea en reposo (NYHA IV)"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="c-amber" style="margin-top:16px">
+      <strong>⚠️ Campos Difícil</strong> — son los que más generan dudas. Para ellos el botón <span class="p-q">?</span> está especialmente justificado.
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 4: Valores Sí / No / ? ══ -->
+  <div class="slide" id="s4">
+    <div class="slide-title"><span class="snum">3</span>Valores: Sí, No y ? (No sé)</div>
+    <table class="dtbl" style="margin-bottom:16px">
+      <thead>
+        <tr><th>Marcar SÍ cuando…</th><th>Marcar NO cuando…</th><th>Marcar ? cuando…</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><ul>
+            <li>La condición aparece nombrada explícitamente.</li>
+            <li>Sinónimo claro: <em>"ventilación"</em> → VMI.</li>
+            <li>Deducción directa e inequívoca.</li>
+          </ul></td>
+          <td><ul>
+            <li>La condición no aparece en ninguna sección.</li>
+            <li>Negación: <em>"sin antecedentes de…"</em></li>
+            <li>Sospecha descartada durante el ingreso.</li>
+          </ul></td>
+          <td><ul>
+            <li>Información genuinamente ambigua o contradictoria.</li>
+            <li>Mención indirecta no resoluble con la lectura.</li>
+            <li>Deducción requiere más de un paso no trivial.</li>
+          </ul></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="display:grid;grid-template-columns:1fr 260px;gap:20px;align-items:start">
+      <div>
+        <div class="c-amber">
+          <strong>⚠️ Usar ? con moderación</strong> — ante evidencia clara de ausencia usar <span class="p-no">No</span>; ante presencia clara usar <span class="p-si">Sí</span>. El botón <span class="p-q">?</span> es para incertidumbre genuina. Al marcarlo es <strong>obligatorio</strong> escribir un comentario.
+        </div>
+        <div class="c-blue" style="margin-top:0">
+          <strong>Regla de evidencia:</strong> todo campo <span class="p-si">Sí</span> requiere evidencia capturada. Los <span class="p-no">No</span> y <span class="p-q">?</span> no requieren evidencia textual.
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div class="panel-lbl" style="margin:0">Prueba los tres estados</div>
+          <button class="reset-btn" onclick="resetSlide('s4')">↺</button>
+        </div>
+        <!-- HTA: prueba Sí -->
+        <div class="fcard" id="field-s4-hta">
+          <div class="fc-hdr">
+            <span class="fc-name">HTA</span>
+            <div class="fc-dots"><span class="d d-v"></span><span class="d d-a d-dim"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+          </div>
+          <div class="fc-body">
+            <span class="fc-lbl">Hipertensión arterial</span>
+            <div class="fc-btns">
+              <button class="fb" data-val="si" onclick="setBtn('s4-hta','si')">Sí</button>
+              <button class="fb" data-val="no" onclick="setBtn('s4-hta','no')">No</button>
+              <button class="fb" data-val="q"  onclick="setBtn('s4-hta','q')">?</button>
+            </div>
+          </div>
+          <div class="fc-ev" id="ev-wrap-s4-hta">
+            <div class="ev-box empty" id="ev-s4-hta">— captura evidencia —</div>
+          </div>
+          <div class="fc-cm" id="cm-wrap-s4-hta">
+            <div class="cm-lbl">Comentarios <em>* obligatorio</em></div>
+            <textarea class="cm-input" id="cm-s4-hta" rows="2" placeholder="Explica la duda…"></textarea>
+          </div>
+        </div>
+        <!-- Diabetes: prueba No -->
+        <div class="fcard" id="field-s4-dm">
+          <div class="fc-hdr">
+            <span class="fc-name">Diabetes</span>
+            <div class="fc-dots"><span class="d d-v"></span><span class="d d-a d-dim"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+          </div>
+          <div class="fc-body">
+            <span class="fc-lbl">Diabetes mellitus</span>
+            <div class="fc-btns">
+              <button class="fb" data-val="si" onclick="setBtn('s4-dm','si')">Sí</button>
+              <button class="fb" data-val="no" onclick="setBtn('s4-dm','no')">No</button>
+              <button class="fb" data-val="q"  onclick="setBtn('s4-dm','q')">?</button>
+            </div>
+          </div>
+          <div class="fc-ev" id="ev-wrap-s4-dm">
+            <div class="ev-box empty" id="ev-s4-dm">— captura evidencia —</div>
+          </div>
+          <div class="fc-cm" id="cm-wrap-s4-dm">
+            <div class="cm-lbl">Comentarios <em>* obligatorio</em></div>
+            <textarea class="cm-input" id="cm-s4-dm" rows="2" placeholder="Explica la duda…"></textarea>
+          </div>
+        </div>
+        <!-- IC: prueba ? -->
+        <div class="fcard" id="field-s4-ic">
+          <div class="fc-hdr">
+            <span class="fc-name">Insuficiencia Cardíaca</span>
+            <div class="fc-dots"><span class="d d-v d-dim"></span><span class="d d-a d-dim"></span><span class="d d-r"></span><span class="fc-ql">¿Qué costó?</span></div>
+          </div>
+          <div class="fc-body">
+            <span class="fc-lbl">IC clase IV (NYHA)</span>
+            <div class="fc-btns">
+              <button class="fb" data-val="si" onclick="setBtn('s4-ic','si')">Sí</button>
+              <button class="fb" data-val="no" onclick="setBtn('s4-ic','no')">No</button>
+              <button class="fb" data-val="q"  onclick="setBtn('s4-ic','q')">?</button>
+            </div>
+          </div>
+          <div class="fc-ev" id="ev-wrap-s4-ic">
+            <div class="ev-box empty" id="ev-s4-ic">— captura evidencia —</div>
+          </div>
+          <div class="fc-cm" id="cm-wrap-s4-ic">
+            <div class="cm-lbl">Comentarios <em>* obligatorio</em></div>
+            <textarea class="cm-input" id="cm-s4-ic" rows="2" placeholder="Explica la duda…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 5: Protocolo ══ -->
+  <div class="slide" id="s5">
+    <div class="slide-title"><span class="snum">4</span>Protocolo de Lectura</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+      <div class="flow">
+        <div class="flow-row">
+          <div class="fb-blue">1. Antecedentes</div>
+          <span class="arrow">→</span>
+          <div class="fb-box">Completar bloque Antecedentes<br><small>Sí + evidencia / No provisional</small></div>
+        </div>
+        <div class="flow-row">
+          <div class="fb-blue">2. Evolución UCI</div>
+          <span class="arrow">→</span>
+          <div class="fb-box">Intervenciones · Infecciones<br>Falla Orgánica · Mortalidad · HFAV</div>
+        </div>
+        <div class="flow-row">
+          <div class="fb-blue">3. Segunda pasada</div>
+          <span class="arrow">→</span>
+          <div class="fb-box">¿Apareció comorbilidad nueva?</div>
+        </div>
+        <div class="flow-indent">
+          <div class="flow-row"><span class="arrow">├─</span><div class="fb-green">Sí, certeza</div><span class="arrow">→</span><div class="fb-box">Actualizar a Sí + evidencia</div></div>
+          <div class="flow-row"><span class="arrow">├─</span><div class="fb-amb">Ambiguo</div><span class="arrow">→</span><div class="fb-box">? + comentario obligatorio</div></div>
+          <div class="flow-row"><span class="arrow">└─</span><div class="fb-red">No encontrado</div><span class="arrow">→</span><div class="fb-box">Mantener No</div></div>
+        </div>
+        <div class="flow-row" style="margin-top:4px">
+          <div class="fb-blue">4. Verificación</div>
+          <span class="arrow">→</span>
+          <div class="fb-box">Todo Sí tiene evidencia · Comentario Final si quedan dudas</div>
+        </div>
+      </div>
+      <div>
+        <div class="c-blue">
+          <strong>📌 Prioridad en la lectura</strong><br>
+          Los <strong>antecedentes</strong> son relativamente estandarizados → leer rápido.<br>
+          La <strong>evolución UCI</strong> varía mucho entre casos → leer con atención detallada.
+        </div>
+        <div class="c-green" style="margin-top:8px">
+          <strong>✅ Segunda pasada obligatoria</strong><br>
+          Comorbilidades como ERC, IC o HTP pueden aparecer nombradas fuera de los antecedentes (p. ej. en evolución o en diagnósticos). Siempre volver a revisar al final.
+        </div>
+        <div class="c-amber" style="margin-top:8px">
+          <strong>⚠️ Comentario Final</strong><br>
+          Si al finalizar quedan dudas sin resolver, registrarlas en el campo <em>Comentario Final</em> del formulario para que el adjudicador las resuelva.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 6: Antecedentes ══ -->
+  <div class="slide" id="s6">
+    <div class="slide-title"><span class="snum">5</span>Antecedentes — Referencia rápida</div>
+    <div style="display:grid;grid-template-columns:1fr 260px;gap:20px;align-items:start">
+      <div>
+        <table class="tbl">
+          <thead><tr><th>Comorbilidad</th><th>CIE-10</th><th style="width:260px">Criterio clave</th><th>Dif.</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Hipertensión Arterial</strong></td><td><span class="cie">I10</span></td><td>HTA crónica preexistente o antihipertensivos en antecedentes.</td><td><span class="dv">●</span></td></tr>
+            <tr><td><strong>DM2 No Complicada</strong></td><td><span class="cie">E11.9</span></td><td>DM2 sin complicaciones. Mutuamente excluyente con DM2 Complicada.</td><td><span class="dv">●</span></td></tr>
+            <tr><td><strong>DM2 Complicada</strong></td><td><span class="cie">E11.6</span></td><td>DM2 con nefropatía, retinopatía, neuropatía, pie de Charcot u otra complicación.</td><td><span class="da">●</span></td></tr>
+            <tr><td><strong>Enfermedad Renal Crónica</strong></td><td><span class="cie">N18</span></td><td>ERC preexistente. Distinguir de IRA intrahospitalaria (→ Falla Orgánica).</td><td><span class="da">●</span></td></tr>
+            <tr><td><strong>Arritmias</strong></td><td><span class="cie">I49</span></td><td>FA permanente, bloqueos AV crónicos. Excluir arritmias agudas de UCI.</td><td><span class="da">●</span></td></tr>
+            <tr><td><strong>EPOC</strong></td><td><span class="cie">J44</span></td><td>Si hay EPOC, marcar también <em>Enfermedad Pulmonar</em>.</td><td><span class="da">●</span></td></tr>
+            <tr><td><strong>ACV</strong></td><td><span class="cie">I63–64</span></td><td>ACV previo al ingreso. ACV durante UCI → Falla Nerviosa.</td><td><span class="da">●</span></td></tr>
+            <tr><td><strong>Neoplasia Hematológica</strong></td><td><span class="cie">C81–96</span></td><td>Leucemias, linfomas, mieloma, mielodisplasias.</td><td><span class="da">●</span></td></tr>
+            <tr><td><strong>Cáncer Metastásico</strong></td><td><span class="cie">C77–79</span></td><td>Tumor sólido con metástasis documentadas.</td><td><span class="da">●</span></td></tr>
+            <tr><td><strong>Demencia</strong></td><td><span class="cie">F00–03</span></td><td>Alzheimer, demencia vascular u otras.</td><td><span class="dv">●</span></td></tr>
+            <tr><td><strong>Abuso de Sustancias</strong></td><td><span class="cie">F10–19</span></td><td>Mención explícita de consumo problemático de alcohol o drogas.</td><td><span class="dv">●</span></td></tr>
+            <tr><td><strong>Postración</strong></td><td><span class="cie">R53</span></td><td>Dependencia funcional total previa al ingreso.</td><td><span class="da">●</span></td></tr>
+            <tr><td><strong>Hipertensión Pulmonar</strong></td><td><span class="cie">I27</span></td><td>Campo separado de HTA sistémica. Solo si diagnosticada antes del ingreso.</td><td><span class="dr">●</span></td></tr>
+            <tr><td><strong>IC Clase IV (NYHA)</strong></td><td><span class="cie">I50</span></td><td>Solo síntomas en reposo (NYHA IV). No marcar para clases I–III.</td><td><span class="dr">●</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div class="panel-lbl" style="margin:0">Practica</div>
+          <button class="reset-btn" onclick="resetSlide('s6')">↺</button>
+        </div>
+        <div class="doc-text panel-box" style="margin-bottom:10px;font-size:11px">
+          <strong>ANTECEDENTES:</strong><br>
+          <span class="hl-g" onclick="captureDoc('s6-hta',this)">HTA</span> conocida.
+          <span class="hl-g" onclick="captureDoc('s6-dm2',this)">DM2 con nefropatía diabética.</span>
+          Tabaquismo crónico suspendido hace 5 años.
+        </div>
+        <div class="fcard" id="field-s6-hta">
+          <div class="fc-hdr">
+            <span class="fc-name">HTA</span>
+            <div class="fc-dots"><span class="d d-v"></span><span class="d d-a d-dim"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+          </div>
+          <div class="fc-body">
+            <span class="fc-lbl">Hipertensión arterial</span>
+            <div class="fc-btns">
+              <button class="fb" data-val="si" onclick="setBtn('s6-hta','si')">Sí</button>
+              <button class="fb" data-val="no" onclick="setBtn('s6-hta','no')">No</button>
+              <button class="fb" data-val="q"  onclick="setBtn('s6-hta','q')">?</button>
+            </div>
+          </div>
+          <div class="fc-ev" id="ev-wrap-s6-hta"><div class="ev-box empty" id="ev-s6-hta">↑ haz clic en texto verde</div></div>
+          <div class="fc-cm" id="cm-wrap-s6-hta"><div class="cm-lbl">Comentarios <em>* obligatorio</em></div><textarea class="cm-input" id="cm-s6-hta" rows="2" placeholder="Explica la duda…"></textarea></div>
+        </div>
+        <div class="fcard" id="field-s6-dm2">
+          <div class="fc-hdr">
+            <span class="fc-name">DM2 Complicada</span>
+            <div class="fc-dots"><span class="d d-v d-dim"></span><span class="d d-a"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+          </div>
+          <div class="fc-body">
+            <span class="fc-lbl">Diabetes tipo 2 con complicaciones</span>
+            <div class="fc-btns">
+              <button class="fb" data-val="si" onclick="setBtn('s6-dm2','si')">Sí</button>
+              <button class="fb" data-val="no" onclick="setBtn('s6-dm2','no')">No</button>
+              <button class="fb" data-val="q"  onclick="setBtn('s6-dm2','q')">?</button>
+            </div>
+          </div>
+          <div class="fc-ev" id="ev-wrap-s6-dm2"><div class="ev-box empty" id="ev-s6-dm2">↑ haz clic en texto verde</div></div>
+          <div class="fc-cm" id="cm-wrap-s6-dm2"><div class="cm-lbl">Comentarios <em>* obligatorio</em></div><textarea class="cm-input" id="cm-s6-dm2" rows="2" placeholder="Explica la duda…"></textarea></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 7: Intervenciones — VMI ══ -->
+  <div class="slide" id="s7">
+    <div class="slide-title"><span class="snum">6</span>Intervenciones — VMI y Subcampos</div>
+    <div class="two-col">
+      <div>
+        <div class="panel-lbl">Documento</div>
+        <div class="panel-box">
+          <div class="doc-text">
+            <p style="margin-bottom:6px"><strong>EVOLUCIÓN UCI:</strong></p>
+            <p style="margin-bottom:6px">
+              <span class="hl-g" onclick="captureDoc('s7-vmi',this)">Paciente ingresa intubado por PCR extrahospitalario.</span>
+              Se conecta a ventilación mecánica en modo VCV.
+            </p>
+            <p style="margin-bottom:6px">Durante evolución se indica decúbito prono por hipoxemia refractaria (PaO₂/FiO₂ &lt; 100).</p>
+          </div>
+        </div>
+        <p class="tip">💡 Marca VMI = <span class="p-si">Sí</span> para ver los subcampos desplegarse. Haz clic en el texto verde para capturar evidencia.</p>
+        <div class="c-blue" style="margin-top:10px">
+          <strong>Al marcar VMI = Sí</strong> aparecen automáticamente los subcampos: <em>Motivo de la VMI</em> (texto libre), <em>Urgencia inmediata</em> y <em>Posición prono</em>.
+        </div>
+        <h3 class="sh">Otras intervenciones</h3>
+        <table class="tbl">
+          <thead><tr><th>Campo</th><th>Dif.</th></tr></thead>
+          <tbody>
+            <tr><td>Transfusión de hemoderivados</td><td><span class="dv">●</span></td></tr>
+            <tr><td>Drogas Vasoactivas (noradrenalina, dopamina…)</td><td><span class="da">●</span></td></tr>
+            <tr><td>Cirugías en hospitalización</td><td><span class="dv">●</span></td></tr>
+            <tr><td>TRR — Terapia de Reemplazo Renal</td><td><span class="da">●</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div class="panel-lbl" style="margin:0">Formulario — Soporte Ventilatorio</div>
+          <button class="reset-btn" onclick="resetSlide('s7')">↺</button>
+        </div>
+        <!-- VMI con subcampos -->
+        <div class="fcard" id="field-s7-vmi">
+          <div class="fc-hdr">
+            <span class="fc-name">VMI</span>
+            <div class="fc-dots"><span class="d d-v"></span><span class="d d-a d-dim"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+          </div>
+          <div class="fc-body">
+            <span class="fc-lbl">Ventilación mecánica invasiva</span>
+            <div class="fc-btns">
+              <button class="fb" data-val="si" onclick="setBtn('s7-vmi','si')">Sí</button>
+              <button class="fb" data-val="no" onclick="setBtn('s7-vmi','no')">No</button>
+              <button class="fb" data-val="q"  onclick="setBtn('s7-vmi','q')">?</button>
+            </div>
+          </div>
+          <div class="fc-ev" id="ev-wrap-s7-vmi"><div class="ev-box empty" id="ev-s7-vmi">↑ haz clic en texto verde</div></div>
+          <!-- Subcampos -->
+          <div class="fc-sub" id="sub-s7-vmi">
+            <!-- Motivo: texto libre -->
+            <div class="fcard" style="margin:0">
+              <div class="fc-hdr">
+                <span class="fc-name">Motivo de la VMI</span>
+                <div class="fc-dots"><span class="d d-v"></span><span class="d d-a d-dim"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+              </div>
+              <div style="padding:6px 10px">
+                <input id="motivo-s7" type="text" style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;color:#334155" placeholder="Indicación clínica…" />
+              </div>
+            </div>
+            <!-- Urgencia inmediata -->
+            <div class="fcard" id="field-s7-urg" style="margin:0">
+              <div class="fc-hdr">
+                <span class="fc-name">Urgencia Inmediata</span>
+                <div class="fc-dots"><span class="d d-v d-dim"></span><span class="d d-a"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+              </div>
+              <div class="fc-body">
+                <span class="fc-lbl">Intubación de emergencia</span>
+                <div class="fc-btns">
+                  <button class="fb" data-val="si" onclick="setBtn('s7-urg','si')">Sí</button>
+                  <button class="fb" data-val="no" onclick="setBtn('s7-urg','no')">No</button>
+                  <button class="fb" data-val="q"  onclick="setBtn('s7-urg','q')">?</button>
+                </div>
+              </div>
+            </div>
+            <!-- Posición prono -->
+            <div class="fcard" id="field-s7-prono" style="margin:0">
+              <div class="fc-hdr">
+                <span class="fc-name">Posición Prono</span>
+                <div class="fc-dots"><span class="d d-v"></span><span class="d d-a d-dim"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+              </div>
+              <div class="fc-body">
+                <span class="fc-lbl">Decúbito prono durante UCI</span>
+                <div class="fc-btns">
+                  <button class="fb" data-val="si" onclick="setBtn('s7-prono','si')">Sí</button>
+                  <button class="fb" data-val="no" onclick="setBtn('s7-prono','no')">No</button>
+                  <button class="fb" data-val="q"  onclick="setBtn('s7-prono','q')">?</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 8: Infecciones ══ -->
+  <div class="slide" id="s8">
+    <div class="slide-title"><span class="snum">7</span>Sección: Infecciones por Foco</div>
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start">
+      <div>
+        <div class="c-green" style="margin-top:0">
+          <strong>✅ Aproximación recomendada: Sí / No.</strong> Reservar <span class="p-q">?</span> solo para ambigüedad genuina e irresoluble.
+        </div>
+        <div class="c-blue" style="margin-top:0">
+          Todos los focos comparten: <strong>Evidencia</strong>, <strong>Germen aislado</strong> y <strong>Comentarios</strong>.
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Foco</th><th>Criterios clave</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Urinario</strong></td><td>ITU, urocultivo positivo, ATB dirigido a foco urinario.</td></tr>
+            <tr><td><strong>Respiratorio</strong></td><td>Neumonía, bronconeumonía, aspiración con ATB.</td></tr>
+            <tr><td><strong>Quirúrgico</strong></td><td>Infección de sitio quirúrgico, dehiscencia infectada.</td></tr>
+            <tr><td><strong>Cerebral</strong></td><td>Meningitis, encefalitis, absceso cerebral.</td></tr>
+            <tr><td><strong>Piel y tejidos blandos</strong></td><td>Celulitis, fascitis, úlceras infectadas, pie diabético.</td></tr>
+            <tr><td><strong>Sangre</strong></td><td>Sepsis y/o hemocultivos positivos (HCT+).</td></tr>
+            <tr><td><strong>Vascular / CAET</strong></td><td>Infección asociada a catéter (CVC, arterial, otros).</td></tr>
+            <tr><td><strong>Cardíaco</strong></td><td>Endocarditis, miocarditis infecciosa.</td></tr>
+            <tr><td><strong>Gastrointestinal</strong></td><td>Peritonitis, colitis, absceso intraabdominal, C. diff.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div class="panel-lbl" style="margin:0">Practica — Foco Sangre</div>
+          <button class="reset-btn" onclick="resetSlide('s8')">↺</button>
+        </div>
+        <div class="doc-text panel-box" style="margin-bottom:10px;font-size:11px">
+          <strong>MICROBIOLOGÍA:</strong><br>
+          <span class="hl-g" onclick="captureDoc('s8-sangre',this)">Hemocultivos positivos para Staphylococcus aureus MRSA (×2). Cuadro compatible con sepsis de foco no precisado.</span>
+          Tratamiento con vancomicina IV 14 días.
+        </div>
+        <div class="fcard" id="field-s8-sangre">
+          <div class="fc-hdr">
+            <span class="fc-name">Sangre (Sepsis / HCT+)</span>
+            <div class="fc-dots"><span class="d d-v d-dim"></span><span class="d d-a"></span><span class="d d-r d-dim"></span><span class="fc-ql">¿Qué costó?</span></div>
+          </div>
+          <div class="fc-body">
+            <span class="fc-lbl">Sepsis o hemocultivos positivos</span>
+            <div class="fc-btns">
+              <button class="fb" data-val="si" onclick="setBtn('s8-sangre','si')">Sí</button>
+              <button class="fb" data-val="no" onclick="setBtn('s8-sangre','no')">No</button>
+              <button class="fb" data-val="q"  onclick="setBtn('s8-sangre','q')">?</button>
+            </div>
+          </div>
+          <div class="fc-ev" id="ev-wrap-s8-sangre">
+            <div style="margin-bottom:4px">
+              <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:3px">Evidencia</div>
+              <div class="ev-box empty" id="ev-s8-sangre">↑ haz clic en texto verde</div>
+            </div>
+            <div style="margin-bottom:4px">
+              <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:3px">Germen aislado</div>
+              <input id="germen-s8" type="text" style="width:100%;border:1px solid #86efac;background:#f0fdf4;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#166534;outline:none" placeholder="Microorganismo…" />
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:3px">Comentarios (opcional)</div>
+              <textarea style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#334155;outline:none;resize:none" rows="2" placeholder="Observaciones…"></textarea>
+            </div>
+          </div>
+          <div class="fc-cm" id="cm-wrap-s8-sangre">
+            <div class="cm-lbl">Comentarios <em>* obligatorio</em></div>
+            <textarea class="cm-input" id="cm-s8-sangre" rows="2" placeholder="Explica la duda…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 9: Falla Orgánica ══ -->
+  <div class="slide" id="s9">
+    <div class="slide-title"><span class="snum">8</span>Sección: Falla Orgánica</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <div>
+        <div class="c-green" style="margin-top:0">
+          <strong>✅ Aproximación recomendada: Sí / No.</strong> Varios campos son <span class="dr">● Difícil</span>: ante duda, priorizar <span class="p-no">No</span> con nota en Comentario Final.
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Órgano</th><th>Criterios orientadores</th><th>Dif.</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Renal</strong></td><td>IRA, elevación aguda de creatinina, oliguria, TRR de novo. <em>Distinguir de ERC preexistente.</em></td><td><span class="dr">●</span></td></tr>
+            <tr><td><strong>Vascular</strong></td><td>Shock (séptico, cardiogénico, distributivo), isquemia mesentérica.</td><td><span class="dr">●</span></td></tr>
+            <tr><td><strong>Hepático</strong></td><td>Hepatitis aguda grave, insuficiencia hepática aguda, transaminasas significativamente elevadas.</td><td><span class="dr">●</span></td></tr>
+            <tr><td><strong>Nervioso</strong></td><td>Encefalopatía, coma, ACV isquémico o hemorrágico ocurrido durante el ingreso.</td><td><span class="da">●</span></td></tr>
+            <tr><td><strong>Cardíaco</strong></td><td>Insuficiencia cardíaca aguda, SCA, arritmias con compromiso hemodinámico.</td><td><span class="da">●</span></td></tr>
+            <tr><td><strong>Pulmonar</strong></td><td>Insuficiencia respiratoria aguda, SDRA, neumonía grave con falla ventilatoria.</td><td><span class="da">●</span></td></tr>
+            <tr><td><strong>Otra</strong></td><td>Fallas no cubiertas por los campos anteriores. Describir en Comentario Final.</td><td><span class="da">●</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="c-amber">
+          <strong>⚠️ Solo falla intrahospitalaria</strong><br>
+          Registrar únicamente lo que ocurrió durante la hospitalización en UCI. No incluir condiciones preexistentes salvo que se documente una descompensación aguda durante el ingreso.
+        </div>
+        <div class="c-amber" style="margin-top:8px">
+          <strong>Campos Difícil (rojo) en esta sección</strong>
+          <ul style="margin-top:6px;padding-left:16px;font-size:12px">
+            <li><strong>Falla Renal:</strong> interpretar creatinina basal vs. nueva elevación aguda.</li>
+            <li><strong>Shock:</strong> identificar el tipo a partir del contexto clínico y fármacos.</li>
+            <li><strong>Falla Hepática:</strong> requiere conocer umbrales de laboratorio.</li>
+          </ul>
+        </div>
+        <div class="c-blue" style="margin-top:8px">
+          <strong>Ejemplo habitual:</strong> paciente con ERC 3B conocida (→ Antecedentes) que durante la UCI desarrolla IRA sobre ERC (→ Falla Renal). Anotar en <em>ambos</em> campos.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 10: Casos Difíciles ══ -->
+  <div class="slide" id="s10">
+    <div class="slide-title"><span class="snum">9</span>Casos Difíciles — Deducciones desde Fármacos</div>
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start">
+      <div>
+        <table class="tbl">
+          <thead><tr><th>Fármaco en antecedentes</th><th>Deducción</th></tr></thead>
+          <tbody>
+            <tr><td>Antihipertensivos (enalapril, losartán, amlodipino…)</td><td>→ <span class="p-si">Sí</span> <strong>HTA</strong></td></tr>
+            <tr><td>Insulina o metformina habitual</td><td>→ <span class="p-si">Sí</span> <strong>Diabetes</strong> (complicada si hay evidencia de órgano)</td></tr>
+            <tr><td>Broncodilatadores inhalados crónicos (salbutamol, tiotropio)</td><td>→ <span class="p-si">Sí</span> <strong>Enfermedad Pulmonar / EPOC</strong></td></tr>
+            <tr><td>Anticoagulantes crónicos (TACO, apixabán, rivaroxabán)</td><td>→ Evaluar contexto. Puede indicar FA o ACV previo. <strong>No deducir</strong> solo por el anticoagulante.</td></tr>
+            <tr style="background:#fff9f9"><td>Furosemida como único indicador</td><td>→ <strong>Insuficiente</strong> para deducir IC. Marcar <span class="p-q">?</span> + comentario si no hay otra evidencia.</td></tr>
+          </tbody>
+        </table>
+        <div class="c-amber" style="margin-top:8px">
+          <strong>Negaciones:</strong> <em>"No presenta diabetes"</em> → <span class="p-no">No</span> · <em>"Sin antecedentes de HTA"</em> → <span class="p-no">No</span> · <em>"Sospecha de endocarditis no confirmada"</em> → <span class="p-no">No</span> + comentario.
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div class="panel-lbl" style="margin:0">Practica — caso furosemida</div>
+          <button class="reset-btn" onclick="resetSlide('s10')">↺</button>
+        </div>
+        <div class="doc-text panel-box" style="margin-bottom:10px;font-size:11px">
+          <strong>ANTECEDENTES:</strong><br>
+          HTA, DM2. Fármacos habituales: metformina, enalapril, <span class="hl-y">furosemida 40 mg/día.</span>
+          <br><span class="doc-dim" style="font-size:10px">Sin mención explícita de insuficiencia cardíaca.</span>
+        </div>
+        <div class="fcard" id="field-s10-ic">
+          <div class="fc-hdr">
+            <span class="fc-name">Insuficiencia Cardíaca</span>
+            <div class="fc-dots"><span class="d d-v d-dim"></span><span class="d d-a d-dim"></span><span class="d d-r"></span><span class="fc-ql">¿Qué costó?</span></div>
+          </div>
+          <div class="fc-body">
+            <span class="fc-lbl">IC clase IV (NYHA)</span>
+            <div class="fc-btns">
+              <button class="fb" data-val="si" onclick="setBtn('s10-ic','si')">Sí</button>
+              <button class="fb" data-val="no" onclick="setBtn('s10-ic','no')">No</button>
+              <button class="fb" data-val="q"  onclick="setBtn('s10-ic','q')">?</button>
+            </div>
+          </div>
+          <div class="fc-ev" id="ev-wrap-s10-ic">
+            <div class="ev-box empty" id="ev-s10-ic">— sin evidencia —</div>
+          </div>
+          <div class="fc-cm" id="cm-wrap-s10-ic">
+            <div class="cm-lbl">Comentarios <em>* obligatorio</em></div>
+            <textarea class="cm-input" id="cm-s10-ic" rows="3" placeholder="Explica por qué marcas ?…"></textarea>
+          </div>
+        </div>
+        <p class="tip" style="margin-top:8px">💡 La respuesta correcta aquí es <span class="p-q">?</span> + comentario como: <em>"Solo furosemida, sin diagnóstico explícito de IC."</em></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 11: Flujo de trabajo ══ -->
+  <div class="slide" id="s11">
+    <div class="slide-title"><span class="snum">10</span>Flujo de Trabajo Resumido</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+      <div>
+        <div class="flow">
+          <div class="flow-row"><div class="fb-blue" style="min-width:140px">1. Leer antecedentes</div><span class="arrow">→</span><div class="fb-box">Completar bloque Antecedentes · <span class="p-si">Sí</span> + evidencia · <span class="p-no">No</span> provisional</div></div>
+          <div class="flow-row"><div class="fb-blue" style="min-width:140px">2. Leer evolución</div><span class="arrow">→</span><div class="fb-box">Intervenciones · Infecciones · Fallas · Diagnósticos · Mortalidad · HFAV</div></div>
+          <div class="flow-row"><div class="fb-blue" style="min-width:140px">3. Segunda pasada</div><span class="arrow">→</span><div class="fb-box">¿Apareció comorbilidad nueva en la evolución?</div></div>
+          <div class="flow-indent">
+            <div class="flow-row"><span class="arrow">├─</span><div class="fb-green">Sí con certeza</div><span class="arrow">→</span><div class="fb-box">Actualizar a <span class="p-si">Sí</span> + evidencia</div></div>
+            <div class="flow-row"><span class="arrow">├─</span><div class="fb-amb">Ambiguo</div><span class="arrow">→</span><div class="fb-box"><span class="p-q">?</span> + comentario obligatorio</div></div>
+            <div class="flow-row"><span class="arrow">└─</span><div class="fb-red">No encontrado</div><span class="arrow">→</span><div class="fb-box">Mantener <span class="p-no">No</span></div></div>
+          </div>
+          <div class="flow-row" style="margin-top:4px"><div class="fb-blue" style="min-width:140px">4. Verificación final</div><span class="arrow">→</span><div class="fb-box">Todo <span class="p-si">Sí</span> tiene evidencia · Dudas en Comentario Final</div></div>
+        </div>
+      </div>
+      <div>
+        <h3 class="sh">Checklist antes de enviar</h3>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" style="margin-top:2px;flex-shrink:0" /><span>Todos los campos <span class="p-si">Sí</span> tienen evidencia capturada.</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" style="margin-top:2px;flex-shrink:0" /><span>Todos los campos <span class="p-q">?</span> tienen comentario explicativo.</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" style="margin-top:2px;flex-shrink:0" /><span>Se realizó segunda pasada por comorbilidades.</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" style="margin-top:2px;flex-shrink:0" /><span>DM2 Complicada y No Complicada: solo una marcada.</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" style="margin-top:2px;flex-shrink:0" /><span>ERC en Antecedentes / IRA intrahospitalaria en Falla Orgánica (no confundir).</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" style="margin-top:2px;flex-shrink:0" /><span>TRR y HFAV son campos independientes; si hay HFAV, marcar ambos.</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" style="margin-top:2px;flex-shrink:0" /><span>Fechas de ingreso/egreso verificadas.</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" style="margin-top:2px;flex-shrink:0" /><span>Comentario Final escrito si quedan incertidumbres.</span></label>
+        </div>
+        <div class="c-blue" style="margin-top:16px">
+          Ante dudas sobre terminología del Hospital Sótero del Río o la red FONASA: <strong>consultar al adjudicador antes de anotar</strong>. No asumir equivalencias con terminología estándar.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- ── Navigation bar ── -->
+<div id="nav">
+  <button id="btn-prev" onclick="go(-1)">←</button>
+  <div id="dots"></div>
+  <span id="counter"></span>
+  <button id="btn-next" onclick="go(1)">→</button>
+</div>
+
+<script>
+  // ── Slide navigation ──────────────────────────────────────────────
+  let cur = 0;
+  const slides = document.querySelectorAll('.slide');
+  const TOTAL  = slides.length;
+
+  function go(dir) {
+    slides[cur].classList.remove('active');
+    cur = Math.max(0, Math.min(TOTAL - 1, cur + dir));
+    slides[cur].classList.add('active');
+    updateNav();
+  }
+
+  function goTo(n) {
+    slides[cur].classList.remove('active');
+    cur = n;
+    slides[cur].classList.add('active');
+    updateNav();
+  }
+
+  function updateNav() {
+    document.getElementById('counter').textContent = (cur + 1) + ' / ' + TOTAL;
+    document.getElementById('btn-prev').disabled = cur === 0;
+    document.getElementById('btn-next').disabled = cur === TOTAL - 1;
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === cur));
+  }
+
+  // Build progress dots
+  const dotsEl = document.getElementById('dots');
+  slides.forEach((_, i) => {
+    const d = document.createElement('span');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+  });
+
+  // Init
+  slides[0].classList.add('active');
+  updateNav();
+
+  // ── Annotation interaction engine ────────────────────────────────
+  const ST = {}; // state store
+
+  function getS(id) {
+    return ST[id] || (ST[id] = {value: null, evidence: ''});
+  }
+
+  function setBtn(fieldId, val) {
+    const s = getS(fieldId);
+    s.value = (s.value === val) ? null : val;
+    renderField(fieldId);
+  }
+
+  function captureDoc(fieldId, el) {
+    const text = el.textContent.trim();
+    const s = getS(fieldId);
+    s.evidence = text;
+    if (s.value !== 'si') s.value = 'si';
+    el.classList.add('captured');
+    renderField(fieldId);
+  }
+
+  function renderField(id) {
+    const s = getS(id);
+    const card = document.getElementById('field-' + id);
+    if (!card) return;
+
+    // Border state
+    card.className = 'fcard' + (s.value ? ' state-' + s.value : '');
+    // Nested cards (subcards) inside subfields keep their own style
+    card.querySelectorAll('.fc-sub .fcard').forEach(sub => sub.style.removeProperty('class'));
+
+    // Update buttons
+    card.querySelectorAll('.fb[data-val]').forEach(btn => {
+      const isActive = btn.dataset.val === s.value;
+      btn.className = 'fb' + (isActive ? ' a-' + s.value : '');
+      if (btn.dataset.val === 'si') btn.textContent = isActive ? 'Sí ✓' : 'Sí';
+      if (btn.dataset.val === 'no') btn.textContent = isActive ? 'No ✓' : 'No';
+      if (btn.dataset.val === 'q')  btn.textContent = isActive ? '? ✓' : '?';
+    });
+
+    // Evidence area (show when Sí)
+    const evWrap = document.getElementById('ev-wrap-' + id);
+    if (evWrap) evWrap.style.display = s.value === 'si' ? 'block' : 'none';
+
+    // Update evidence text
+    const evEl = document.getElementById('ev-' + id);
+    if (evEl && s.evidence) {
+      evEl.textContent = s.evidence;
+      evEl.classList.remove('empty');
+    }
+
+    // Comment area (show when ?)
+    const cmWrap = document.getElementById('cm-wrap-' + id);
+    if (cmWrap) cmWrap.style.display = s.value === 'q' ? 'block' : 'none';
+
+    // Subfields (show when Sí)
+    const subEl = document.getElementById('sub-' + id);
+    if (subEl) subEl.style.display = s.value === 'si' ? 'flex' : 'none';
+  }
+
+  // Reset a slide's interactive state
+  function resetSlide(slideId) {
+    const slide = document.getElementById(slideId);
+    if (!slide) return;
+
+    // Clear JS state for all fields in this slide
+    slide.querySelectorAll('.fcard[id^="field-"]').forEach(card => {
+      const id = card.id.replace('field-', '');
+      delete ST[id];
+      renderField(id);
+    });
+
+    // Reset captured text highlights
+    slide.querySelectorAll('.hl-g.captured').forEach(el => el.classList.remove('captured'));
+
+    // Reset text inputs / textareas
+    slide.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = '');
+
+    // Reset checkboxes
+    slide.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+
+    // Restore preset states (HTA in s2 = Sí with "HTA" evidence)
+    if (slideId === 's2') {
+      const s = getS('s2-hta');
+      s.value = 'si'; s.evidence = 'HTA';
+      renderField('s2-hta');
+      const evEl = document.getElementById('ev-s2-hta');
+      if (evEl) { evEl.textContent = 'HTA'; evEl.classList.remove('empty'); }
+    }
+  }
+
+  // Initialise preset states on load
+  (function initPresets() {
+    const s = getS('s2-hta');
+    s.value = 'si'; s.evidence = 'HTA';
+    renderField('s2-hta');
+  })();
+</script>
+</body>
+</html>

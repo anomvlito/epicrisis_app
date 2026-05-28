@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual de Anotación — Epicrisis UCI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #2563eb;
+      --blue-lt: #eff6ff;
+      --green:   #15803d;
+      --green-lt:#dcfce7;
+      --red:     #b91c1c;
+      --red-lt:  #fee2e2;
+      --amber:   #92400e;
+      --amber-lt:#fef3c7;
+      --gray:    #475569;
+      --gray-lt: #f8fafc;
+      --border:  #e2e8f0;
+      --text:    #0f172a;
+      --text-2:  #475569;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #fff;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.65;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 48px 40px 80px;
+    }
+
+    @media print {
+      body { padding: 0; font-size: 12px; }
+      .no-print { display: none; }
+      h2 { page-break-before: always; }
+      h2:first-of-type { page-break-before: avoid; }
+    }
+
+    /* ── Cover ── */
+    .cover {
+      border-left: 4px solid var(--blue);
+      padding: 20px 24px;
+      background: var(--blue-lt);
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 40px;
+    }
+    .cover h1 { font-size: 20px; font-weight: 700; color: var(--blue); margin-bottom: 4px; }
+    .cover .subtitle { font-size: 13px; color: var(--text-2); }
+    .cover .meta { display: flex; gap: 20px; margin-top: 12px; flex-wrap: wrap; }
+    .cover .meta span {
+      font-size: 12px;
+      background: #fff;
+      border: 1px solid #bfdbfe;
+      border-radius: 20px;
+      padding: 3px 12px;
+      color: var(--blue);
+      font-weight: 500;
+    }
+
+    /* ── TOC ── */
+    .toc {
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray); margin-bottom: 10px; }
+    .toc ol { padding-left: 18px; }
+    .toc li { margin-bottom: 4px; }
+    .toc a { color: var(--blue); text-decoration: none; font-size: 13px; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── Headings ── */
+    h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 8px;
+      margin: 40px 0 20px;
+    }
+    h2 .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px; height: 26px;
+      background: var(--blue);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 700;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+    h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 24px 0 10px;
+    }
+    h3.sub {
+      font-size: 13px;
+      color: var(--text-2);
+      font-weight: 600;
+      margin: 18px 0 8px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    p { margin-bottom: 10px; }
+
+    /* ── Callout boxes ── */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .callout .icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .callout p { margin: 0; font-size: 13px; line-height: 1.6; }
+    .callout.blue   { background: var(--blue-lt);  border: 1px solid #bfdbfe; }
+    .callout.green  { background: var(--green-lt); border: 1px solid #86efac; }
+    .callout.amber  { background: var(--amber-lt); border: 1px solid #fcd34d; }
+    .callout.red    { background: var(--red-lt);   border: 1px solid #fca5a5; }
+
+    /* ── Value pills ── */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .pill.si  { background: var(--green-lt); color: var(--green); border: 1px solid #86efac; }
+    .pill.no  { background: var(--red-lt);   color: var(--red);   border: 1px solid #fca5a5; }
+    .pill.ns  { background: var(--amber-lt); color: var(--amber); border: 1px solid #fcd34d; }
+
+    /* ── Difficulty semaphore ── */
+    .dif {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    .dif.verde    { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .dif.amarillo { background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; }
+    .dif.rojo     { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+    /* ── Protocol steps ── */
+    .steps { counter-reset: step; list-style: none; padding: 0; }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .steps li::before {
+      content: counter(step);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px; height: 26px;
+      min-width: 26px;
+      background: var(--blue);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .steps li .step-body { flex: 1; }
+    .steps li strong { font-size: 13px; display: block; margin-bottom: 3px; }
+    .steps li p { font-size: 13px; color: var(--text-2); margin: 0; }
+
+    /* ── Field table ── */
+    .field-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px;
+      font-size: 13px;
+    }
+    .field-table th {
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .field-table td {
+      border: 1px solid var(--border);
+      padding: 9px 12px;
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    .field-table tr:nth-child(even) td { background: #fafafa; }
+    .cie {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--blue);
+      background: var(--blue-lt);
+      border-radius: 4px;
+      padding: 1px 5px;
+      white-space: nowrap;
+    }
+
+    /* ── Example box ── */
+    .example {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--blue);
+      border-radius: 0 6px 6px 0;
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-size: 12.5px;
+    }
+    .example .label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--blue);
+      margin-bottom: 4px;
+    }
+    .example .quote {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      margin: 4px 0;
+      display: block;
+    }
+    .example .result { color: var(--text-2); margin-top: 5px; }
+
+    /* ── Decision table ── */
+    .decision-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin: 12px 0;
+    }
+    .decision-table th {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .decision-table th:nth-child(1) { background: var(--green-lt); color: var(--green); border: 1px solid #86efac; }
+    .decision-table th:nth-child(2) { background: var(--red-lt);   color: var(--red);   border: 1px solid #fca5a5; }
+    .decision-table th:nth-child(3) { background: var(--amber-lt); color: var(--amber); border: 1px solid #fcd34d; }
+    .decision-table td {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      vertical-align: top;
+    }
+    .decision-table td li { margin-bottom: 4px; }
+
+    /* ── Flow diagram ── */
+    .flow {
+      background: var(--gray-lt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .flow-box {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .flow-box.blue  { border-color: #93c5fd; background: var(--blue-lt); color: var(--blue); }
+    .flow-box.green { border-color: #86efac; background: var(--green-lt); color: var(--green); }
+    .flow-box.red   { border-color: #fca5a5; background: var(--red-lt); color: var(--red); }
+    .flow-arrow { color: var(--text-2); font-size: 16px; }
+    .flow-indent { padding-left: 28px; }
+
+    /* ── Section divider ── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════
+     PORTADA
+══════════════════════ -->
+<div class="cover">
+  <h1>Manual de Anotación de Epicrisis de UCI</h1>
+  <div class="subtitle">Plataforma iHEALTH · Hospital Sótero del Río · Santiago, Chile</div>
+  <div class="meta">
+    <span>Versión 1.0</span>
+    <span>Proyecto Sotero</span>
+    <span>Supplementary S6</span>
+  </div>
+</div>
+
+<!-- ══════════════════════
+     ÍNDICE
+══════════════════════ -->
+<nav class="toc">
+  <h2>Contenido</h2>
+  <ol>
+    <li><a href="#s1">Objetivo y alcance</a></li>
+    <li><a href="#s2">Cómo usar la plataforma</a></li>
+    <li><a href="#s3">Protocolo de lectura</a></li>
+    <li><a href="#s4">Valores: Sí, No y ? (incertidumbre)</a></li>
+    <li><a href="#s5">Sección: Fechas Clínicas</a></li>
+    <li><a href="#s6">Sección: Antecedentes (Comorbilidades)</a></li>
+    <li><a href="#s7">Sección: Datos Clínicos del Episodio</a></li>
+    <li><a href="#s8">Sección: Infecciones por Foco</a></li>
+    <li><a href="#s9">Sección: Falla Orgánica</a></li>
+    <li><a href="#s10">Sección: Diagnósticos, Mortalidad y HFAV</a></li>
+    <li><a href="#s11">Casos difíciles y criterios de desempate</a></li>
+    <li><a href="#s12">Flujo de trabajo resumido</a></li>
+  </ol>
+</nav>
+
+
+<!-- ══════════════════════
+     1. OBJETIVO
+══════════════════════ -->
+<h2 id="s1"><span class="num">1</span>Objetivo y alcance</h2>
+
+<p>Esta guía establece los criterios de anotación para extraer campos clínicos estructurados de epicrisis de la Unidad de Cuidados Intensivos (UCI) del Hospital Sótero del Río. El conjunto de datos resultante sirve como referencia (<em>ground truth</em>) para entrenar y evaluar modelos de extracción automática basados en lenguaje.</p>
+
+<p>La anotación cubre <strong>34 campos clínicos</strong> agrupados en: comorbilidades preexistentes, intervenciones en UCI, infecciones por foco, fallas orgánicas, diagnósticos de ingreso/egreso y mortalidad.</p>
+
+<!-- ══════════════════════
+     2. PLATAFORMA
+══════════════════════ -->
+<h2 id="s2"><span class="num">2</span>Cómo usar la plataforma</h2>
+
+<p>La pantalla está dividida en dos paneles: el <strong>documento</strong> (epicrisis) a la izquierda y el <strong>formulario de anotación</strong> a la derecha. El siguiente esquema muestra cómo interactúan ambos paneles durante la captura de evidencia.</p>
+
+<!-- Mockup de la app -->
+<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:20px 0;font-size:12px;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+
+  <!-- Barra de título simulada -->
+  <div style="background:#1e40af;color:#fff;padding:8px 16px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px">
+    <span>✚</span> Plataforma de Anotación de Epicrisis &nbsp;·&nbsp; <span style="opacity:.7;font-weight:400">iHEALTH · Hospital Sótero del Río</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 300px;min-height:260px">
+
+    <!-- Panel izquierdo: documento PDF simulado -->
+    <div style="padding:16px 20px;border-right:1px solid var(--border);background:#fff">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:10px">Documento</div>
+
+      <!-- Texto clínico simulado con highlight -->
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.9;color:#334155">
+        <p style="margin-bottom:6px"><strong>ANTECEDENTES:</strong></p>
+        <p style="margin-bottom:6px">Paciente masculino 68 años. <span style="background:#fef08a;padding:1px 3px;border-radius:3px;border-bottom:2px solid #ca8a04">HTA</span> en tratamiento con
+        losartán. <span style="background:#bbf7d0;padding:1px 3px;border-radius:3px;border-bottom:2px solid #16a34a;cursor:pointer" title="Texto seleccionado">DM2 IR, pie de Charcot bilateral.</span>
+        Tabaquismo suspendido.</p>
+        <p style="margin-bottom:6px">Insuficiencia renal crónica etapa 3B.</p>
+        <p style="margin-bottom:6px;color:#94a3b8">MOTIVO DE INGRESO: Cetoacidosis diabética...</p>
+      </div>
+
+      <!-- Indicador de selección -->
+      <div style="margin-top:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:7px 10px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:14px">☝️</span>
+        <span style="font-size:11px;color:var(--green)"><strong>Texto seleccionado:</strong> "DM2 IR, pie de Charcot bilateral."</span>
+      </div>
+    </div>
+
+    <!-- Panel derecho: formulario simulado -->
+    <div style="padding:12px 14px;background:#f8fafc">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:10px">Antecedentes</div>
+
+      <!-- HTA: Sí, evidencia capturada -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:8px;overflow:hidden">
+        <div style="background:#f8fafc;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Hipertensión Arterial</span>
+          <div style="display:flex;align-items:center;gap:3px">
+            <span style="width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;display:inline-block;opacity:.25"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;opacity:.25"></span>
+            <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+          </div>
+        </div>
+        <div style="padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span style="font-size:11px;color:#334155">HTA en tratamiento con losartán</span>
+          <div style="display:flex;gap:3px;flex-shrink:0">
+            <span style="background:#22c55e;color:#fff;border:1px solid #22c55e;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600">Sí ✓</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">No</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">?</span>
+          </div>
+        </div>
+        <div style="padding:0 10px 7px">
+          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#166534">HTA</div>
+        </div>
+      </div>
+
+      <!-- DM2 Complicada: Sí, evidencia capturada (texto activo en panel izquierdo) -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:8px;overflow:hidden">
+        <div style="background:#f8fafc;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Diabetes T2 Complicada</span>
+          <div style="display:flex;align-items:center;gap:3px">
+            <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;opacity:.25"></span>
+            <span style="width:9px;height:9px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;opacity:.25"></span>
+            <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+          </div>
+        </div>
+        <div style="padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span style="font-size:11px;color:#334155">Diabetes mellitus tipo 2 con complicaciones</span>
+          <div style="display:flex;gap:3px;flex-shrink:0">
+            <span style="background:#22c55e;color:#fff;border:1px solid #22c55e;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600">Sí ✓</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">No</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">?</span>
+          </div>
+        </div>
+        <div style="padding:0 10px 7px">
+          <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:3px">Tu evidencia (ground truth)</div>
+          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#166534">DM2 IR, pie de Charcot bilateral.</div>
+          <div style="display:flex;gap:6px;margin-top:5px">
+            <span style="background:var(--blue);color:#fff;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:500">Capturar</span>
+            <span style="background:none;color:var(--red);border:1px solid #fca5a5;border-radius:4px;padding:2px 8px;font-size:10px">✕ limpiar</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ERC: sin selección aún -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+        <div style="background:#f8fafc;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Enfermedad Renal Crónica</span>
+          <div style="display:flex;align-items:center;gap:3px">
+            <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;opacity:.25"></span>
+            <span style="width:9px;height:9px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;opacity:.25"></span>
+            <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+          </div>
+        </div>
+        <div style="padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span style="font-size:11px;color:#94a3b8">Selecciona texto y presiona "Capturar"</span>
+          <div style="display:flex;gap:3px;flex-shrink:0">
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">Sí</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">No</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">?</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+
+  <!-- Leyenda -->
+  <div style="background:#f8fafc;border-top:1px solid var(--border);padding:8px 16px;display:flex;gap:20px;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--text-2)">
+      <span style="background:#bbf7d0;padding:1px 5px;border-radius:3px">▐</span> Texto actualmente seleccionado → listo para capturar como evidencia
+    </span>
+    <span style="font-size:11px;color:var(--text-2)">
+      ● ● ● = semáforo del campo (verde · amarillo · rojo) — el punto más grande indica su dificultad
+    </span>
+  </div>
+</div>
+
+<h3>Botones Sí / No / ?</h3>
+<p>Cada campo tiene <strong>tres botones</strong>: <span class="pill si">Sí</span>, <span class="pill no">No</span> y <span class="pill ns">?</span>. Solo puede estar activo uno a la vez. Al presionar <span class="pill si">Sí</span> aparece el recuadro de evidencia para ese campo. Al presionar <span class="pill ns">?</span> aparece el campo de Comentarios, donde es obligatorio explicar la duda (ver Sección 4).</p>
+
+<h3>Captura de evidencia</h3>
+<ol style="padding-left:18px;font-size:13px;line-height:2">
+  <li>Selecciona con el cursor el fragmento relevante en el panel del documento.</li>
+  <li>Presiona el botón <strong>"Capturar"</strong> junto al campo correspondiente.</li>
+  <li>El texto queda registrado automáticamente como evidencia.</li>
+  <li>Para corregir: usa <strong>"✕ limpiar"</strong> y vuelve a capturar.</li>
+</ol>
+
+<div class="callout green">
+  <span class="icon">✅</span>
+  <p><strong>Regla de evidencia:</strong> todo campo marcado <span class="pill si">Sí</span> debe tener evidencia capturada. Los campos marcados <span class="pill no">No</span> pueden dejarse sin evidencia. Los campos marcados <span class="pill ns">?</span> no requieren evidencia pero sí un <strong>comentario obligatorio</strong> explicando la duda.</p>
+</div>
+
+<h3>Campo de comentarios</h3>
+<p>Algunos campos de infecciones tienen un recuadro <em>"Comentarios (opcional)"</em> y un campo <em>"Germen aislado (opcional)"</em>. El formulario cierra con un <strong>Comentario Final</strong> de alcance general para el documento.</p>
+<p>Usa los comentarios para registrar incertidumbres, abreviaturas no reconocidas o cualquier situación inusual.</p>
+
+<h3>Semáforo de dificultad</h3>
+<p>Cada campo del formulario incluye un indicador de dificultad inferencial que orienta cuánto esfuerzo cognitivo requiere su resolución:</p>
+
+<table class="field-table" style="margin-bottom:8px">
+  <thead><tr><th style="width:110px">Nivel</th><th>Descripción</th><th>Ejemplo</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="dif verde">● Fácil</span></td>
+      <td>La información está escrita de forma explícita o usa un sinónimo muy reconocido que no requiere búsqueda.</td>
+      <td><em>"ventilación mecánica"</em> → VMI; <em>"HTA"</em> → Hipertensión Arterial; <em>"paro cardiorrespiratorio"</em> → Reanimación</td>
+    </tr>
+    <tr>
+      <td><span class="dif amarillo">● Media</span></td>
+      <td>Requiere conocimiento médico para interpretar una sigla o abreviatura menos obvia, o para reconocer la presentación clínica típica del campo (puede haberse necesitado consultar en un manual o internet).</td>
+      <td><em>"FA permanente"</em> → Arritmias; <em>"CAET"</em> → infección vascular; <em>"ERC 3B"</em> → Enfermedad Renal Crónica</td>
+    </tr>
+    <tr>
+      <td><span class="dif rojo">● Difícil</span></td>
+      <td>La determinación del campo requiere razonamiento clínico de mayor nivel: deducir una enfermedad a partir del fármaco que la trata, interpretar valores de laboratorio, o conocer una clasificación clínica específica.</td>
+      <td>Insulinoterapia crónica → Diabetes; creatinina elevada + oliguria → Falla Renal; IC clase IV requiere conocer la escala NYHA</td>
+    </tr>
+  </tbody>
+</table>
+<p style="font-size:12px;color:var(--text-2)">Los campos con semáforo <span class="dif rojo">● Difícil</span> son los que más frecuentemente generan dudas. Para ellos, el botón <span class="pill ns">?</span> está especialmente justificado.</p>
+
+
+<!-- ══════════════════════
+     3. PROTOCOLO
+══════════════════════ -->
+<h2 id="s3"><span class="num">3</span>Protocolo de lectura</h2>
+
+<p>La epicrisis tiene dos zonas con dinámicas distintas que determinan el orden y la velocidad de lectura.</p>
+
+<ul class="steps">
+  <li>
+    <div class="step-body">
+      <strong>Leer la sección de antecedentes / anamnesis próxima — lectura rápida</strong>
+      <p>Es el lugar principal donde se mencionan las comorbilidades preexistentes. Esta sección es relativamente estandarizada entre casos y puede leerse con más rapidez. Completar el bloque <em>Antecedentes</em> del formulario a medida que se lee: marcar <span class="pill si">Sí</span> con evidencia para cada comorbilidad encontrada, y <span class="pill no">No</span> provisional para las ausentes.</p>
+    </div>
+  </li>
+  <li>
+    <div class="step-body">
+      <strong>Leer la evolución en UCI — lectura detallada</strong>
+      <p>Esta parte registra los eventos ocurridos durante la hospitalización: intervenciones, infecciones, fallas orgánicas, medicamentos. <strong>Varía considerablemente de caso en caso</strong> y requiere atención cuidadosa. La historia clínica previa del paciente, fuera de la sección de antecedentes, suele ser menos densa y puede recorrerse más rápido. Completar los bloques <em>Datos Clínicos del Episodio</em>, <em>Diagnósticos y Egreso</em>, <em>Mortalidad</em> y <em>HFAV</em>.</p>
+    </div>
+  </li>
+  <li>
+    <div class="step-body">
+      <strong>Segunda pasada por comorbilidades</strong>
+      <p>Al terminar la lectura completa, revisar si en alguna sección posterior a los antecedentes apareció una comorbilidad que no estaba registrada. Si se encontró con certeza: actualizar a <span class="pill si">Sí</span> y capturar evidencia. Si la mención es indirecta o ambigua: marcar según criterio (ver Sección 4) y dejar nota en Comentarios.</p>
+    </div>
+
+    <!-- MOCKUP: actualizar campo de No → Sí durante la segunda pasada -->
+    <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:16px 0 0;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+      <div style="background:#1e40af;color:#fff;padding:8px 16px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px">
+        <span>✚</span> Plataforma de Anotación &nbsp;·&nbsp; <span style="opacity:.7;font-weight:400">Segunda pasada — actualizando un campo de No → Sí</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 300px;min-height:210px">
+        <div style="padding:16px 20px;border-right:1px solid var(--border);background:#fff">
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:10px">Documento — sección de evolución UCI</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.9;color:#334155">
+            <p style="margin-bottom:6px;color:#94a3b8">ANTECEDENTES: HTA, DM2. [ya anotados durante primera lectura]</p>
+            <p style="margin-bottom:6px"><strong>EVOLUCIÓN:</strong> Paciente evoluciona con deterioro de función renal. <span style="background:#bbf7d0;padding:1px 3px;border-radius:3px;border-bottom:2px solid #16a34a">Creatinina basal 2.1 mg/dL, con antecedente de ERC etapa 3B conocida.</span></p>
+            <p style="color:#94a3b8;font-size:10.5px">↑ Hallazgo durante segunda pasada: ERC mencionada fuera de los antecedentes.</p>
+          </div>
+        </div>
+        <div style="padding:12px 14px;background:#f8fafc">
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:8px">Antecedentes</div>
+          <!-- ERC antes: No (opaco = estado anterior) -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;overflow:hidden;opacity:.55">
+            <div style="background:#f8fafc;padding:4px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+              <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Enfermedad Renal Crónica <span style="font-weight:400;font-size:9px;text-transform:none">(1ª lectura)</span></span>
+              <div style="display:flex;align-items:center;gap:3px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;opacity:.25"></span>
+                <span style="width:9px;height:9px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
+                <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;opacity:.25"></span>
+                <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+              </div>
+            </div>
+            <div style="padding:6px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+              <span style="font-size:11px;color:#334155">Enfermedad renal crónica</span>
+              <div style="display:flex;gap:3px;flex-shrink:0">
+                <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 7px;font-size:10px">Sí</span>
+                <span style="background:#ef4444;color:#fff;border:1px solid #ef4444;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600">No ✓</span>
+                <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 7px;font-size:10px">?</span>
+              </div>
+            </div>
+          </div>
+          <div style="text-align:center;font-size:11px;color:var(--blue);margin:4px 0">↓ actualizar tras segunda pasada</div>
+          <!-- ERC después: Sí + evidencia capturada -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+            <div style="background:#f8fafc;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+              <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Enfermedad Renal Crónica</span>
+              <div style="display:flex;align-items:center;gap:3px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;opacity:.25"></span>
+                <span style="width:9px;height:9px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
+                <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;opacity:.25"></span>
+                <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+              </div>
+            </div>
+            <div style="padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+              <span style="font-size:11px;color:#334155">Enfermedad renal crónica</span>
+              <div style="display:flex;gap:3px;flex-shrink:0">
+                <span style="background:#22c55e;color:#fff;border:1px solid #22c55e;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600">Sí ✓</span>
+                <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">No</span>
+                <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">?</span>
+              </div>
+            </div>
+            <div style="padding:0 10px 7px">
+              <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#166534">con antecedente de ERC etapa 3B conocida.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="background:#f8fafc;border-top:1px solid var(--border);padding:8px 16px">
+        <span style="font-size:11px;color:var(--text-2)">Si durante la segunda pasada encuentras evidencia clara de una comorbilidad: cambia el botón a <strong>Sí</strong> y captura el texto donde aparece.</span>
+      </div>
+    </div>
+
+  </li>
+  <li>
+    <div class="step-body">
+      <strong>Verificación final</strong>
+      <p>Revisar que todo campo marcado <span class="pill si">Sí</span> tenga evidencia capturada. Escribir el Comentario Final si quedan incertidumbres no resueltas.</p>
+    </div>
+  </li>
+</ul>
+
+
+<!-- ══════════════════════
+     4. VALORES
+══════════════════════ -->
+<h2 id="s4"><span class="num">4</span>Valores: Sí, No y ? (No sé)</h2>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th>Marcar SÍ cuando…</th>
+      <th>Marcar NO cuando…</th>
+      <th>Marcar ? cuando…</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <ul>
+          <li>La condición aparece nombrada explícitamente.</li>
+          <li>Se usa un sinónimo claro (ej: <em>"ventilación mecánica"</em> → VMI).</li>
+          <li>La deducción es directa e inequívoca a partir de un fármaco o hallazgo característico (ver Sección 11).</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>La condición no aparece en ninguna sección.</li>
+          <li>Se menciona en negación: <em>"sin antecedentes de…"</em>, <em>"se descarta…"</em></li>
+          <li>Se describe como sospecha descartada durante el ingreso.</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>La información es genuinamente ambigua o contradictoria.</li>
+          <li>La deducción requiere más de un paso inferencial no trivial.</li>
+          <li>Hay una mención indirecta que podría o no implicar la condición y no es posible resolverla con la lectura.</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>El botón ? (No sé)</h3>
+<p>La plataforma tiene un tercer valor representado con el signo <span class="pill ns">?</span>. Usarlo cuando la información es genuinamente ambigua y no es posible resolverla con la lectura del documento. Al marcar <span class="pill ns">?</span>, es <strong>obligatorio</strong> escribir una nota en el campo <strong>Comentarios</strong> del campo o en el <strong>Comentario Final</strong>, explicando qué hace incierta la decisión.</p>
+
+<p>Contextos típicos para usar <span class="pill ns">?</span>:</p>
+<ul style="font-size:13px;padding-left:20px;line-height:2;margin-bottom:12px">
+  <li>La deducción a partir de un fármaco o síntoma requiere más de un paso inferencial no trivial.</li>
+  <li>Hay una mención indirecta que podría o no corresponder a la condición (ej: fármaco compatible con múltiples diagnósticos).</li>
+  <li>La información del texto es contradictoria o incompleta.</li>
+  <li>Se necesita contexto clínico adicional que no está en el documento.</li>
+</ul>
+
+<div class="example">
+  <div class="label">Ejemplo — campo marcado con ?</div>
+  <span class="quote">Fármacos habituales: furosemida 40 mg/día. No hay mención explícita de IC ni de otro diagnóstico cardiovascular que justifique el diurético.</span>
+  <div class="result">→ Campo: Insuficiencia Cardíaca &nbsp;·&nbsp; Valor: <span class="pill ns">?</span> &nbsp;·&nbsp; Comentario: <em>"Solo furosemida, sin diagnóstico explícito de IC. Duda genuina."</em></div>
+</div>
+
+<div class="callout amber">
+  <span class="icon">⚠️</span>
+  <p>Usar <span class="pill ns">?</span> con moderación: está pensado para incertidumbre genuina, no como sustituto de una lectura cuidadosa. Ante evidencia clara de ausencia usar <span class="pill no">No</span>; ante evidencia clara de presencia usar <span class="pill si">Sí</span>. El adjudicador resolverá los campos marcados con <span class="pill ns">?</span> durante la revisión del piloto.</p>
+</div>
+
+<!-- MOCKUP: los tres estados posibles (Sí / No / ?) -->
+<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:20px 0;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+  <div style="background:#1e40af;color:#fff;padding:8px 16px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px">
+    <span>✚</span> Plataforma de Anotación &nbsp;·&nbsp; <span style="opacity:.7;font-weight:400">Los tres estados posibles de un campo</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 310px;min-height:240px">
+    <div style="padding:16px 20px;border-right:1px solid var(--border);background:#fff">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:10px">Documento</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.9;color:#334155">
+        <p style="margin-bottom:6px"><strong>ANTECEDENTES:</strong></p>
+        <p style="margin-bottom:6px"><span style="background:#bbf7d0;padding:1px 3px;border-radius:3px;border-bottom:2px solid #16a34a">Hipertensión arterial en tratamiento con enalapril.</span></p>
+        <p style="margin-bottom:6px">No presenta diabetes. Fármacos habituales: enalapril, furosemida 40 mg/día.</p>
+        <p style="margin-bottom:6px;color:#94a3b8">MOTIVO DE INGRESO: Exacerbación EPOC...</p>
+      </div>
+    </div>
+    <div style="padding:14px 16px;background:#f8fafc">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:10px">Antecedentes</div>
+
+      <!-- HTA: Sí activo (verde) -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:8px;overflow:hidden">
+        <div style="background:#f8fafc;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Hipertensión Arterial</span>
+          <div style="display:flex;align-items:center;gap:3px">
+            <span style="width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;display:inline-block;opacity:.25"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;opacity:.25"></span>
+            <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+          </div>
+        </div>
+        <div style="padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span style="font-size:11px;color:#334155">Hipertensión arterial en tratamiento con enalapril</span>
+          <div style="display:flex;gap:3px;flex-shrink:0">
+            <span style="background:#22c55e;color:#fff;border:1px solid #22c55e;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600">Sí ✓</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">No</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">?</span>
+          </div>
+        </div>
+        <div style="padding:0 10px 7px">
+          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#166534">Hipertensión arterial en tratamiento con enalapril.</div>
+        </div>
+      </div>
+
+      <!-- Diabetes: No activo (rojo) -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:8px;overflow:hidden">
+        <div style="background:#f8fafc;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Diabetes</span>
+          <div style="display:flex;align-items:center;gap:3px">
+            <span style="width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;display:inline-block;opacity:.25"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;opacity:.25"></span>
+            <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+          </div>
+        </div>
+        <div style="padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span style="font-size:11px;color:#334155">Diabetes mellitus</span>
+          <div style="display:flex;gap:3px;flex-shrink:0">
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">Sí</span>
+            <span style="background:#ef4444;color:#fff;border:1px solid #ef4444;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600">No ✓</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">?</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- IC: ? activo (ámbar) + comentario obligatorio -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+        <div style="background:#f8fafc;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Insuficiencia Cardíaca</span>
+          <div style="display:flex;align-items:center;gap:3px">
+            <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;opacity:.25"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;display:inline-block;opacity:.25"></span>
+            <span style="width:9px;height:9px;border-radius:50%;background:#ef4444;display:inline-block"></span>
+            <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+          </div>
+        </div>
+        <div style="padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span style="font-size:11px;color:#334155">Insuficiencia cardíaca</span>
+          <div style="display:flex;gap:3px;flex-shrink:0">
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">Sí</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">No</span>
+            <span style="background:#f59e0b;color:#fff;border:1px solid #f59e0b;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600">? ✓</span>
+          </div>
+        </div>
+        <div style="padding:0 10px 7px">
+          <div style="font-size:10px;font-weight:600;color:#b45309;margin-bottom:3px">Comentarios <span style="color:#dc2626">* obligatorio al marcar ?</span></div>
+          <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#78350f">Solo furosemida habitual, sin diagnóstico explícito de IC. Duda genuina → ?</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div style="background:#f8fafc;border-top:1px solid var(--border);padding:8px 16px;display:flex;gap:16px;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--text-2)"><span style="background:#16a34a;color:#fff;border-radius:3px;padding:1px 6px;font-size:10px">Sí ✓</span> Verde — condición confirmada con evidencia</span>
+    <span style="font-size:11px;color:var(--text-2)"><span style="background:#dc2626;color:#fff;border-radius:3px;padding:1px 6px;font-size:10px">No ✓</span> Rojo — condición ausente o negada</span>
+    <span style="font-size:11px;color:var(--text-2)"><span style="background:#f59e0b;color:#fff;border-radius:3px;padding:1px 6px;font-size:10px">? ✓</span> Ámbar — genuinamente incierto + comentario obligatorio</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════
+     5. FECHAS CLÍNICAS
+══════════════════════ -->
+<h2 id="s5"><span class="num">5</span>Sección: Fechas Clínicas</h2>
+
+<p>La plataforma auto-extrae las fechas de ingreso y egreso del hospital y de la UCI. <strong>Verificar que correspondan al documento</strong> y corregir manualmente si hay error.</p>
+
+<table class="field-table">
+  <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td>Ingreso Hospital</td><td>Fecha de admisión al hospital.</td></tr>
+    <tr><td>Egreso Hospital</td><td>Fecha de alta o fallecimiento.</td></tr>
+    <tr><td>Ingreso UCI</td><td>Fecha de ingreso a la unidad de cuidados intensivos.</td></tr>
+    <tr><td>Egreso UCI</td><td>Fecha de traslado fuera de UCI o fallecimiento en UCI.</td></tr>
+  </tbody>
+</table>
+
+
+<!-- ══════════════════════
+     6. ANTECEDENTES
+══════════════════════ -->
+<h2 id="s6"><span class="num">6</span>Sección: Antecedentes (Comorbilidades)</h2>
+
+<div class="callout blue">
+  <span class="icon">📌</span>
+  <p><strong>Mayor prioridad de atención.</strong> Completar durante la primera lectura de los antecedentes y <strong>revisar nuevamente</strong> al terminar el documento completo (Paso 3 del protocolo).</p>
+</div>
+
+<p>Son condiciones preexistentes al ingreso a UCI. Pueden aparecer nombradas en los antecedentes, pero también en el diagnóstico de ingreso, en el cuerpo del informe, o inferirse de los fármacos habituales del paciente.</p>
+
+<table class="field-table">
+  <thead>
+    <tr>
+      <th>Campo</th>
+      <th>CIE-10</th>
+      <th>Criterios de anotación</th>
+      <th>Dif.</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Hipertensión Arterial</strong></td>
+      <td><span class="cie">I10</span></td>
+      <td>HTA crónica preexistente. Incluye mención explícita de HTA o uso crónico de antihipertensivos en antecedentes. <strong>Excluir</strong> hipertensión reactiva aguda durante la hospitalización.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+    <tr>
+      <td><strong>Hipertensión Pulmonar</strong></td>
+      <td><span class="cie">I27</span></td>
+      <td>Campo <em>separado</em> de HTA sistémica. Solo si está diagnosticada previamente al ingreso.</td>
+      <td><span class="dif rojo">Difícil</span></td>
+    </tr>
+    <tr>
+      <td><strong>Enfermedad Pulmonar</strong></td>
+      <td><span class="cie">J98</span></td>
+      <td>Cualquier enfermedad pulmonar crónica: EPOC, asma, fibrosis pulmonar, etc. Puede coexistir con el campo EPOC; anotar ambos si corresponde.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Diabetes Tipo 2 Complicada</strong></td>
+      <td><span class="cie">E11.6</span></td>
+      <td>DM2 con evidencia documentada de complicación: nefropatía, retinopatía, neuropatía, pie de Charcot, etc. Si hay complicaciones, marcar <em>solo este campo</em>, no el de no complicada.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Diabetes Tipo 2 No Complicada</strong></td>
+      <td><span class="cie">E11.9</span></td>
+      <td>DM2 sin complicaciones mencionadas. <strong>Mutuamente excluyente</strong> con el campo anterior: marcar uno u otro, nunca ambos.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+    <tr>
+      <td><strong>Enfermedad Renal Crónica</strong></td>
+      <td><span class="cie">N18</span></td>
+      <td>ERC preexistente. <strong>Distinguir de injuria renal aguda (IRA) intrahospitalaria</strong>: la IRA se anota en Falla Orgánica Renal, no aquí.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Insuficiencia Cardíaca Clase IV</strong></td>
+      <td><span class="cie">I50</span></td>
+      <td>Solo clase IV (NYHA): síntomas en reposo, incapacidad funcional total. <strong>No marcar</strong> para clases I–III.</td>
+      <td><span class="dif rojo">Difícil</span></td>
+    </tr>
+    <tr>
+      <td><strong>Arritmias</strong></td>
+      <td><span class="cie">I49</span></td>
+      <td>Arritmias crónicas preexistentes: FA permanente, bloqueos AV crónicos, etc. <strong>Excluir</strong> arritmias agudas de novo ocurridas en UCI.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Neoplasia Hematológica</strong></td>
+      <td><span class="cie">C81–C96</span></td>
+      <td>Leucemias, linfomas, mieloma múltiple, síndromes mielodisplásicos.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Cáncer Metastásico</strong></td>
+      <td><span class="cie">C77–C79</span></td>
+      <td>Cualquier tumor sólido con metástasis documentadas.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Demencia</strong></td>
+      <td><span class="cie">F00–F03</span></td>
+      <td>Alzheimer, demencia vascular, otras demencias diagnosticadas.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+    <tr>
+      <td><strong>Abuso de Sustancias</strong></td>
+      <td><span class="cie">F10–F19</span></td>
+      <td>Consumo problemático crónico de alcohol o drogas. Marcar si hay mención explícita.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+    <tr>
+      <td><strong>EPOC</strong></td>
+      <td><span class="cie">J44</span></td>
+      <td>Enfermedad pulmonar obstructiva crónica. Si el documento menciona EPOC, marcar <em>también</em> el campo Enfermedad Pulmonar.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Accidente Cerebrovascular</strong></td>
+      <td><span class="cie">I63–I64</span></td>
+      <td>ACV previo al ingreso actual. No incluir ACV ocurrido durante la hospitalización (que se anotaría en Falla Orgánica Nerviosa).</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Postración</strong></td>
+      <td><span class="cie">R53</span></td>
+      <td>Dependencia funcional total o alta dependencia previa al ingreso. No requiere evidencia textual.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Ejemplos de anotación en antecedentes</h3>
+
+<div class="example">
+  <div class="label">Fragmento de epicrisis</div>
+  <span class="quote">Antecedentes: DM2 IR, HTA, pie de Charcot bilateral.</span>
+  <div class="result">→ <span class="pill si">Sí</span> Hipertensión Arterial · <span class="pill si">Sí</span> Diabetes Tipo 2 Complicada (pie de Charcot indica complicación)</div>
+</div>
+
+<div class="example">
+  <div class="label">Fragmento de epicrisis</div>
+  <span class="quote">Hábitos: TBQ (+) suspendido hace 14 años, OH+ 7 L cerveza al día.</span>
+  <div class="result">→ <span class="pill si">Sí</span> Abuso de Sustancias (consumo activo de alcohol)</div>
+</div>
+
+<h3>Cirugías previas y fármacos habituales</h3>
+<p><strong>Cirugías previas:</strong> marcar Sí/No e indicar la cantidad. Se refiere a procedimientos quirúrgicos anteriores al ingreso actual.</p>
+<p><strong>Fármacos habituales:</strong> campo de texto libre. Listar los medicamentos que el paciente tomaba antes del ingreso, tal como aparecen en el documento.</p>
+
+
+<!-- ══════════════════════
+     7. DATOS CLÍNICOS
+══════════════════════ -->
+<h2 id="s7"><span class="num">7</span>Sección: Datos Clínicos del Episodio</h2>
+
+<p>Registra procedimientos y eventos ocurridos <strong>durante</strong> la hospitalización en UCI.</p>
+
+<h3 class="sub">Soporte Ventilatorio</h3>
+<table class="field-table">
+  <thead><tr><th>Campo</th><th>Criterio</th><th>Dif.</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>VMI</strong><br><small>(Ventilación Mecánica Invasiva)</small></td>
+      <td>Intubación orotraqueal o traqueostomía con conexión a ventilador mecánico. Requiere evidencia capturada.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+    <tr>
+      <td><strong>Motivo de la VMI</strong></td>
+      <td>Campo de texto libre. Describir brevemente la indicación clínica (ej: insuficiencia respiratoria aguda, paro cardiorrespiratorio).</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+    <tr>
+      <td><strong>Urgencia inmediata</strong></td>
+      <td>Sí si la intubación fue de emergencia vital inmediata. No si fue electiva o programada.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Posición prono</strong></td>
+      <td>Sí si se utilizó posición prono como parte del manejo ventilatorio.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- MOCKUP: VMI = Sí con subcampos desplegados -->
+<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:20px 0;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+  <div style="background:#1e40af;color:#fff;padding:8px 16px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px">
+    <span>✚</span> Plataforma de Anotación &nbsp;·&nbsp; <span style="opacity:.7;font-weight:400">VMI activa — subcampos desplegados</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 300px;min-height:250px">
+    <div style="padding:16px 20px;border-right:1px solid var(--border);background:#fff">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:10px">Documento</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.9;color:#334155">
+        <p style="margin-bottom:6px"><strong>EVOLUCIÓN UCI:</strong></p>
+        <p style="margin-bottom:6px"><span style="background:#bbf7d0;padding:1px 3px;border-radius:3px;border-bottom:2px solid #16a34a">Paciente ingresa intubado por PCR extrahospitalario.</span> Se conecta a ventilación mecánica en modo VCV.</p>
+        <p style="margin-bottom:6px">Durante evolución se indica decúbito prono por hipoxemia refractaria (PaO₂/FiO₂ &lt; 100).</p>
+      </div>
+    </div>
+    <div style="padding:12px 14px;background:#f8fafc">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:8px">Datos Clínicos del Episodio</div>
+      <!-- VMI: Sí + evidencia + subcampos desplegados -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+        <div style="background:#f8fafc;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">VMI</span>
+          <div style="display:flex;align-items:center;gap:3px">
+            <span style="width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;display:inline-block;opacity:.25"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;opacity:.25"></span>
+            <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+          </div>
+        </div>
+        <div style="padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span style="font-size:11px;color:#334155">Ventilación mecánica invasiva</span>
+          <div style="display:flex;gap:3px;flex-shrink:0">
+            <span style="background:#22c55e;color:#fff;border:1px solid #22c55e;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600">Sí ✓</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">No</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">?</span>
+          </div>
+        </div>
+        <div style="padding:0 10px 2px">
+          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#166534">Paciente ingresa intubado por PCR extrahospitalario.</div>
+        </div>
+        <!-- Subcampos desplegados al marcar VMI = Sí -->
+        <div style="border-top:1px dashed #e2e8f0;margin:8px 10px 0;padding-top:6px;padding-bottom:8px;display:flex;flex-direction:column;gap:6px">
+          <!-- Motivo VMI: texto libre -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+            <div style="background:#f8fafc;padding:4px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+              <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Motivo de la VMI</span>
+              <div style="display:flex;align-items:center;gap:3px">
+                <span style="width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+                <span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;display:inline-block;opacity:.25"></span>
+                <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;opacity:.25"></span>
+                <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+              </div>
+            </div>
+            <div style="padding:5px 10px">
+              <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#166534">PCR extrahospitalario</div>
+            </div>
+          </div>
+          <!-- Urgencia inmediata -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+            <div style="background:#f8fafc;padding:4px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+              <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Urgencia Inmediata</span>
+              <div style="display:flex;align-items:center;gap:3px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;opacity:.25"></span>
+                <span style="width:9px;height:9px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
+                <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;opacity:.25"></span>
+                <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+              </div>
+            </div>
+            <div style="padding:5px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+              <span style="font-size:11px;color:#334155">Intubación de emergencia vital</span>
+              <div style="display:flex;gap:3px;flex-shrink:0">
+                <span style="background:#22c55e;color:#fff;border:1px solid #22c55e;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600">Sí ✓</span>
+                <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 7px;font-size:10px">No</span>
+                <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 7px;font-size:10px">?</span>
+              </div>
+            </div>
+          </div>
+          <!-- Posición prono -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+            <div style="background:#f8fafc;padding:4px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+              <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Posición Prono</span>
+              <div style="display:flex;align-items:center;gap:3px">
+                <span style="width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+                <span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;display:inline-block;opacity:.25"></span>
+                <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;opacity:.25"></span>
+                <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+              </div>
+            </div>
+            <div style="padding:5px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+              <span style="font-size:11px;color:#334155">Decúbito prono durante UCI</span>
+              <div style="display:flex;gap:3px;flex-shrink:0">
+                <span style="background:#22c55e;color:#fff;border:1px solid #22c55e;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600">Sí ✓</span>
+                <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 7px;font-size:10px">No</span>
+                <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 7px;font-size:10px">?</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="background:#f8fafc;border-top:1px solid var(--border);padding:8px 16px">
+    <span style="font-size:11px;color:var(--text-2)">Al marcar VMI = <strong>Sí</strong> aparecen los subcampos: <em>Motivo de la VMI</em> (texto libre), <em>Urgencia inmediata</em> y <em>Posición prono</em> (Sí/No).</span>
+  </div>
+</div>
+
+<h3 class="sub">Reanimación</h3>
+<table class="field-table">
+  <thead><tr><th>Campo</th><th>Criterio</th><th>Dif.</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Maniobras de reanimación</strong></td><td>Sí si hubo maniobras de RCP documentadas. Describir brevemente en el campo de texto.</td><td><span class="dif verde">Fácil</span></td></tr>
+    <tr><td><strong>Cantidad de paros</strong></td><td>Número de episodios de paro cardiorrespiratorio durante la hospitalización.</td><td><span class="dif verde">Fácil</span></td></tr>
+    <tr><td><strong>Ciclos para sacar de paro</strong></td><td>Número de ciclos de RCP realizados.</td><td><span class="dif verde">Fácil</span></td></tr>
+  </tbody>
+</table>
+
+<h3 class="sub">Otras intervenciones</h3>
+<table class="field-table">
+  <thead><tr><th>Campo</th><th>Criterio</th><th>Dif.</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Transfusión</strong></td>
+      <td>Sí si se administró cualquier hemoderivado: glóbulos rojos, plaquetas o plasma fresco congelado.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+    <tr>
+      <td><strong>Drogas Vasoactivas</strong></td>
+      <td>Sí si se usaron vasopresores o inotrópicos durante la UCI: noradrenalina, adrenalina, dopamina, vasopresina, dobutamina u otros.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Cirugías en Hospitalización</strong></td>
+      <td>Indicar cantidad y describir cuáles. Se refiere a procedimientos quirúrgicos realizados <em>durante</em> el ingreso.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+    <tr>
+      <td><strong>TRR</strong><br><small>(Terapia de Reemplazo Renal)</small></td>
+      <td>Sí si se realizó hemodiálisis, hemofiltración continua u otra modalidad de soporte renal durante la hospitalización.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ══════════════════════
+     8. INFECCIONES
+══════════════════════ -->
+<h2 id="s8"><span class="num">8</span>Sección: Infecciones por Foco</h2>
+
+<p>Marcar <span class="pill si">Sí</span> si hay <strong>diagnóstico explícito</strong>, cultivo positivo, o <strong>tratamiento antibiótico dirigido</strong> a ese foco. La mención de cultivo positivo es suficiente evidencia aunque no haya diagnóstico nombrado.</p>
+
+<div class="callout green">
+  <span class="icon">✅</span>
+  <p><strong>Aproximación recomendada: Sí / No.</strong> En esta sección se recomienda tomar una decisión binaria siempre que sea posible. El botón <span class="pill ns">?</span> debe reservarse únicamente para casos de ambigüedad genuina e irresoluble (p. ej., texto ininteligible o información contradictoria). Si el foco no está mencionado en el documento, marcar <span class="pill no">No</span>.</p>
+</div>
+
+<div class="callout blue">
+  <span class="icon">ℹ️</span>
+  <p><strong>Todos los focos</strong> comparten los mismos tres campos adicionales: <em>Evidencia</em> (capturar el fragmento que sustenta el diagnóstico), <em>Germen aislado</em> (microorganismo identificado en cultivo, si está disponible) y <em>Comentarios</em> (opcional). Completar los que tengan información en el documento.</p>
+</div>
+
+<table class="field-table">
+  <thead>
+    <tr>
+      <th>Foco</th>
+      <th>Criterios específicos</th>
+      <th>Dif.</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Urinario</strong></td>
+      <td>ITU, urocultivo positivo, tratamiento antibiótico dirigido a foco urinario.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+    <tr>
+      <td><strong>Respiratorio</strong></td>
+      <td>Neumonía, bronconeumonía, traqueobronquitis, aspiración con tratamiento antibiótico.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+    <tr>
+      <td><strong>Vascular</strong></td>
+      <td>Infecciones asociadas a catéter (<strong>CAET</strong>): catéter venoso central, arterial u otros dispositivos intravasculares.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Sangre</strong></td>
+      <td><strong>Sepsis</strong> y/o <strong>hemocultivos positivos (HCT+)</strong>. Marcar Sí ante cualquiera de los dos.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Cerebral</strong></td>
+      <td>Meningitis, encefalitis, absceso cerebral.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+    <tr>
+      <td><strong>Cardíaco</strong></td>
+      <td>Endocarditis, miocarditis infecciosa.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Quirúrgico</strong></td>
+      <td>Infección de sitio quirúrgico, dehiscencia infectada, absceso postoperatorio.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+    <tr>
+      <td><strong>Gastrointestinal</strong></td>
+      <td>Peritonitis, colitis, absceso intraabdominal, diarrea por <em>C. difficile</em>.</td>
+      <td><span class="dif amarillo">Media</span></td>
+    </tr>
+    <tr>
+      <td><strong>Piel y tejidos blandos</strong></td>
+      <td>Celulitis, fascitis necrotizante, úlceras infectadas, pie diabético infectado.</td>
+      <td><span class="dif verde">Fácil</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- MOCKUP: foco Sangre con evidencia + germen aislado + comentario -->
+<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:20px 0;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+  <div style="background:#1e40af;color:#fff;padding:8px 16px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px">
+    <span>✚</span> Plataforma de Anotación &nbsp;·&nbsp; <span style="opacity:.7;font-weight:400">Infecciones — ejemplo de foco con todos sus campos</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 300px;min-height:250px">
+    <div style="padding:16px 20px;border-right:1px solid var(--border);background:#fff">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:10px">Documento</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.9;color:#334155">
+        <p style="margin-bottom:6px"><strong>MICROBIOLOGÍA:</strong></p>
+        <p style="margin-bottom:6px"><span style="background:#bbf7d0;padding:1px 3px;border-radius:3px;border-bottom:2px solid #16a34a">Hemocultivos positivos para Staphylococcus aureus MRSA (×2). Cuadro interpretado como sepsis de foco no precisado.</span></p>
+        <p style="margin-bottom:6px">Tratamiento con vancomicina IV 14 días con respuesta clínica favorable.</p>
+      </div>
+    </div>
+    <div style="padding:12px 14px;background:#f8fafc">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:8px">Infecciones</div>
+      <!-- Foco Sangre: Sí + evidencia + germen + comentario -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+        <div style="background:#f8fafc;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Sangre (Sepsis / HCT+)</span>
+          <div style="display:flex;align-items:center;gap:3px">
+            <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;opacity:.25"></span>
+            <span style="width:9px;height:9px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;opacity:.25"></span>
+            <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+          </div>
+        </div>
+        <div style="padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span style="font-size:11px;color:#334155">Sepsis o hemocultivos positivos</span>
+          <div style="display:flex;gap:3px;flex-shrink:0">
+            <span style="background:#22c55e;color:#fff;border:1px solid #22c55e;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600">Sí ✓</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">No</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">?</span>
+          </div>
+        </div>
+        <div style="padding:0 10px 8px;display:flex;flex-direction:column;gap:6px">
+          <div>
+            <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:3px">Evidencia</div>
+            <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#166534">Hemocultivos positivos para Staphylococcus aureus MRSA (×2). Cuadro interpretado como sepsis...</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:3px">Germen aislado</div>
+            <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#166534">Staphylococcus aureus MRSA</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:3px">Comentarios</div>
+            <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#78350f">Foco no precisado según epicrisis; bacteriemia por S. aureus MRSA confirmada.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="background:#f8fafc;border-top:1px solid var(--border);padding:8px 16px;display:flex;gap:20px;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--text-2)"><strong>Todos los focos</strong> tienen los mismos campos adicionales: <em>Evidencia</em>, <em>Germen aislado</em> y <em>Comentarios</em>. Completar los que tengan información disponible en el documento.</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════
+     9. FALLA ORGÁNICA
+══════════════════════ -->
+<h2 id="s9"><span class="num">9</span>Sección: Falla Orgánica</h2>
+
+<p>Registrar si hubo falla <strong>durante la hospitalización en UCI</strong>. No incluir condiciones preexistentes, salvo que se documente una descompensación aguda durante el ingreso.</p>
+
+<div class="callout green">
+  <span class="icon">✅</span>
+  <p><strong>Aproximación recomendada: Sí / No.</strong> Al igual que en infecciones, se recomienda tomar una decisión binaria. El botón <span class="pill ns">?</span> debe reservarse para casos genuinamente irresolubles. Varios campos de esta sección requieren interpretar valores de laboratorio o criterios clínicos (<span class="dif rojo" style="display:inline-flex">Difícil</span>): ante duda, priorizar <span class="pill no">No</span> con nota en Comentario Final.</p>
+</div>
+
+<table class="field-table">
+  <thead><tr><th>Órgano</th><th>Criterios orientadores</th><th>Dif.</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Renal</strong></td><td>Injuria renal aguda (IRA), elevación aguda de creatinina, oliguria, requerimiento de TRR de novo. <strong>Distinto de ERC preexistente</strong> (que va en Antecedentes).</td><td><span class="dif rojo">Difícil</span></td></tr>
+    <tr><td><strong>Nervioso</strong></td><td>Encefalopatía, coma, ACV isquémico o hemorrágico ocurrido durante el ingreso.</td><td><span class="dif amarillo">Media</span></td></tr>
+    <tr><td><strong>Vascular</strong></td><td>Shock de cualquier origen (séptico, cardiogénico, distributivo), isquemia mesentérica.</td><td><span class="dif rojo">Difícil</span></td></tr>
+    <tr><td><strong>Cardíaco</strong></td><td>Insuficiencia cardíaca aguda, síndrome coronario agudo, arritmias con compromiso hemodinámico.</td><td><span class="dif amarillo">Media</span></td></tr>
+    <tr><td><strong>Pulmonar</strong></td><td>Insuficiencia respiratoria aguda, SDRA, neumonía grave con falla respiratoria.</td><td><span class="dif amarillo">Media</span></td></tr>
+    <tr><td><strong>Hepático</strong></td><td>Hepatitis aguda grave, insuficiencia hepática aguda, elevación significativa de transaminasas en contexto clínico.</td><td><span class="dif rojo">Difícil</span></td></tr>
+    <tr><td><strong>Otra</strong></td><td>Usar para fallas no cubiertas por los campos anteriores. Describir en Comentario Final.</td><td><span class="dif amarillo">Media</span></td></tr>
+  </tbody>
+</table>
+
+
+<!-- ══════════════════════
+     10. DIAGNÓSTICOS
+══════════════════════ -->
+<h2 id="s10"><span class="num">10</span>Sección: Diagnósticos, Mortalidad y HFAV</h2>
+
+<h3>Diagnósticos y Egreso</h3>
+<table class="field-table">
+  <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Diagnóstico de ingreso</strong></td><td>Auto-extraído. Verificar y corregir si no coincide con el documento.</td></tr>
+    <tr><td><strong>Diagnóstico de egreso</strong></td><td>Auto-extraído. Verificar y corregir si no coincide.</td></tr>
+    <tr><td><strong>Fármacos suministrados en hospitalización</strong></td><td>Texto libre. Listar medicamentos administrados durante la UCI (distinto de fármacos habituales previos al ingreso).</td></tr>
+  </tbody>
+</table>
+
+<h3>Mortalidad</h3>
+<p>Marcar <span class="pill si">Sí</span> si el paciente falleció durante la hospitalización documentada. Si el desenlace no está explícito en el texto, marcar <span class="pill no">No</span> y dejar nota en el Comentario Final.</p>
+
+<h3>HFAV (Hemofiltración de Alto Volumen)</h3>
+<p>Campo independiente de TRR. Marcar <span class="pill si">Sí</span> si se realizó hemofiltración de alto volumen como terapia específica durante el ingreso. Si se realizó HFAV, marcar <span class="pill si">Sí</span> en <em>ambos</em> campos (TRR y HFAV).</p>
+
+
+<!-- ══════════════════════
+     11. CASOS DIFÍCILES
+══════════════════════ -->
+<h2 id="s11"><span class="num">11</span>Casos difíciles y criterios de desempate</h2>
+
+<h3>Deducciones válidas a partir de fármacos</h3>
+<p>Cuando un fármaco habitual es suficientemente específico de una condición, la deducción es aceptable y se marca <span class="pill si">Sí</span>:</p>
+
+<table class="field-table">
+  <thead><tr><th>Fármaco mencionado en antecedentes</th><th>Deducción aceptable</th></tr></thead>
+  <tbody>
+    <tr><td>Antihipertensivos (enalapril, losartán, amlodipino…)</td><td>→ <span class="pill si">Sí</span> Hipertensión Arterial</td></tr>
+    <tr><td>Insulina o metformina como tratamiento habitual</td><td>→ <span class="pill si">Sí</span> Diabetes (campo según presencia de complicaciones)</td></tr>
+    <tr><td>Broncodilatadores inhalados crónicos (salbutamol, salmeterol, tiotropio)</td><td>→ <span class="pill si">Sí</span> Enfermedad Pulmonar / EPOC</td></tr>
+    <tr><td>Anticoagulantes crónicos (TACO, apixabán, rivaroxabán)</td><td>→ Evaluar contexto. Puede indicar FA (Arritmias) o ACV previo. Si no hay otra mención, <strong>no deducir</strong> solo por el anticoagulante.</td></tr>
+    <tr><td>Diuréticos (furosemida) como único indicador</td><td>→ Insuficiente para deducir IC. Marcar <span class="pill no">No</span> con comentario si no hay otra evidencia.</td></tr>
+  </tbody>
+</table>
+
+<!-- MOCKUP: deducción ambigua — ? + comentario obligatorio -->
+<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:20px 0;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+  <div style="background:#1e40af;color:#fff;padding:8px 16px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px">
+    <span>✚</span> Plataforma de Anotación &nbsp;·&nbsp; <span style="opacity:.7;font-weight:400">Deducción insuficiente — ? con comentario obligatorio</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 310px;min-height:200px">
+    <div style="padding:16px 20px;border-right:1px solid var(--border);background:#fff">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:10px">Documento</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.9;color:#334155">
+        <p style="margin-bottom:6px"><strong>ANTECEDENTES:</strong></p>
+        <p style="margin-bottom:6px">HTA, DM2. Fármacos habituales: metformina, enalapril, <span style="background:#fef08a;padding:1px 3px;border-radius:3px;border-bottom:2px solid #ca8a04">furosemida 40 mg/día.</span></p>
+        <p style="margin-bottom:6px;color:#94a3b8">Sin mención explícita de insuficiencia cardíaca en ninguna sección.</p>
+      </div>
+    </div>
+    <div style="padding:12px 14px;background:#f8fafc">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:8px">Antecedentes</div>
+      <!-- IC: ? activo (ámbar) + comentario obligatorio -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+        <div style="background:#f8fafc;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b">Insuficiencia Cardíaca</span>
+          <div style="display:flex;align-items:center;gap:3px">
+            <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;opacity:.25"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;display:inline-block;opacity:.25"></span>
+            <span style="width:9px;height:9px;border-radius:50%;background:#ef4444;display:inline-block"></span>
+            <span style="font-size:10px;color:#94a3b8;margin-left:4px">¿Qué costó?</span>
+          </div>
+        </div>
+        <div style="padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span style="font-size:11px;color:#334155">Insuficiencia cardíaca</span>
+          <div style="display:flex;gap:3px;flex-shrink:0">
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">Sí</span>
+            <span style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:11px">No</span>
+            <span style="background:#f59e0b;color:#fff;border:1px solid #f59e0b;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600">? ✓</span>
+          </div>
+        </div>
+        <div style="padding:0 10px 7px">
+          <div style="font-size:10px;font-weight:600;color:#b45309;margin-bottom:3px">Comentarios <span style="color:#dc2626">* obligatorio al marcar ?</span></div>
+          <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#78350f">Solo furosemida habitual, sin diagnóstico explícito de IC. Deducción insuficiente → ?</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="background:#f8fafc;border-top:1px solid var(--border);padding:8px 16px">
+    <span style="font-size:11px;color:var(--text-2)">Un diurético aislado no basta para deducir IC. La duda es genuina → marcar <strong>?</strong> con comentario para que el adjudicador pueda resolver.</span>
+  </div>
+</div>
+
+<h3>Negaciones y condicionantes</h3>
+<table class="field-table">
+  <thead><tr><th>Fragmento en el texto</th><th>Anotación</th></tr></thead>
+  <tbody>
+    <tr><td><em>"No presenta diabetes"</em></td><td><span class="pill no">No</span></td></tr>
+    <tr><td><em>"Sin antecedentes de HTA"</em></td><td><span class="pill no">No</span></td></tr>
+    <tr><td><em>"Se descarta infección urinaria"</em></td><td><span class="pill no">No</span></td></tr>
+    <tr><td><em>"Sospecha de endocarditis no confirmada"</em></td><td><span class="pill no">No</span> + comentario explicativo</td></tr>
+    <tr><td>Condición mencionada solo en diagnóstico de ingreso/egreso</td><td><span class="pill si">Sí</span> — capturar evidencia de esa sección</td></tr>
+  </tbody>
+</table>
+
+<h3>Abreviaturas institucionales</h3>
+<div class="callout amber">
+  <span class="icon">⚠️</span>
+  <p>El texto puede contener abreviaturas propias del Hospital Sótero del Río o de la red FONASA. En caso de duda sobre el significado, <strong>consultar al adjudicador antes de anotar</strong>. No asumir equivalencias con terminología estándar.</p>
+</div>
+
+
+<!-- ══════════════════════
+     12. FLUJO RESUMIDO
+══════════════════════ -->
+<h2 id="s12"><span class="num">12</span>Flujo de trabajo resumido</h2>
+
+<div class="flow">
+  <div class="flow-row">
+    <div class="flow-box blue">1. Leer antecedentes</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box">Completar bloque Antecedentes · Sí + evidencia · No provisional</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-box blue">2. Leer evolución UCI</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box">Completar Intervenciones · Infecciones · Fallas · Diagnósticos · Mortalidad · HFAV</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-box blue">3. Segunda pasada comorbilidades</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box">¿Apareció comorbilidad nueva?</div>
+  </div>
+  <div class="flow-indent">
+    <div class="flow-row" style="margin-bottom:4px">
+      <span class="flow-arrow">├─</span>
+      <div class="flow-box green">Sí, con certeza</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">Actualizar a Sí + capturar evidencia</div>
+    </div>
+    <div class="flow-row" style="margin-bottom:4px">
+      <span class="flow-arrow">├─</span>
+      <div class="flow-box" style="border-color:#fcd34d;background:#fef9c3;color:#92400e">Ambiguo</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">? + comentario obligatorio</div>
+    </div>
+    <div class="flow-row">
+      <span class="flow-arrow">└─</span>
+      <div class="flow-box red">No encontrado</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">Mantener No</div>
+    </div>
+  </div>
+  <div class="flow-row" style="margin-top:8px">
+    <div class="flow-box blue">4. Verificación final</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box">Todo Sí tiene evidencia · Dudas en Comentario Final</div>
+  </div>
+</div>
+
+<hr />
+<p style="font-size:12px;color:var(--text-2);text-align:center">
+  Versión 1.0 — Las revisiones derivadas del piloto de anotación (50 documentos) darán lugar a la versión 2.0,
+  que será la guía definitiva para la campaña principal de anotación.
+</p>
+
+</body>
+</html>
