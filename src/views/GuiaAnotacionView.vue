@@ -3,16 +3,19 @@ import GuiaSection from '@/components/guia/GuiaSection.vue'
 import GuiaCallout from '@/components/guia/GuiaCallout.vue'
 import GuiaValuePill from '@/components/guia/GuiaValuePill.vue'
 import GuiaExample from '@/components/guia/GuiaExample.vue'
+import GuiaEjemploInteractivo from '@/components/guia/GuiaEjemploInteractivo.vue'
+import { GUIA_EJEMPLOS } from '@/constants/guiaEjemplos'
 
 // Índice del manual — fuente única para el TOC y el orden de las secciones.
 const toc = [
   { anchor: 'objetivo',   num: 1, title: 'Objetivo y alcance' },
   { anchor: 'plataforma', num: 2, title: 'Cómo usar la plataforma' },
-  { anchor: 'protocolo',  num: 3, title: 'Protocolo de lectura' },
-  { anchor: 'valores',    num: 4, title: 'Valores: Sí, No y ?' },
-  { anchor: 'dificiles',  num: 5, title: 'Casos difíciles' },
-  { anchor: 'flujo',      num: 6, title: 'Flujo de trabajo resumido' },
-  { anchor: 'referencia', num: 7, title: 'Referencia por bloque clínico' },
+  { anchor: 'ejemplos',   num: 3, title: 'Ejemplos interactivos' },
+  { anchor: 'protocolo',  num: 4, title: 'Protocolo de lectura' },
+  { anchor: 'valores',    num: 5, title: 'Valores: Sí, No y ?' },
+  { anchor: 'dificiles',  num: 6, title: 'Casos difíciles' },
+  { anchor: 'flujo',      num: 7, title: 'Flujo de trabajo resumido' },
+  { anchor: 'referencia', num: 8, title: 'Referencia por bloque clínico' },
 ]
 </script>
 
@@ -98,8 +101,25 @@ const toc = [
         </p>
       </GuiaSection>
 
-      <!-- 3. Protocolo de lectura -->
-      <GuiaSection anchor="protocolo" :num="3" title="Protocolo de lectura">
+      <!-- 3. Ejemplos interactivos -->
+      <GuiaSection anchor="ejemplos" :num="3" title="Ejemplos interactivos">
+        <p>
+          Practica antes de anotar casos reales. En cada ejemplo, lee el
+          <strong>documento</strong>, selecciona la evidencia y responde en el
+          <strong>formulario</strong> (con el mismo estilo que usarás de verdad). Luego pulsa
+          <strong>"Ver respuesta correcta"</strong> para comparar.
+        </p>
+        <div class="space-y-5 not-prose">
+          <GuiaEjemploInteractivo
+            v-for="ej in GUIA_EJEMPLOS"
+            :key="ej.id"
+            :ejemplo="ej"
+          />
+        </div>
+      </GuiaSection>
+
+      <!-- 4. Protocolo de lectura -->
+      <GuiaSection anchor="protocolo" :num="4" title="Protocolo de lectura">
         <p>Un orden de lectura recomendado para no perder información:</p>
         <ol class="list-decimal pl-5 space-y-2">
           <li><strong>Antecedentes primero.</strong> Es donde se concentran las comorbilidades preexistentes. Complétalos a medida que lees.</li>
@@ -109,8 +129,8 @@ const toc = [
         </ol>
       </GuiaSection>
 
-      <!-- 4. Valores Sí / No / ? -->
-      <GuiaSection anchor="valores" :num="4" title="Valores: Sí, No y ?">
+      <!-- 5. Valores Sí / No / ? -->
+      <GuiaSection anchor="valores" :num="5" title="Valores: Sí, No y ?">
         <div class="overflow-x-auto">
           <table class="w-full text-sm border-collapse min-w-[520px]">
             <thead>
@@ -163,8 +183,8 @@ const toc = [
         </GuiaExample>
       </GuiaSection>
 
-      <!-- 5. Casos difíciles -->
-      <GuiaSection anchor="dificiles" :num="5" title="Casos difíciles">
+      <!-- 6. Casos difíciles -->
+      <GuiaSection anchor="dificiles" :num="6" title="Casos difíciles">
         <h3 class="text-sm font-semibold text-slate-800">Deducciones a partir de fármacos</h3>
         <p>Cuando un fármaco habitual es suficientemente específico de una condición, la deducción es aceptable:</p>
         <ul class="list-disc pl-5 space-y-1">
@@ -185,8 +205,8 @@ const toc = [
         </GuiaCallout>
       </GuiaSection>
 
-      <!-- 6. Flujo resumido -->
-      <GuiaSection anchor="flujo" :num="6" title="Flujo de trabajo resumido">
+      <!-- 7. Flujo resumido -->
+      <GuiaSection anchor="flujo" :num="7" title="Flujo de trabajo resumido">
         <div class="bg-slate-50 border border-gray-200 rounded-lg px-6 py-5 space-y-2 text-sm">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="bg-brand-50 border border-brand-100 text-brand-600 rounded px-3 py-1.5 font-medium">1. Leer antecedentes</span>
@@ -211,8 +231,8 @@ const toc = [
         </div>
       </GuiaSection>
 
-      <!-- 7. Referencia por bloque (HU-035) -->
-      <GuiaSection anchor="referencia" :num="7" title="Referencia por bloque clínico">
+      <!-- 8. Referencia por bloque (HU-035) -->
+      <GuiaSection anchor="referencia" :num="8" title="Referencia por bloque clínico">
         <GuiaCallout variant="blue">
           La referencia detallada de cada criterio (qué marcar en cada campo, por bloque clínico) se incorpora en
           una entrega posterior (HU-035), derivada directamente del formulario para mantenerse siempre

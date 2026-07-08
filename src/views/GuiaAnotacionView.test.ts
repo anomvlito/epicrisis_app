@@ -7,7 +7,7 @@ import GuiaValuePill from '@/components/guia/GuiaValuePill.vue'
 // contenido refleje el comportamiento ACTUAL de la app y que el índice navegable
 // tenga anclas reales para cada sección.
 
-const ANCHORS = ['objetivo', 'plataforma', 'protocolo', 'valores', 'dificiles', 'flujo', 'referencia']
+const ANCHORS = ['objetivo', 'plataforma', 'ejemplos', 'protocolo', 'valores', 'dificiles', 'flujo', 'referencia']
 
 describe('GuiaAnotacionView (HU-034)', () => {
   it('renderiza una sección con ancla por cada entrada del índice', () => {
