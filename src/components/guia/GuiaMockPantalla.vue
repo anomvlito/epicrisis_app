@@ -1,7 +1,8 @@
 <script setup lang="ts">
-// Panel demo (solo lectura, sin store) que ilustra la anidación del formulario
-// y la barra de búsqueda: al escribir, filtra los campos hoja por su nombre,
-// igual que en la app real. Reutiliza normalizeSearch para ignorar tildes/mayús.
+// Panel demo (solo lectura, sin store) que ilustra la pantalla real de anotación:
+// documento a la izquierda y formulario a la derecha, ambos scrolleables, con
+// barra de búsqueda y los campos anidados. La búsqueda filtra las hojas por su
+// nombre reutilizando normalizeSearch (igual que la app real).
 import { ref, computed } from 'vue'
 import { normalizeSearch } from '@/constants/clinicalItems'
 
@@ -19,8 +20,15 @@ const ARBOL: Bloque[] = [
   {
     label: 'Antecedentes',
     subcats: [
-      { label: 'Cardiovascular', hojas: ['Hipertensión arterial', 'Insuficiencia cardíaca', 'Arritmia crónica'] },
-      { label: 'Metabólico / endocrino', hojas: ['Diabetes mellitus', 'Obesidad', 'Hipotiroidismo'] },
+      { label: 'Cardiovascular', hojas: ['Hipertensión arterial', 'Insuficiencia cardíaca', 'Arritmia crónica', 'Enfermedad coronaria'] },
+      { label: 'Metabólico / endocrino', hojas: ['Diabetes mellitus', 'Obesidad', 'Hipotiroidismo', 'Dislipidemia'] },
+      { label: 'Renal', hojas: ['Enfermedad renal crónica'] },
+    ],
+  },
+  {
+    label: 'Falla orgánica',
+    subcats: [
+      { label: 'Órganos', hojas: ['Falla renal aguda', 'Falla hepática aguda', 'Delirium'] },
     ],
   },
 ]
@@ -40,8 +48,22 @@ const arbolFiltrado = computed<Bloque[]>(() => {
 
 const sinResultados = computed(() => arbolFiltrado.value.length === 0)
 
-const documentoDemo =
-  'ANTECEDENTES: Paciente con hipertensión arterial y diabetes mellitus tipo 2 en tratamiento habitual.'
+const documentoDemo = `EPICRISIS UCI — Hospital Sótero del Río
+
+IDENTIFICACIÓN: Paciente de 71 años, sexo masculino.
+
+ANTECEDENTES: Hipertensión arterial en tratamiento con losartán.
+Diabetes mellitus tipo 2. Enfermedad renal crónica etapa 3.
+Ex tabáquico. Sin alergias conocidas.
+
+INGRESO: Ingresa a UCI el 12/03 derivado desde urgencias por
+neumonía adquirida en la comunidad con insuficiencia respiratoria.
+
+EVOLUCIÓN: Requiere ventilación mecánica invasiva y drogas
+vasoactivas. Cursa con injuria renal aguda que requiere
+hemofiltración.
+
+EGRESO: Evoluciona favorablemente. Se traslada a sala médica.`
 
 const btnBase = 'px-2 py-0.5 rounded text-[10px] font-bold border bg-white text-gray-400 border-gray-200'
 </script>
@@ -49,22 +71,23 @@ const btnBase = 'px-2 py-0.5 rounded text-[10px] font-bold border bg-white text-
 <template>
   <div class="border border-gray-200 rounded-lg overflow-hidden bg-white my-4 not-prose">
     <div class="bg-slate-50 border-b border-gray-200 px-4 py-2 flex items-center justify-between gap-2">
-      <span class="text-xs font-bold text-slate-700">Buscar y anidación</span>
+      <span class="text-xs font-bold text-slate-700">Vista de anotación</span>
       <span class="text-[11px] text-slate-400">Ejemplo visual</span>
     </div>
 
     <div class="grid md:grid-cols-2 gap-0">
-      <!-- Documento corto -->
+      <!-- Documento (scrolleable) -->
       <div class="p-4 md:border-r border-gray-100">
         <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Documento</div>
-        <p class="font-mono text-[12px] leading-relaxed text-slate-700">{{ documentoDemo }}</p>
+        <div class="max-h-72 overflow-y-auto pr-1">
+          <pre class="font-mono text-[11.5px] leading-relaxed text-slate-700 whitespace-pre-wrap">{{ documentoDemo }}</pre>
+        </div>
       </div>
 
-      <!-- Formulario: buscador + árbol anidado -->
+      <!-- Formulario: búsqueda + árbol anidado (scrolleable) -->
       <div class="p-4 bg-slate-50/50">
         <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Formulario</div>
 
-        <!-- Barra de búsqueda (funcional) -->
         <input
           v-model="query"
           type="text"
@@ -77,7 +100,7 @@ const btnBase = 'px-2 py-0.5 rounded text-[10px] font-bold border bg-white text-
           Sin resultados para "{{ query }}".
         </p>
 
-        <div v-else class="space-y-2">
+        <div v-else data-arbol class="max-h-72 overflow-y-auto pr-1 space-y-2">
           <div v-for="bloque in arbolFiltrado" :key="bloque.label">
             <p class="text-xs font-bold text-slate-700">{{ bloque.label }}</p>
             <div v-for="sub in bloque.subcats" :key="sub.label" class="pl-3 mt-1">
@@ -97,7 +120,7 @@ const btnBase = 'px-2 py-0.5 rounded text-[10px] font-bold border bg-white text-
             </div>
           </div>
         </div>
-        <p class="text-[11px] text-slate-400 mt-3">Los campos están anidados; el buscador te lleva directo a uno.</p>
+        <p class="text-[11px] text-slate-400 mt-3">Los campos están anidados y se scrollean; el buscador te lleva directo a uno.</p>
       </div>
     </div>
   </div>

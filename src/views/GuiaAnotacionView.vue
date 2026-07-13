@@ -3,8 +3,9 @@ import GuiaSection from '@/components/guia/GuiaSection.vue'
 import GuiaCallout from '@/components/guia/GuiaCallout.vue'
 import GuiaValuePill from '@/components/guia/GuiaValuePill.vue'
 import GuiaEjemplosTabs from '@/components/guia/GuiaEjemplosTabs.vue'
-import GuiaMockMacrosecciones from '@/components/guia/GuiaMockMacrosecciones.vue'
-import GuiaMockBusqueda from '@/components/guia/GuiaMockBusqueda.vue'
+import GuiaMockPantalla from '@/components/guia/GuiaMockPantalla.vue'
+import GuiaMockCaptura from '@/components/guia/GuiaMockCaptura.vue'
+import GuiaMockFecha from '@/components/guia/GuiaMockFecha.vue'
 import { GUIA_EJEMPLOS } from '@/constants/guiaEjemplos'
 
 // Índice del manual — fuente única para el TOC y el orden de las secciones.
@@ -78,7 +79,7 @@ const toc = [
           recorrer todo el árbol.
         </p>
 
-        <GuiaMockMacrosecciones />
+        <GuiaMockPantalla />
 
         <h3 class="text-sm font-semibold text-slate-800 pt-2">2.2 Opciones de respuesta</h3>
         <p>Cada campo se responde con <strong>un único valor activo a la vez</strong>:</p>
@@ -115,8 +116,6 @@ const toc = [
           evitar leer con cuidado.
         </p>
 
-        <GuiaMockBusqueda />
-
         <h3 class="text-sm font-semibold text-slate-800 pt-2">2.3 Capturar evidencia</h3>
         <p>La evidencia es el fragmento del documento que justifica tu respuesta. Para capturarla:</p>
         <ol class="list-decimal pl-5 space-y-1">
@@ -131,12 +130,16 @@ const toc = [
           además eliges el nivel de <strong>Incertidumbre</strong> y, si lo consideras útil, dejas un comentario.
         </GuiaCallout>
 
+        <GuiaMockCaptura />
+
         <h3 class="text-sm font-semibold text-slate-800 pt-2">2.4 Campos de texto y fecha</h3>
         <p>En algunas ocasiones, en vez de responder con <GuiaValuePill variant="si" /> / <GuiaValuePill variant="no" /> / <GuiaValuePill variant="ns" />, el formulario te pedirá:</p>
         <ul class="list-disc pl-5 space-y-1">
           <li><strong>Texto en formato "Capturar evidencia"</strong> — seleccionas el fragmento del documento igual que con la evidencia normal.</li>
           <li><strong>Una fecha</strong> — la ingresas en el campo de fecha correspondiente.</li>
         </ul>
+
+        <GuiaMockFecha />
       </GuiaSection>
 
       <!-- 3. Macrosecciones del formulario -->
