@@ -38,13 +38,13 @@ describe('GuiaEjemploInteractivo (HU-034)', () => {
     expect(wrapper.text()).toContain(ejemploSi.explicacion)
   })
 
-  it('marcar ? muestra el desplegable de Sospecha clínica (como el form real)', async () => {
+  it('marcar ? muestra el desplegable de Incertidumbre (como el form real)', async () => {
     const wrapper = mount(GuiaEjemploInteractivo, { props: { ejemplo: ejemploNs } })
     expect(wrapper.find('select').exists()).toBe(false)
     const btnNs = wrapper.findAll('button').find((b) => b.text() === '?')!
     await btnNs.trigger('click')
     expect(wrapper.find('select').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Sospecha clínica')
+    expect(wrapper.text()).toContain('Incertidumbre')
   })
 
   it('capturar copia la evidencia seleccionada al bloque de ground truth', async () => {

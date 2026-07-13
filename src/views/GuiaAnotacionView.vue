@@ -3,19 +3,17 @@ import GuiaSection from '@/components/guia/GuiaSection.vue'
 import GuiaCallout from '@/components/guia/GuiaCallout.vue'
 import GuiaValuePill from '@/components/guia/GuiaValuePill.vue'
 import GuiaExample from '@/components/guia/GuiaExample.vue'
-import GuiaEjemploInteractivo from '@/components/guia/GuiaEjemploInteractivo.vue'
+import GuiaEjemplosTabs from '@/components/guia/GuiaEjemplosTabs.vue'
 import { GUIA_EJEMPLOS } from '@/constants/guiaEjemplos'
 
 // Índice del manual — fuente única para el TOC y el orden de las secciones.
+// Estructura espejo de guias/manual-anotacion.md (documento base definitivo).
 const toc = [
-  { anchor: 'objetivo',   num: 1, title: 'Objetivo y alcance' },
-  { anchor: 'plataforma', num: 2, title: 'Cómo usar la plataforma' },
-  { anchor: 'ejemplos',   num: 3, title: 'Ejemplos interactivos' },
-  { anchor: 'protocolo',  num: 4, title: 'Protocolo de lectura' },
-  { anchor: 'valores',    num: 5, title: 'Valores: Sí, No y ?' },
-  { anchor: 'dificiles',  num: 6, title: 'Casos difíciles' },
-  { anchor: 'flujo',      num: 7, title: 'Flujo de trabajo resumido' },
-  { anchor: 'referencia', num: 8, title: 'Referencia por bloque clínico' },
+  { anchor: 'objetivo',        num: 1, title: 'Objetivo y alcance' },
+  { anchor: 'plataforma',      num: 2, title: 'Cómo usar la plataforma' },
+  { anchor: 'macrosecciones',  num: 3, title: 'Macrosecciones del formulario' },
+  { anchor: 'ejemplos',        num: 4, title: 'Ejemplos interactivos' },
+  { anchor: 'recomendaciones', num: 5, title: 'Recomendaciones de rellenado' },
 ]
 </script>
 
@@ -43,94 +41,148 @@ const toc = [
         </ol>
       </nav>
 
-      <!-- 1. Objetivo -->
+      <!-- 1. Objetivo y alcance -->
       <GuiaSection anchor="objetivo" :num="1" title="Objetivo y alcance">
         <p>
-          Esta guía explica cómo anotar epicrisis de la Unidad de Cuidados Intensivos (UCI) en la
-          plataforma. Tu trabajo como anotador es <strong>validar y corregir</strong>, criterio por criterio,
-          la extracción que propone el modelo de lenguaje (LLM), dejando como resultado un conjunto de datos
-          confiable (<em>ground truth</em>).
+          Esta guía explica cómo <strong>extraer campos clínicos a partir de las epicrisis</strong> de la Unidad
+          de Cuidados Intensivos (UCI) del Hospital Sótero del Río.
         </p>
         <p>
-          El formulario está organizado como un <strong>árbol de bloques clínicos</strong> (antecedentes,
-          soporte e intervenciones, falla orgánica, infecciones, complicaciones, egreso y calidad). Cada bloque
-          agrupa criterios que se responden con los valores <GuiaValuePill variant="si" />,
-          <GuiaValuePill variant="no" /> o <GuiaValuePill variant="ns" />.
+          El objetivo de esta extracción es tener un <strong>registro humano del proceso de extracción</strong>,
+          que sirve como referencia (<em>gold standard</em>) para <strong>validar la extracción automatizada que
+          hace la IA</strong>. Es decir: lo que tú anotas es lo que después usamos para medir qué tan bien lo hace
+          el sistema automático.
         </p>
+        <p>El proceso consiste, para cada campo clínico del formulario, en:</p>
+        <ol class="list-decimal pl-5 space-y-1">
+          <li>Marcar <strong>si la condición existe o no</strong>, y con qué <strong>nivel de incertidumbre</strong>.</li>
+          <li><strong>Anotar la evidencia textual</strong> (el fragmento de la epicrisis) que respalda tu decisión.</li>
+          <li>Opcionalmente, <strong>dejar un comentario</strong> cuando algo requiera aclaración.</li>
+        </ol>
       </GuiaSection>
 
       <!-- 2. Cómo usar la plataforma -->
       <GuiaSection anchor="plataforma" :num="2" title="Cómo usar la plataforma">
+
+        <h3 class="text-sm font-semibold text-slate-800">2.1 La pantalla de anotación</h3>
         <p>
-          La pantalla de anotación se divide en dos paneles: el <strong>documento</strong> (la epicrisis) a un
-          lado y el <strong>formulario</strong> de criterios al otro. Anotas leyendo el documento y respondiendo
-          cada criterio del formulario.
+          La pantalla de anotación se divide en <strong>dos paneles</strong>: a la <strong>izquierda</strong> el
+          documento de la epicrisis y a la <strong>derecha</strong> el formulario de anotación. Anotas leyendo el
+          documento de la izquierda y respondiendo cada campo del formulario de la derecha.
+        </p>
+        <p>
+          Los campos están <strong>anidados</strong> (organizados como un acordeón): una categoría madre agrupa
+          varios campos hoja. Al marcar una categoría se despliegan sus campos internos. Además, en la
+          <strong>barra superior</strong> puedes <strong>buscar un campo específico</strong> por su nombre, sin
+          recorrer todo el árbol.
         </p>
 
-        <h3 class="text-sm font-semibold text-slate-800 pt-2">Los tres valores de un criterio</h3>
+        <h3 class="text-sm font-semibold text-slate-800 pt-2">2.2 Opciones de respuesta</h3>
+        <p>Cada campo se responde con <strong>un único valor activo a la vez</strong>:</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse min-w-[520px]">
+            <thead>
+              <tr>
+                <th class="text-left font-semibold text-xs uppercase tracking-wide px-3 py-2 border bg-slate-50 text-slate-600 border-gray-200">Valor</th>
+                <th class="text-left font-semibold text-xs uppercase tracking-wide px-3 py-2 border bg-slate-50 text-slate-600 border-gray-200">Qué significa</th>
+                <th class="text-left font-semibold text-xs uppercase tracking-wide px-3 py-2 border bg-slate-50 text-slate-600 border-gray-200">¿Requiere evidencia?</th>
+              </tr>
+            </thead>
+            <tbody class="align-top">
+              <tr>
+                <td class="border border-gray-200 px-3 py-2"><GuiaValuePill variant="si" /></td>
+                <td class="border border-gray-200 px-3 py-2">La condición está presente, ya sea por existencia textual explícita o por inferencia directa.</td>
+                <td class="border border-gray-200 px-3 py-2"><strong>Sí</strong>, debes capturar el fragmento que lo respalda.</td>
+              </tr>
+              <tr>
+                <td class="border border-gray-200 px-3 py-2"><GuiaValuePill variant="no" /></td>
+                <td class="border border-gray-200 px-3 py-2">La condición está ausente o aparece negada.</td>
+                <td class="border border-gray-200 px-3 py-2">No.</td>
+              </tr>
+              <tr>
+                <td class="border border-gray-200 px-3 py-2"><GuiaValuePill variant="ns" /></td>
+                <td class="border border-gray-200 px-3 py-2">La evidencia es poco clara, exige deducciones poco seguras o es inconsistente.</td>
+                <td class="border border-gray-200 px-3 py-2"><strong>Sí</strong>, además eliges el nivel de <strong>Incertidumbre</strong> (Alto / Bajo / Indeterminado) y puedes dejar un comentario.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <p>
-          Cada criterio se responde con un valor. Solo uno puede estar activo a la vez:
+          Usa <GuiaValuePill variant="ns" /> solo para incertidumbre genuina; no lo utilices como atajo para
+          evitar leer con cuidado.
         </p>
-        <ul class="list-disc pl-5 space-y-1">
-          <li><GuiaValuePill variant="si" /> — la condición está presente. Debes <strong>capturar la evidencia</strong> (el fragmento del documento que lo respalda).</li>
-          <li><GuiaValuePill variant="no" /> — la condición está ausente o negada. No requiere evidencia.</li>
-          <li><GuiaValuePill variant="ns" /> — no se puede determinar con el documento. Requiere un <strong>comentario obligatorio</strong> explicando la duda.</li>
-        </ul>
 
-        <h3 class="text-sm font-semibold text-slate-800 pt-2">Capturar evidencia</h3>
+        <h3 class="text-sm font-semibold text-slate-800 pt-2">2.3 Capturar evidencia</h3>
+        <p>La evidencia es el fragmento del documento que justifica tu respuesta. Para capturarla:</p>
         <ol class="list-decimal pl-5 space-y-1">
-          <li>Selecciona con el cursor el fragmento relevante en el panel del documento.</li>
-          <li>Presiona <strong>Capturar</strong> junto al criterio correspondiente.</li>
-          <li>El texto queda registrado como evidencia de ese criterio.</li>
-          <li>Para corregir, usa <strong>limpiar</strong> y vuelve a capturar.</li>
+          <li><strong>Selecciona con el cursor</strong> el fragmento relevante en el panel del documento (izquierda).</li>
+          <li>Presiona el botón <strong>Capturar</strong>, arriba a la derecha en el criterio correspondiente, o pulsa la <strong>barra espaciadora</strong>.</li>
         </ol>
-
+        <p>Para corregir una captura, pulsa <strong>Limpiar</strong> y vuelve a seleccionar y capturar.</p>
         <GuiaCallout variant="green">
-          <strong>Regla de evidencia:</strong> todo criterio marcado <GuiaValuePill variant="si" /> debe tener
-          evidencia capturada. Los <GuiaValuePill variant="no" /> pueden quedar sin evidencia. Los
-          <GuiaValuePill variant="ns" /> no requieren evidencia, pero sí un comentario que explique la duda.
+          <strong>Regla de evidencia:</strong> los criterios marcados <GuiaValuePill variant="si" /> y
+          <GuiaValuePill variant="ns" /> deben tener evidencia capturada (es <strong>obligatorio</strong>); los
+          <GuiaValuePill variant="no" /> pueden quedar sin evidencia. Al marcar <GuiaValuePill variant="ns" />
+          además eliges el nivel de <strong>Incertidumbre</strong> y, si lo consideras útil, dejas un comentario.
         </GuiaCallout>
 
-        <h3 class="text-sm font-semibold text-slate-800 pt-2">La predicción del LLM</h3>
-        <p>
-          Para cada criterio, la plataforma muestra la <strong>predicción del modelo</strong> (su valor
-          propuesto y su confianza). Tu rol es confirmarla o corregirla según el documento. Cuando el modelo
-          detecta evidencia en conflicto, marca el criterio con una insignia
-          <span class="px-1.5 py-0.5 rounded text-[11px] font-bold bg-orange-100 text-orange-700">⚠ Conflicto</span>:
-          revísalo con especial cuidado.
-        </p>
+        <h3 class="text-sm font-semibold text-slate-800 pt-2">2.4 Campos de texto y fecha</h3>
+        <p>En algunas ocasiones, en vez de responder con <GuiaValuePill variant="si" /> / <GuiaValuePill variant="no" /> / <GuiaValuePill variant="ns" />, el formulario te pedirá:</p>
+        <ul class="list-disc pl-5 space-y-1">
+          <li><strong>Texto en formato "Capturar evidencia"</strong> — seleccionas el fragmento del documento igual que con la evidencia normal.</li>
+          <li><strong>Una fecha</strong> — la ingresas en el campo de fecha correspondiente.</li>
+        </ul>
       </GuiaSection>
 
-      <!-- 3. Ejemplos interactivos -->
-      <GuiaSection anchor="ejemplos" :num="3" title="Ejemplos interactivos">
+      <!-- 3. Macrosecciones del formulario -->
+      <GuiaSection anchor="macrosecciones" :num="3" title="Macrosecciones del formulario">
         <p>
-          Practica antes de anotar casos reales. En cada ejemplo, lee el
-          <strong>documento</strong>, selecciona la evidencia y responde en el
-          <strong>formulario</strong> (con el mismo estilo que usarás de verdad). Luego pulsa
-          <strong>"Ver respuesta correcta"</strong> para comparar.
+          El formulario se divide en las siguientes macrosecciones. En general comparten una estructura similar,
+          con algunas excepciones que se indican en cada caso.
         </p>
-        <div class="space-y-5 not-prose">
-          <GuiaEjemploInteractivo
-            v-for="ej in GUIA_EJEMPLOS"
-            :key="ej.id"
-            :ejemplo="ej"
-          />
+        <div class="space-y-3">
+          <p><strong>Antecedentes.</strong> Condiciones que el paciente ya traía antes de entrar a la UCI: enfermedades, cirugías, alergias, hábitos y dependencia funcional. Se llenan una sola vez. Cada categoría (corazón, riñón, pulmón…) se abre al marcarla, y ahí eliges las condiciones puntuales. <em>Ojo:</em> algunos campos podrían encajar en dos secciones, pero se registran en una sola; por ejemplo, un ataque cerebral previo va en la categoría de corazón y vasos, no en la neurológica.</p>
+
+          <p><strong>Ingreso.</strong> Fecha de ingreso y desde dónde llegó el paciente a la UCI. Como diagnóstico principal, anota el que motivó el ingreso; los demás van como secundarios.</p>
+
+          <p><strong>Soporte e intervenciones.</strong> Todo lo que se hizo para sostener al paciente. Está dividido en: reanimación cardiopulmonar, hemodinámico, respiratorio, circulación extracorpórea, sedación, renal, hemofiltración de alto volumen, transfusión y otros. En algunos se solicitará la fecha de inicio. <em>Ojo:</em> que un paciente reciba soporte para un órgano no significa que ese órgano haya fallado (eso se registra aparte, en Falla orgánica).</p>
+
+          <p><strong>Falla orgánica.</strong> Qué órganos dejaron de funcionar bien durante la UCI. Distingue lo agudo de lo crónico: una falla renal <em>aguda</em> no es lo mismo que un paciente que ya venía con el riñón dañado y estable. Un puntaje tipo SOFA o APACHE solo se marca si el texto lo nombra. <em>Ojo:</em> el delirium va aquí solo si fue grave; si fue leve, va en Complicaciones.</p>
+
+          <p><strong>Infecciones.</strong> Se anota en cascada: primero si hubo infección, luego si fue sepsis, después dónde estaba (el foco), con qué germen y con qué tratamiento. <em>Ojo:</em> no marques infección solo por fiebre, exámenes alterados o un cultivo suelto: hace falta un diagnóstico. Algunos cultivos suelen ser contaminación, no infección.</p>
+
+          <p><strong>Complicaciones.</strong> Problemas que aparecen por la propia estadía en la UCI: delirium, debilidad muscular, escaras, desnutrición, etc. <em>Ojo:</em> el delirium leve va aquí; el grave va en Falla orgánica (neurológica). La traqueostomía no va aquí, va en el soporte respiratorio.</p>
+
+          <p><strong>Egreso.</strong> Cómo terminó la estadía en la UCI. Primero indicas si el paciente salió vivo o falleció; si salió vivo, se abre a dónde fue, junto con el diagnóstico de egreso.</p>
+
+          <p><strong>Reingreso.</strong> Si el paciente tuvo que volver a la UCI en la misma hospitalización. Por ahora solo registramos la primera estadía para simplificar la extracción. En comentarios puedes mencionar si hay información relevante en otra de las estadías.</p>
+
+          <p><strong>Calidad de la epicrisis.</strong> Al cierre das tu impresión de qué tan completa y confiable venía la epicrisis: confiable, parcial o deficiente. Es tu juicio como anotador, enfocado en la calidad de la información que se pudo extraer. Al final puedes escribir un comentario final, útil para describir con más detalle la calidad de la epicrisis o del proceso de anotación.</p>
         </div>
       </GuiaSection>
 
-      <!-- 4. Protocolo de lectura -->
-      <GuiaSection anchor="protocolo" :num="4" title="Protocolo de lectura">
-        <p>Un orden de lectura recomendado para no perder información:</p>
-        <ol class="list-decimal pl-5 space-y-2">
-          <li><strong>Antecedentes primero.</strong> Es donde se concentran las comorbilidades preexistentes. Complétalos a medida que lees.</li>
-          <li><strong>Evolución en UCI en detalle.</strong> Aquí aparecen intervenciones, infecciones, fallas orgánicas y complicaciones. Varía mucho entre casos: léela con atención.</li>
-          <li><strong>Segunda pasada por antecedentes.</strong> Al terminar, revisa si apareció una comorbilidad fuera de la sección de antecedentes; si la encuentras con certeza, actualízala a <GuiaValuePill variant="si" /> y captura la evidencia.</li>
-          <li><strong>Verificación final.</strong> Confirma que todo <GuiaValuePill variant="si" /> tenga evidencia y que cada <GuiaValuePill variant="ns" /> tenga su comentario.</li>
-        </ol>
+      <!-- 4. Ejemplos interactivos -->
+      <GuiaSection anchor="ejemplos" :num="4" title="Ejemplos interactivos">
+        <p>
+          Antes de anotar casos reales, <strong>practica con los ejemplos interactivos</strong>. En cada ejemplo:
+          lee el <strong>documento</strong>, marca la respuesta y selecciona la evidencia; luego pulsa
+          <strong>"Ver respuesta correcta"</strong> para comparar. Hay varios escenarios para que explores las
+          situaciones posibles.
+        </p>
+        <div class="not-prose">
+          <GuiaEjemplosTabs :ejemplos="GUIA_EJEMPLOS" />
+        </div>
       </GuiaSection>
 
-      <!-- 5. Valores Sí / No / ? -->
-      <GuiaSection anchor="valores" :num="5" title="Valores: Sí, No y ?">
+      <!-- 5. Recomendaciones de rellenado -->
+      <GuiaSection anchor="recomendaciones" :num="5" title="Recomendaciones de rellenado">
+        <p>
+          <strong>No se anota por bloques aislados ni en un orden rígido.</strong> Lo central es ir leyendo las
+          macrosecciones a la par del documento de la epicrisis, y decidir cada campo según la
+          <strong>claridad de la evidencia</strong>.
+        </p>
+
+        <h3 class="text-sm font-semibold text-slate-800 pt-2">¿Cómo abordar las tres opciones de respuesta?</h3>
         <div class="overflow-x-auto">
           <table class="w-full text-sm border-collapse min-w-[520px]">
             <thead>
@@ -168,76 +220,13 @@ const toc = [
           </table>
         </div>
 
-        <GuiaCallout variant="amber">
-          Al marcar <GuiaValuePill variant="ns" /> es <strong>obligatorio</strong> escribir un comentario que
-          explique la duda. Úsalo con moderación: es para incertidumbre genuina, no un reemplazo de la lectura
-          cuidadosa.
-        </GuiaCallout>
-
         <GuiaExample label="Ejemplo — criterio marcado con ?">
           <template #quote>Fármacos habituales: furosemida 40 mg/día. Sin mención explícita de insuficiencia cardíaca.</template>
           <template #result>
             → Criterio <em>Insuficiencia cardíaca</em> · valor <GuiaValuePill variant="ns" /> ·
-            comentario: <em>"Solo furosemida, sin diagnóstico explícito de IC. Duda genuina."</em>
+            incertidumbre <strong>Bajo</strong> · comentario: <em>"Solo furosemida, sin diagnóstico explícito de IC."</em>
           </template>
         </GuiaExample>
-      </GuiaSection>
-
-      <!-- 6. Casos difíciles -->
-      <GuiaSection anchor="dificiles" :num="6" title="Casos difíciles">
-        <h3 class="text-sm font-semibold text-slate-800">Deducciones a partir de fármacos</h3>
-        <p>Cuando un fármaco habitual es suficientemente específico de una condición, la deducción es aceptable:</p>
-        <ul class="list-disc pl-5 space-y-1">
-          <li>Antihipertensivos crónicos → <GuiaValuePill variant="si" /> Hipertensión arterial.</li>
-          <li>Insulina o metformina habitual → <GuiaValuePill variant="si" /> Diabetes.</li>
-          <li>Diurético (furosemida) como único indicio → insuficiente para deducir IC; marca <GuiaValuePill variant="no" /> o <GuiaValuePill variant="ns" /> con comentario.</li>
-        </ul>
-
-        <h3 class="text-sm font-semibold text-slate-800 pt-2">Negaciones</h3>
-        <p>
-          Frases como <em>"no presenta diabetes"</em>, <em>"sin antecedentes de HTA"</em> o
-          <em>"se descarta infección urinaria"</em> se anotan como <GuiaValuePill variant="no" />.
-        </p>
-
-        <GuiaCallout variant="amber">
-          Ante abreviaturas institucionales o dudas de significado, <strong>consulta al adjudicador</strong> antes
-          de anotar. No asumas equivalencias.
-        </GuiaCallout>
-      </GuiaSection>
-
-      <!-- 7. Flujo resumido -->
-      <GuiaSection anchor="flujo" :num="7" title="Flujo de trabajo resumido">
-        <div class="bg-slate-50 border border-gray-200 rounded-lg px-6 py-5 space-y-2 text-sm">
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="bg-brand-50 border border-brand-100 text-brand-600 rounded px-3 py-1.5 font-medium">1. Leer antecedentes</span>
-            <span class="text-slate-400">→</span>
-            <span class="bg-white border border-gray-200 rounded px-3 py-1.5">Completar comorbilidades</span>
-          </div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="bg-brand-50 border border-brand-100 text-brand-600 rounded px-3 py-1.5 font-medium">2. Leer evolución UCI</span>
-            <span class="text-slate-400">→</span>
-            <span class="bg-white border border-gray-200 rounded px-3 py-1.5">Intervenciones · Infecciones · Fallas · Complicaciones · Egreso</span>
-          </div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="bg-brand-50 border border-brand-100 text-brand-600 rounded px-3 py-1.5 font-medium">3. Segunda pasada</span>
-            <span class="text-slate-400">→</span>
-            <span class="bg-white border border-gray-200 rounded px-3 py-1.5">¿Apareció una comorbilidad nueva?</span>
-          </div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="bg-brand-50 border border-brand-100 text-brand-600 rounded px-3 py-1.5 font-medium">4. Verificación final</span>
-            <span class="text-slate-400">→</span>
-            <span class="bg-white border border-gray-200 rounded px-3 py-1.5">Todo Sí con evidencia · cada ? con comentario</span>
-          </div>
-        </div>
-      </GuiaSection>
-
-      <!-- 8. Referencia por bloque (HU-035) -->
-      <GuiaSection anchor="referencia" :num="8" title="Referencia por bloque clínico">
-        <GuiaCallout variant="blue">
-          La referencia detallada de cada criterio (qué marcar en cada campo, por bloque clínico) se incorpora en
-          una entrega posterior (HU-035), derivada directamente del formulario para mantenerse siempre
-          sincronizada con la app.
-        </GuiaCallout>
       </GuiaSection>
 
     </div>

@@ -99,11 +99,11 @@ const btnBase = 'px-2.5 py-1 rounded text-[11px] font-bold transition-colors bor
 
           <!-- Bloque de evidencia / sospecha (Sí o ?) -->
           <div v-if="mostrarEvidencia" class="mt-2 border-t border-gray-50 pt-2 space-y-1.5">
-            <!-- Sospecha clínica (solo ?) -->
+            <!-- Incertidumbre (solo ?) -->
             <div v-if="valor === 'ns'" class="flex items-center justify-between gap-2">
-              <span class="text-[10px] text-orange-600 font-bold uppercase tracking-wider">Sospecha clínica</span>
+              <span class="text-[10px] text-orange-600 font-bold uppercase tracking-wider">Incertidumbre</span>
               <select v-model="sospecha" class="rounded border border-orange-200 px-2 py-0.5 text-[10px] text-orange-700 bg-orange-50 outline-none">
-                <option value="">— Elegir sospecha —</option>
+                <option value="">— Elegir nivel —</option>
                 <option value="Alto">Alto</option>
                 <option value="Bajo">Bajo</option>
                 <option value="Indeterminado">Indeterminado</option>
@@ -141,7 +141,7 @@ const btnBase = 'px-2.5 py-1 rounded text-[11px] font-bold transition-colors bor
           <div class="flex items-center gap-2 mb-1">
             <span class="text-[11px] font-bold uppercase tracking-wider text-green-700">Respuesta correcta</span>
             <GuiaValuePill :variant="ejemplo.respuesta.valor" />
-            <span v-if="ejemplo.respuesta.sospecha" class="text-[11px] text-orange-700 font-semibold">Sospecha: {{ ejemplo.respuesta.sospecha }}</span>
+            <span v-if="ejemplo.respuesta.sospecha" class="text-[11px] text-orange-700 font-semibold">Incertidumbre: {{ ejemplo.respuesta.sospecha }}</span>
             <span v-if="valor !== null" class="ml-auto text-[11px] font-semibold" :class="acierto ? 'text-green-700' : 'text-red-600'">
               {{ acierto ? '✓ coincide con tu respuesta' : '✗ difiere de tu respuesta' }}
             </span>

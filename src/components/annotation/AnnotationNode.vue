@@ -280,14 +280,14 @@ const isVisible = computed(() => {
           
           <!-- Suspicion Dropdown (only for '?') -->
           <div v-if="state.isPresent === 'unknown'" class="flex items-center justify-between gap-2">
-            <span class="text-[10px] text-orange-600 font-bold uppercase tracking-wider">Sospecha clínica</span>
+            <span class="text-[10px] text-orange-600 font-bold uppercase tracking-wider">Incertidumbre</span>
             <select 
               :value="(state as any).evidenceMetadata?.suspicion || ''"
               :disabled="isReadOnly"
               class="rounded border border-orange-200 px-2 py-0.5 text-[10px] text-orange-700 bg-orange-50/50 outline-none"
               @change="onSuspicionChange"
             >
-              <option value="">— Elegir sospecha —</option>
+              <option value="">— Elegir nivel —</option>
               <option value="Alto">Alto</option>
               <option value="Bajo">Bajo</option>
               <option value="Indeterminado">Indeterminado</option>

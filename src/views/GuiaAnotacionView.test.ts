@@ -7,7 +7,7 @@ import GuiaValuePill from '@/components/guia/GuiaValuePill.vue'
 // contenido refleje el comportamiento ACTUAL de la app y que el índice navegable
 // tenga anclas reales para cada sección.
 
-const ANCHORS = ['objetivo', 'plataforma', 'ejemplos', 'protocolo', 'valores', 'dificiles', 'flujo', 'referencia']
+const ANCHORS = ['objetivo', 'plataforma', 'macrosecciones', 'ejemplos', 'recomendaciones']
 
 describe('GuiaAnotacionView (HU-034)', () => {
   it('renderiza una sección con ancla por cada entrada del índice', () => {
@@ -28,9 +28,11 @@ describe('GuiaAnotacionView (HU-034)', () => {
     expect(variants.has('ns')).toBe(true)
   })
 
-  it('exige comentario obligatorio al marcar ?', () => {
+  it('documenta la Incertidumbre y la obligación al marcar ?', () => {
     const wrapper = mount(GuiaAnotacionView)
-    expect(wrapper.text()).toMatch(/comentario obligatorio/i)
+    const text = wrapper.text()
+    expect(text).toMatch(/incertidumbre/i)
+    expect(text).toMatch(/obligatorio/i)
   })
 
   it('NO menciona mecanismos deprecados (semáforo / dificultad / ¿qué costó?)', () => {
