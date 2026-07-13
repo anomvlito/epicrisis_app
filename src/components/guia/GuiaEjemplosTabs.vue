@@ -54,13 +54,13 @@ watch(active, async () => {
         class="text-xs font-semibold text-brand-600 disabled:text-gray-300 disabled:cursor-default"
         :disabled="active === 0"
         @click="prev"
-      >← Anterior</button>
+      >Anterior</button>
       <span class="text-xs text-slate-400">{{ active + 1 }} / {{ ejemplos.length }}</span>
       <button
         class="text-xs font-semibold text-brand-600 disabled:text-gray-300 disabled:cursor-default"
         :disabled="active === ejemplos.length - 1"
         @click="next"
-      >Siguiente →</button>
+      >Siguiente</button>
     </div>
   </div>
 </template>

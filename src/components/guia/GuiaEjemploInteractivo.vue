@@ -63,8 +63,8 @@ const btnBase = 'px-2.5 py-1 rounded text-[11px] font-bold transition-colors bor
             @click="seleccionado = partes.match"
           >{{ partes.match }}</button>{{ partes.despues }}
         </p>
-        <p v-if="seleccionado" class="text-[11px] text-green-700 mt-2 flex items-center gap-1">
-          <span>☝️</span> Texto seleccionado — presiona "Capturar" en el formulario.
+        <p v-if="seleccionado" class="text-[11px] text-green-700 mt-2">
+          Texto seleccionado — presiona "Capturar" en el formulario.
         </p>
         <p v-else class="text-[11px] text-slate-400 mt-2">Haz clic en el texto resaltado para seleccionarlo.</p>
       </div>
@@ -120,7 +120,7 @@ const btnBase = 'px-2.5 py-1 rounded text-[11px] font-bold transition-colors bor
                   :disabled="!seleccionado"
                   @click="capturar"
                 >Capturar</button>
-                <button v-if="evidencia" type="button" class="text-[10px] text-gray-400 hover:text-red-500" @click="evidencia = ''">✕ limpiar</button>
+                <button v-if="evidencia" type="button" class="text-[10px] text-gray-400 hover:text-red-500" @click="evidencia = ''">limpiar</button>
               </div>
             </div>
             <div
@@ -143,7 +143,7 @@ const btnBase = 'px-2.5 py-1 rounded text-[11px] font-bold transition-colors bor
             <GuiaValuePill :variant="ejemplo.respuesta.valor" />
             <span v-if="ejemplo.respuesta.sospecha" class="text-[11px] text-orange-700 font-semibold">Incertidumbre: {{ ejemplo.respuesta.sospecha }}</span>
             <span v-if="valor !== null" class="ml-auto text-[11px] font-semibold" :class="acierto ? 'text-green-700' : 'text-red-600'">
-              {{ acierto ? '✓ coincide con tu respuesta' : '✗ difiere de tu respuesta' }}
+              {{ acierto ? 'coincide con tu respuesta' : 'difiere de tu respuesta' }}
             </span>
           </div>
           <p v-if="ejemplo.respuesta.evidencia" class="font-mono text-[11px] bg-white border border-green-200 rounded px-2 py-1 my-1 text-green-800">{{ ejemplo.respuesta.evidencia }}</p>

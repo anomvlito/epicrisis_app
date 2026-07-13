@@ -2,8 +2,9 @@
 import GuiaSection from '@/components/guia/GuiaSection.vue'
 import GuiaCallout from '@/components/guia/GuiaCallout.vue'
 import GuiaValuePill from '@/components/guia/GuiaValuePill.vue'
-import GuiaExample from '@/components/guia/GuiaExample.vue'
 import GuiaEjemplosTabs from '@/components/guia/GuiaEjemplosTabs.vue'
+import GuiaMockMacrosecciones from '@/components/guia/GuiaMockMacrosecciones.vue'
+import GuiaMockBusqueda from '@/components/guia/GuiaMockBusqueda.vue'
 import { GUIA_EJEMPLOS } from '@/constants/guiaEjemplos'
 
 // Índice del manual — fuente única para el TOC y el orden de las secciones.
@@ -77,6 +78,8 @@ const toc = [
           recorrer todo el árbol.
         </p>
 
+        <GuiaMockMacrosecciones />
+
         <h3 class="text-sm font-semibold text-slate-800 pt-2">2.2 Opciones de respuesta</h3>
         <p>Cada campo se responde con <strong>un único valor activo a la vez</strong>:</p>
         <div class="overflow-x-auto">
@@ -112,6 +115,8 @@ const toc = [
           evitar leer con cuidado.
         </p>
 
+        <GuiaMockBusqueda />
+
         <h3 class="text-sm font-semibold text-slate-800 pt-2">2.3 Capturar evidencia</h3>
         <p>La evidencia es el fragmento del documento que justifica tu respuesta. Para capturarla:</p>
         <ol class="list-decimal pl-5 space-y-1">
@@ -141,17 +146,17 @@ const toc = [
           con algunas excepciones que se indican en cada caso.
         </p>
         <div class="space-y-3">
-          <p><strong>Antecedentes.</strong> Condiciones que el paciente ya traía antes de entrar a la UCI: enfermedades, cirugías, alergias, hábitos y dependencia funcional. Se llenan una sola vez. Cada categoría (corazón, riñón, pulmón…) se abre al marcarla, y ahí eliges las condiciones puntuales. <em>Ojo:</em> algunos campos podrían encajar en dos secciones, pero se registran en una sola; por ejemplo, un ataque cerebral previo va en la categoría de corazón y vasos, no en la neurológica.</p>
+          <p><strong>Antecedentes.</strong> Condiciones que el paciente ya traía antes de entrar a la UCI: enfermedades, cirugías, alergias, hábitos y dependencia funcional. Se llenan una sola vez. Cada categoría (corazón, riñón, pulmón…) se abre al marcarla, y ahí eliges las condiciones puntuales. Algunos campos podrían encajar en dos secciones, pero se registran en una sola; por ejemplo, un ataque cerebral previo va en la categoría de corazón y vasos, no en la neurológica.</p>
 
           <p><strong>Ingreso.</strong> Fecha de ingreso y desde dónde llegó el paciente a la UCI. Como diagnóstico principal, anota el que motivó el ingreso; los demás van como secundarios.</p>
 
-          <p><strong>Soporte e intervenciones.</strong> Todo lo que se hizo para sostener al paciente. Está dividido en: reanimación cardiopulmonar, hemodinámico, respiratorio, circulación extracorpórea, sedación, renal, hemofiltración de alto volumen, transfusión y otros. En algunos se solicitará la fecha de inicio. <em>Ojo:</em> que un paciente reciba soporte para un órgano no significa que ese órgano haya fallado (eso se registra aparte, en Falla orgánica).</p>
+          <p><strong>Soporte e intervenciones.</strong> Todo lo que se hizo para sostener al paciente. Está dividido en: reanimación cardiopulmonar, hemodinámico, respiratorio, circulación extracorpórea, sedación, renal, hemofiltración de alto volumen, transfusión y otros. En algunos se solicitará la fecha de inicio. Recibir soporte para un órgano no significa que ese órgano haya fallado (eso se registra aparte, en Falla orgánica).</p>
 
-          <p><strong>Falla orgánica.</strong> Qué órganos dejaron de funcionar bien durante la UCI. Distingue lo agudo de lo crónico: una falla renal <em>aguda</em> no es lo mismo que un paciente que ya venía con el riñón dañado y estable. Un puntaje tipo SOFA o APACHE solo se marca si el texto lo nombra. <em>Ojo:</em> el delirium va aquí solo si fue grave; si fue leve, va en Complicaciones.</p>
+          <p><strong>Falla orgánica.</strong> Qué órganos dejaron de funcionar bien durante la UCI. Distingue lo agudo de lo crónico: una falla renal <em>aguda</em> no es lo mismo que un paciente que ya venía con el riñón dañado y estable. Un puntaje tipo SOFA o APACHE solo se marca si el texto lo nombra. El delirium va aquí solo si fue grave; si fue leve, va en Complicaciones.</p>
 
-          <p><strong>Infecciones.</strong> Se anota en cascada: primero si hubo infección, luego si fue sepsis, después dónde estaba (el foco), con qué germen y con qué tratamiento. <em>Ojo:</em> no marques infección solo por fiebre, exámenes alterados o un cultivo suelto: hace falta un diagnóstico. Algunos cultivos suelen ser contaminación, no infección.</p>
+          <p><strong>Infecciones.</strong> Se anota en cascada: primero si hubo infección, luego si fue sepsis, después dónde estaba (el foco), con qué germen y con qué tratamiento. No marques infección solo por fiebre, exámenes alterados o un cultivo suelto: hace falta un diagnóstico. Algunos cultivos suelen ser contaminación, no infección.</p>
 
-          <p><strong>Complicaciones.</strong> Problemas que aparecen por la propia estadía en la UCI: delirium, debilidad muscular, escaras, desnutrición, etc. <em>Ojo:</em> el delirium leve va aquí; el grave va en Falla orgánica (neurológica). La traqueostomía no va aquí, va en el soporte respiratorio.</p>
+          <p><strong>Complicaciones.</strong> Problemas que aparecen por la propia estadía en la UCI: delirium, debilidad muscular, escaras, desnutrición, etc. El delirium leve va aquí; el grave va en Falla orgánica (neurológica). La traqueostomía no va aquí, va en el soporte respiratorio.</p>
 
           <p><strong>Egreso.</strong> Cómo terminó la estadía en la UCI. Primero indicas si el paciente salió vivo o falleció; si salió vivo, se abre a dónde fue, junto con el diagnóstico de egreso.</p>
 
@@ -220,13 +225,6 @@ const toc = [
           </table>
         </div>
 
-        <GuiaExample label="Ejemplo — criterio marcado con ?">
-          <template #quote>Fármacos habituales: furosemida 40 mg/día. Sin mención explícita de insuficiencia cardíaca.</template>
-          <template #result>
-            → Criterio <em>Insuficiencia cardíaca</em> · valor <GuiaValuePill variant="ns" /> ·
-            incertidumbre <strong>Bajo</strong> · comentario: <em>"Solo furosemida, sin diagnóstico explícito de IC."</em>
-          </template>
-        </GuiaExample>
       </GuiaSection>
 
     </div>

@@ -144,4 +144,52 @@ export const GUIA_EJEMPLOS: EjemploAnotacion[] = [
     explicacion:
       'El reingreso a la unidad durante la misma hospitalización está documentado. Se marca Sí y se captura la evidencia.',
   },
+  {
+    id: 'infeccion-urocultivo-dudoso',
+    seccion: 'Infecciones',
+    campoLabel: 'Infección urinaria',
+    textoDocumento:
+      'Urocultivo con desarrollo de E. coli 10^4 UFC/mL. Paciente sin síntomas urinarios, afebril, sin inicio de antibióticos dirigidos.',
+    evidenciaResaltada: 'Urocultivo con desarrollo de E. coli 10^4 UFC/mL',
+    respuesta: {
+      valor: 'ns',
+      sospecha: 'Alto',
+      evidencia: 'Urocultivo con desarrollo de E. coli 10^4 UFC/mL',
+      comentario: 'Cultivo aislado sin clínica ni tratamiento; podría ser contaminación o colonización.',
+    },
+    explicacion:
+      'Un urocultivo aislado, sin síntomas ni tratamiento dirigido, no confirma infección: puede ser contaminación o colonización. Se marca ? con incertidumbre Alta y se deja comentario.',
+  },
+  {
+    id: 'complicaciones-delirium-dudoso',
+    seccion: 'Complicaciones',
+    campoLabel: 'Delirium',
+    textoDocumento:
+      'Durante la estadía se describe al paciente "por momentos desorientado y agitado", sin evaluación formal ni diagnóstico de delirium consignado.',
+    evidenciaResaltada: 'por momentos desorientado y agitado',
+    respuesta: {
+      valor: 'ns',
+      sospecha: 'Bajo',
+      evidencia: 'por momentos desorientado y agitado',
+      comentario: 'Descripción sugerente pero sin diagnóstico ni evaluación (p. ej. CAM-ICU).',
+    },
+    explicacion:
+      'La descripción sugiere delirium pero no hay diagnóstico ni evaluación formal. La deducción no es inequívoca: se marca ? con incertidumbre Baja.',
+  },
+  {
+    id: 'falla-hepatica-dudosa',
+    seccion: 'Falla orgánica',
+    campoLabel: 'Falla hepática aguda',
+    textoDocumento:
+      'Exámenes con leve alza de transaminasas y bilirrubina en el contexto de sepsis, sin mención de disfunción hepática ni coagulopatía.',
+    evidenciaResaltada: 'leve alza de transaminasas y bilirrubina',
+    respuesta: {
+      valor: 'ns',
+      sospecha: 'Indeterminado',
+      evidencia: 'leve alza de transaminasas y bilirrubina',
+      comentario: 'Alteración inespecífica de laboratorio; no se nombra falla hepática.',
+    },
+    explicacion:
+      'Un alza leve de pruebas hepáticas en sepsis no equivale a falla hepática si el texto no la nombra. Resolverlo exige más de un paso incierto: se marca ? (Indeterminado).',
+  },
 ]
