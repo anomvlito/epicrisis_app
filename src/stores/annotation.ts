@@ -84,6 +84,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
   const activeMetadataField = ref<string | null>(null)
   // HU-029: índice de la única casilla de evidencia activa (dentro del criterio activo)
   const activeEvidenceIndex = ref(0)
+  // HU-022: Estado del glosario
+  const isGlossaryOpen = ref(false)
+  const glossaryActiveKey = ref<string | null>(null)
   const criteria = ref<CriterionState[]>([])
   const clinicalDifficulty = ref<Record<string, { difficulty: DifficultyLevel; notes: string }>>({})
   const saving = ref(false)
@@ -482,6 +485,16 @@ export const useAnnotationStore = defineStore('annotation', () => {
     activeMetadataField.value = field
     activeCriterionName.value = null
     activeClinicalField.value = null
+  }
+
+  function openGlossary(key: string) {
+    glossaryActiveKey.value = key
+    isGlossaryOpen.value = true
+  }
+
+  function closeGlossary() {
+    isGlossaryOpen.value = false
+    glossaryActiveKey.value = null
   }
 
   function setIsPresent(name: string, value: boolean | null | 'unknown') {
@@ -923,6 +936,10 @@ export const useAnnotationStore = defineStore('annotation', () => {
     removeEvidenceFragment,
     toggleEvidenceLock,
     setEvidenceFragmentText,
+    isGlossaryOpen,
+    glossaryActiveKey,
+    openGlossary,
+    closeGlossary,
     clearActive,
     clearGlobalSelection,
     saveProgress,

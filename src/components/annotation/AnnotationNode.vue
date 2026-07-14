@@ -225,9 +225,18 @@ const isVisible = computed(() => {
     >
       <div class="flex items-center justify-between gap-2">
         <div class="flex-1 min-w-0">
-          <p class="text-xs font-semibold text-gray-800 leading-tight">
-            {{ node.label }}
-          </p>
+          <div class="flex items-baseline gap-2">
+            <p class="text-xs font-semibold text-gray-800 leading-tight">
+              {{ node.label }}
+            </p>
+            <button 
+              type="button" 
+              class="text-[10px] text-brand-600 hover:text-brand-800 hover:underline font-semibold cursor-pointer select-none"
+              @click.stop="annotationStore.openGlossary(node.key)"
+            >
+              Glosario
+            </button>
+          </div>
           <p v-if="node.icd10Hint" class="text-[9px] text-gray-400 font-mono mt-0.5">{{ node.icd10Hint }}</p>
         </div>
 
@@ -354,7 +363,16 @@ const isVisible = computed(() => {
       class="p-2 border border-gray-100 rounded-lg bg-white space-y-2 shadow-xs"
     >
       <div class="flex items-center justify-between gap-2">
-        <span class="text-xs font-bold text-gray-700">{{ node.label }}</span>
+        <div class="flex items-baseline gap-2">
+          <span class="text-xs font-bold text-gray-700">{{ node.label }}</span>
+          <button 
+            type="button" 
+            class="text-[10px] text-brand-600 hover:text-brand-800 hover:underline font-semibold cursor-pointer select-none"
+            @click.stop="annotationStore.openGlossary(node.key)"
+          >
+            Glosario
+          </button>
+        </div>
         <select 
           :value="(state as any).evidenceMetadata?.value || ''"
           :disabled="isReadOnly"
@@ -373,7 +391,16 @@ const isVisible = computed(() => {
       data-capture-zone
       class="p-2 border border-gray-100 rounded-lg bg-white space-y-1.5 shadow-xs"
     >
-      <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ node.label }}</label>
+      <div class="flex items-baseline gap-2">
+        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ node.label }}</label>
+        <button 
+          type="button" 
+          class="text-[10px] text-brand-600 hover:text-brand-800 hover:underline font-semibold cursor-pointer select-none normal-case"
+          @click.stop="annotationStore.openGlossary(node.key)"
+        >
+          Glosario
+        </button>
+      </div>
       <textarea
         :value="state.evidenceText"
         :readonly="isReadOnly"
@@ -394,7 +421,16 @@ const isVisible = computed(() => {
       @click="activate"
     >
       <div class="flex items-center justify-between gap-2">
-        <span class="text-xs font-bold text-gray-700">{{ node.label }}</span>
+        <div class="flex items-baseline gap-2">
+          <span class="text-xs font-bold text-gray-700">{{ node.label }}</span>
+          <button 
+            type="button" 
+            class="text-[10px] text-brand-600 hover:text-brand-800 hover:underline font-semibold cursor-pointer select-none"
+            @click.stop="annotationStore.openGlossary(node.key)"
+          >
+            Glosario
+          </button>
+        </div>
         <input 
           type="text" 
           placeholder="DD/MM/AAAA"

@@ -19,6 +19,7 @@ import PdfViewer from '@/components/annotation/PdfViewer.vue'
 import DynamicViewer from '@/components/annotation/DynamicViewer.vue'
 import { epicrisisService } from '@/services/epicrisis.service'
 import AnnotationTree from '@/components/annotation/AnnotationTree.vue'
+import GlosarioModal from '@/components/annotation/GlosarioModal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseLoader from '@/components/ui/BaseLoader.vue'
@@ -893,11 +894,10 @@ onUnmounted(() => {
         :class="{ 'bg-brand-400': isDragging }"
         @mousedown="startDrag"
       />
-
       <!-- ===== RIGHT PANEL: Annotation form ===== -->
       <div
         :style="rightPanelStyle"
-        class="flex-col min-h-0 overflow-hidden bg-gray-50"
+        class="relative flex-col min-h-0 overflow-hidden bg-gray-50"
         :class="[!isMobile || activeMobilePanel === 'form' ? 'flex' : 'hidden', isMobile ? 'w-full' : '']"
       >
         <!-- Panel header with progress -->
@@ -1037,6 +1037,8 @@ onUnmounted(() => {
 
         </div>
       </div>
+      <!-- Glossary Modal -->
+      <GlosarioModal />
     </div>
 
     </template>
