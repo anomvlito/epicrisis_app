@@ -4,6 +4,7 @@ import type { Ref } from 'vue'
 import { useAnnotationStore } from '@/stores/annotation'
 import type { FormNode } from '@/constants/formSchema'
 import { normalizeFecha } from '@/utils/fecha'
+import AnnotationEvidence from './AnnotationEvidence.vue'
 
 const props = defineProps<{
   node: FormNode
@@ -308,28 +309,8 @@ const isVisible = computed(() => {
             />
           </div>
 
-          <!-- Highlight evidence text -->
-          <div class="flex items-center justify-between">
-            <label class="block text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-              Evidencia (ground truth)
-            </label>
-            <button
-              v-if="state.evidenceText && !isReadOnly"
-              class="text-[10px] text-gray-400 hover:text-red-500 transition-colors leading-none"
-              title="Limpiar evidencia"
-              @click.stop="annotationStore.setEvidence(node.key, '')"
-            >✕ limpiar</button>
-          </div>
-          <div
-            :class="[
-              'min-h-[28px] rounded border px-2 py-1.5 text-xs font-mono leading-relaxed transition-colors',
-              state.evidenceText
-                ? 'bg-yellow-50 border-yellow-300 text-gray-800'
-                : 'bg-gray-50 border-gray-200 text-gray-400 italic',
-            ]"
-          >
-            {{ state.evidenceText || 'Selecciona texto en el documento y presiona "Capturar"' }}
-          </div>
+          <!-- Evidencia (ground truth) — múltiples fragmentos (HU-029) -->
+          <AnnotationEvidence :node-key="node.key" :is-read-only="isReadOnly" />
 
           <!-- Comments (when row is active) -->
           <div v-show="isActive" class="space-y-1.5 pt-1.5 border-t border-gray-100">

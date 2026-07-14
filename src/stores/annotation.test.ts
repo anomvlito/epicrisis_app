@@ -284,3 +284,71 @@ describe('HU-032 inicio en blanco y propagación en cascada', () => {
     expect(hta.isPresent).toBe(true)
   })
 })
+
+// HU-029 — captura y gestión de múltiples evidencias (ground truth)
+describe('HU-029 múltiples fragmentos de evidencia', () => {
+  beforeEach(() => { localStorage.clear(); setActivePinia(createPinia()) })
+
+  it('la captura escribe en la casilla activa abierta y deriva evidenceText', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.setActive(C0)
+    s.injectEvidenceToActive('fragmento uno')
+    expect(s.getEvidenceList(C0)).toEqual([{ text: 'fragmento uno', locked: false }])
+    expect(s.criteria.find(c => c.criterionName === C0)!.evidenceText).toBe('fragmento uno')
+  })
+
+  it('[+] agrega una casilla secundaria, la activa, y captura en ella', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.setActive(C0)
+    s.injectEvidenceToActive('principal')
+    s.addEvidenceFragment(C0)
+    expect(s.activeEvidenceIndex).toBe(1)
+    s.injectEvidenceToActive('secundario')
+    const list = s.getEvidenceList(C0)
+    expect(list).toHaveLength(2)
+    expect(list[1].text).toBe('secundario')
+    // evidenceText = join de los fragmentos
+    expect(s.criteria.find(c => c.criterionName === C0)!.evidenceText).toBe('principal | secundario')
+  })
+
+  it('una casilla cerrada (candado) NO recibe la captura', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.setActive(C0)
+    s.injectEvidenceToActive('confirmado')
+    s.toggleEvidenceLock(C0, 0) // cerrar candado
+    s.injectEvidenceToActive('intento de sobrescribir')
+    expect(s.getEvidenceList(C0)[0]).toEqual({ text: 'confirmado', locked: true })
+  })
+
+  it('sin criterio activo, la captura no hace nada', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.clearActive()
+    s.injectEvidenceToActive('flotante')
+    expect(s.getEvidenceList(C0)).toEqual([])
+  })
+
+  it('[-] elimina secundarias pero la principal (índice 0) es intocable', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.setActive(C0)
+    s.injectEvidenceToActive('principal')
+    s.addEvidenceFragment(C0)
+    s.injectEvidenceToActive('secundario')
+    s.removeEvidenceFragment(C0, 1)
+    expect(s.getEvidenceList(C0)).toHaveLength(1)
+    // intentar eliminar la principal no hace nada
+    s.removeEvidenceFragment(C0, 0)
+    expect(s.getEvidenceList(C0)).toHaveLength(1)
+  })
+
+  it('migra el evidenceText legacy a un fragmento cerrado', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.setEvidence(C0, 'evidencia guardada antes')
+    expect(s.getEvidenceList(C0)).toEqual([{ text: 'evidencia guardada antes', locked: true }])
+  })
+})
