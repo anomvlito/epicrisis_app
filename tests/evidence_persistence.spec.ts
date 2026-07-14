@@ -1,7 +1,10 @@
 import { test, expect } from '@playwright/test'
 
-// Mocks reutilizables
 async function mockBaseRoutes(page: any, overrides: { annotations?: any[]; clinicalData?: any } = {}) {
+  await page.addInitScript(() => {
+    localStorage.setItem('auth_token', 'mock-token')
+  })
+
   await page.route('**/api/auth', async (route: any) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({ json: { user: { id: 1, email: 'tester@epicrisis.cl', role: 'annotator', termsAcceptedAt: '2026-05-01T00:00:00Z' } } })
@@ -22,7 +25,7 @@ async function mockBaseRoutes(page: any, overrides: { annotations?: any[]; clini
           sections: [{
             sectionName: 'resumen_clinico',
             label: 'Resumen Clínico',
-            content: 'Paciente con infección urinaria confirmada por cultivo de orina positivo. Hipertensión Arterial severa documentada.',
+            content: 'Infección: urinaria confirmada por cultivo de orina positivo.\nHipertensión: Arterial severa documentada.',
             position: 1,
           }],
         },
@@ -50,24 +53,27 @@ test.describe('Persistencia de evidencia', () => {
 
     await mockBaseRoutes(page)
     await page.goto('/annotate/1')
-    await expect(page.getByText('Paciente con infección')).toBeVisible()
+    await expect(page.getByText('Infección: urinaria')).toBeVisible()
 
-    // Marcar Sí en el primer criterio (Hipertensión Arterial)
-    await page.getByRole('button', { name: 'Sí' }).first().click()
+    // Marcar Sí en el criterio de Hipertensión Arterial
+    await page.getByText('Antecedentes médicos').first().click()
+    await page.getByText('Cardiovascular').first().click()
+    const htaNode = page.locator('[data-criterion="antecedentes.cardiovascular.hipertension_arterial"]')
+    await htaNode.getByRole('button', { name: 'Sí' }).click()
 
     // Seleccionar texto y capturarlo como evidencia
-    await page.locator('text=Hipertensión Arterial severa').dblclick()
+    await page.locator('strong').nth(1).dblclick()
     await page.getByRole('button', { name: /Capturar evidencia/i }).click()
 
-    // Verificar que la evidencia aparece (caja amarilla)
-    await expect(page.locator('.bg-yellow-50').first()).toBeVisible()
+    // Verificar que la evidencia aparece (caja de texto)
+    const evidenceBox = page.locator('textarea').first()
+    await expect(evidenceBox).toHaveValue(/Hipertensión/)
 
     // Limpiar la evidencia
-    await page.getByTitle('Limpiar evidencia capturada').first().click()
+    await page.getByTitle('Limpiar esta casilla').first().click()
 
-    // La caja amarilla ya no debe existir para ese criterio
-    const yellowBox = page.locator('.bg-yellow-50').first()
-    await expect(yellowBox).not.toBeVisible()
+    // La evidencia ya no debe estar
+    await expect(evidenceBox).toHaveValue('')
 
     // Guardar
     await page.getByRole('button', { name: /Guardar borrador/i }).click()
@@ -91,30 +97,34 @@ test.describe('Persistencia de evidencia', () => {
 
     await mockBaseRoutes(page)
     await page.goto('/annotate/1')
-    await expect(page.getByText('Paciente con infección')).toBeVisible()
+    await expect(page.getByText('Infección: urinaria')).toBeVisible()
 
-    // Activar foco Urinario (hacer clic en el toggle "Sí")
-    const urinarioSection = page.locator('text=Urinario').locator('..')
-    await urinarioSection.getByRole('button', { name: 'Sí' }).click()
+    // 1. Marcar Sí en "Infección/es durante la estadía en UPC"
+    const upcInfeccionNode = page.locator('[data-criterion="infecciones.estadia_upc"]')
+    await upcInfeccionNode.getByRole('button', { name: 'Sí' }).click()
 
-    // Activar el campo de evidencia del foco
-    await urinarioSection.click()
+    // 2. Expandir "Focos infecciosos"
+    await page.getByText('Focos infecciosos').click()
+
+    // 3. Marcar Sí en foco Urinario
+    const urinarioNode = page.locator('[data-criterion="infecciones.focos.urinario"]')
+    await urinarioNode.getByRole('button', { name: 'Sí' }).click()
 
     // Seleccionar y capturar texto de evidencia
-    await page.locator('text=infección urinaria confirmada').dblclick()
+    await page.locator('strong').first().dblclick()
     await page.getByRole('button', { name: /Capturar evidencia/i }).click()
 
-    // Verificar que la evidencia aparece
-    const evidenceBox = urinarioSection.locator('.bg-yellow-50')
-    await expect(evidenceBox).toBeVisible()
+    // Verificar que la evidencia aparece en el textarea
+    const evidenceBox = urinarioNode.locator('textarea').first()
+    await expect(evidenceBox).toHaveValue(/infección/i)
 
     // Verificar que el botón limpiar existe para el foco (bug 1 fix)
-    const limpiarBtn = urinarioSection.getByTitle('Limpiar evidencia capturada')
+    const limpiarBtn = urinarioNode.getByTitle('Limpiar esta casilla').first()
     await expect(limpiarBtn).toBeVisible()
 
     // Limpiar
     await limpiarBtn.click()
-    await expect(evidenceBox).not.toBeVisible()
+    await expect(evidenceBox).toHaveValue('')
 
     // Guardar y verificar que clinicalData no tiene la evidencia
     await page.getByRole('button', { name: /Guardar borrador/i }).click()
@@ -131,17 +141,17 @@ test.describe('Persistencia de evidencia', () => {
 
     await mockBaseRoutes(page)
     await page.goto('/annotate/1')
-    await expect(page.getByText('Paciente con infección')).toBeVisible()
+    await expect(page.getByText('Infección: urinaria')).toBeVisible()
 
     // Seleccionar texto en el documento
-    await page.locator('text=Hipertensión Arterial severa').dblclick()
+    await page.locator('strong').nth(1).dblclick()
 
     // Verificar que el botón "Capturar" está activo (pulsa)
     const captureBtn = page.getByRole('button', { name: /Capturar evidencia/i })
     await expect(captureBtn).not.toBeDisabled()
 
-    // Hacer clic fuera del documento (en el panel derecho) sin seleccionar texto
-    await page.locator('[data-criterion]').first().click()
+    // Hacer clic fuera de la selección pero DENTRO del documento (para deseleccionar)
+    await page.getByText('Resumen Clínico').first().click()
     await page.waitForTimeout(100)
 
     // Después del clic fuera, el botón Capturar debe estar inactivo (no hay selección)
@@ -179,7 +189,7 @@ test.describe('Persistencia de evidencia', () => {
 
     await mockBaseRoutes(page, { clinicalData: serverClinicalData })
     await page.goto('/annotate/1')
-    await expect(page.getByText('Paciente con infección')).toBeVisible()
+    await expect(page.getByText('Infección: urinaria')).toBeVisible()
 
     // Esperar a que se carguen los datos del servidor
     await page.waitForTimeout(800)

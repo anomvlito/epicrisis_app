@@ -246,9 +246,15 @@ const docTab = ref<'text' | 'pdf'>('pdf')
 const layoutData = ref<any>(null)
 const loadingLayout = ref(true)
 
-watch(() => epicrisisStore.current?.pdfPath, (pdfPath) => {
-  if (epicrisisStore.current && !pdfPath && !layoutData.value && !loadingLayout.value) docTab.value = 'text'
-}, { immediate: true })
+watch(
+  [() => epicrisisStore.current?.pdfPath, loadingLayout, layoutData],
+  ([pdfPath, loading, layout]) => {
+    if (epicrisisStore.current && !pdfPath && !layout && !loading) {
+      docTab.value = 'text'
+    }
+  },
+  { immediate: true }
+)
 
 // Mobile responsiveness
 const activeMobilePanel = ref<'doc' | 'form'>('doc')
@@ -864,7 +870,7 @@ onUnmounted(() => {
         <div
           v-show="docTab === 'text'"
           ref="textPanelRef"
-          class="flex-1 min-h-0 overflow-y-auto relative"
+          class="flex-1 min-h-0 overflow-y-auto relative text-selection-zone"
           style="background: #e8ecf0;"
         >
           <!-- User Watermark (Deterrent) -->

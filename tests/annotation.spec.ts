@@ -49,13 +49,19 @@ test.describe('Anotación de Comorbilidades', () => {
     });
 
     // 4. Ir a la vista de anotación directamente
+    await page.addInitScript(() => {
+      localStorage.setItem('auth_token', 'mock-token');
+    });
     await page.goto('/annotate/999');
 
     // Comprobar que cargó la UI con el texto de la sección
     await expect(page.getByText('Paciente masculino de 65 años')).toBeVisible();
 
-    // 5. Interactuar: Marcar como "Sí" el primer criterio
-    await page.getByRole('button', { name: 'Sí' }).first().click();
+    // 5. Interactuar: Marcar como "Sí" el criterio de Hipertensión Arterial
+    await page.getByText('Antecedentes médicos').first().click();
+    await page.getByText('Cardiovascular').first().click();
+    const htaNode = page.locator('[data-criterion="antecedentes.cardiovascular.hipertension_arterial"]');
+    await htaNode.getByRole('button', { name: 'Sí' }).click();
 
     // Comprobar avance en el progreso — total incluye criterios + datos clínicos + fechas
     // Usamos regex en vez de texto exacto para no acoplarnos al total concreto
@@ -67,7 +73,7 @@ test.describe('Anotación de Comorbilidades', () => {
 
     // 7. Verificar Selección Persistente (Virtual Highlighting)
     // Hacemos clic "afuera" (en el contenedor derecho) para intentar borrar la selección nativa
-    await page.locator('.rounded-lg.border').first().click();
+    await htaNode.click();
 
     // Verificamos que la API de CSS Highlights mantenga nuestro texto resaltado
     const hasHighlight = await page.evaluate(() => {
@@ -86,7 +92,7 @@ test.describe('Anotación de Comorbilidades', () => {
     });
     expect(isHighlightCleared).toBeTruthy();
 
-    // 10. Verificar que la evidencia se guardó en la caja amarilla del criterio activo
-    await expect(page.locator('.bg-yellow-50').first()).toContainText('Hipertensión');
+    // 10. Verificar que la evidencia se guardó en la caja activa del criterio activo
+    await expect(page.locator('textarea').first()).toHaveValue(/Hipertensión/);
   });
 });
