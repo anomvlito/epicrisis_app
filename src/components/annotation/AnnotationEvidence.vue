@@ -40,6 +40,10 @@ function remove(i: number) {
   if (props.isReadOnly) return
   store.removeEvidenceFragment(props.nodeKey, i)
 }
+function clear(i: number) {
+  if (props.isReadOnly) return
+  store.setEvidenceFragmentText(props.nodeKey, i, '')
+}
 </script>
 
 <template>
@@ -51,12 +55,11 @@ function remove(i: number) {
       <button
         v-if="!isReadOnly"
         type="button"
-        class="flex items-center gap-0.5 text-[10px] font-semibold text-brand-600 hover:text-brand-700 transition-colors leading-none"
+        class="p-0.5 rounded border border-brand-200 text-brand-600 hover:bg-brand-50 transition-colors leading-none"
         title="Agregar otro fragmento de evidencia"
         @click.stop="add"
       >
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
-        fragmento
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
       </button>
     </div>
 
@@ -110,6 +113,17 @@ function remove(i: number) {
           <svg v-if="frag.locked" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v3m-4-6V6a4 4 0 118 0v2m-9 0h10a1 1 0 011 1v7a1 1 0 01-1 1H6a1 1 0 01-1-1V9a1 1 0 011-1z" /></svg>
           <!-- candado abierto -->
           <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v3m-5-6V6a4 4 0 017.874-1M6 8h10a1 1 0 011 1v7a1 1 0 01-1 1H6a1 1 0 01-1-1V9a1 1 0 011-1z" /></svg>
+        </button>
+
+        <!-- Limpiar (casilla abierta con texto) -->
+        <button
+          v-if="!isReadOnly && !frag.locked && frag.text"
+          type="button"
+          class="p-1 rounded border border-gray-200 bg-white text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors"
+          title="Limpiar esta casilla"
+          @click.stop="clear(i)"
+        >
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
 
         <!-- [-] solo en secundarias -->

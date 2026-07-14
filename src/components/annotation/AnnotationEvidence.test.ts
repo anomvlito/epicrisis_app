@@ -41,6 +41,17 @@ describe('AnnotationEvidence (HU-029)', () => {
     expect(removeBtns(wrapper)).toHaveLength(0)
   })
 
+  it('el botón de limpiar vacía la casilla abierta', async () => {
+    const { store, wrapper } = mountFor()
+    store.setActiveEvidence(KEY, 0)
+    store.injectEvidenceToActive('texto a limpiar')
+    await wrapper.vm.$nextTick()
+    const clearBtn = wrapper.findAll('button').find((b) => b.attributes('title') === 'Limpiar esta casilla')!
+    expect(clearBtn).toBeTruthy()
+    await clearBtn.trigger('click')
+    expect(store.getEvidenceList(KEY)[0].text).toBe('')
+  })
+
   it('el candado cerrado pasa la casilla a solo lectura (sin textarea)', async () => {
     const { store, wrapper } = mountFor()
     store.setActiveEvidence(KEY, 0)
