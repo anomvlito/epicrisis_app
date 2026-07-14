@@ -58,6 +58,14 @@ export type MissingItem = { category: string; label: string } & (
   | { kind: 'date';      key: string }
 )
 
+// HU-029: un criterio puede tener varios fragmentos de evidencia. Cada uno con
+// su candado: abierto (locked=false) = editable y a la escucha de la captura;
+// cerrado (locked=true) = confirmado, solo lectura.
+export interface EvidenceFragment {
+  text: string
+  locked: boolean
+}
+
 export interface CriterionState {
   criterionName: string
   isPresent: boolean | null | 'unknown'
@@ -74,6 +82,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
   const activeCriterionName = ref<string | null>(null)
   const activeClinicalField = ref<string | null>(null)
   const activeMetadataField = ref<string | null>(null)
+  // HU-029: índice de la única casilla de evidencia activa (dentro del criterio activo)
+  const activeEvidenceIndex = ref(0)
   const criteria = ref<CriterionState[]>([])
   const clinicalDifficulty = ref<Record<string, { difficulty: DifficultyLevel; notes: string }>>({})
   const saving = ref(false)
@@ -459,6 +469,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     activeCriterionName.value = name
     activeClinicalField.value = null
     activeMetadataField.value = null
+    activeEvidenceIndex.value = 0
   }
 
   function setActiveClinical(field: string) {
@@ -477,9 +488,12 @@ export const useAnnotationStore = defineStore('annotation', () => {
     const c = criteria.value.find((c) => c.criterionName === name)
     if (c) {
       c.isPresent = value
-      // Auto-capture text selection on checking Sí
+      // Auto-capture text selection on checking Sí (HU-029: siembra la casilla principal)
       if (value === true && hasSelection.value && selectedText.value) {
-        c.evidenceText = selectedText.value
+        const list = getEvidenceList(name).slice()
+        if (list.length === 0) list.push({ text: '', locked: false })
+        list[0] = { ...list[0], text: selectedText.value }
+        applyEvidences(c, list)
         clearGlobalSelection()
       }
 
@@ -558,6 +572,93 @@ export const useAnnotationStore = defineStore('annotation', () => {
     }
   }
 
+  // ── HU-029: gestión de múltiples fragmentos de evidencia ──────────────────
+  // Los fragmentos viven en evidenceMetadata.evidences (jsonb). evidenceText se
+  // mantiene como string derivado (join) para no romper progreso/validación/exports.
+  function fragmentsToText(evidences: EvidenceFragment[]): string {
+    return evidences.map((e) => e.text).filter((t) => t && t.trim() !== '').join(' | ')
+  }
+
+  // Lee los fragmentos de un criterio, migrando desde el evidenceText legacy si aún
+  // no existen (sin escribir; la materialización ocurre al primer cambio).
+  function getEvidenceList(name: string): EvidenceFragment[] {
+    const c = criteria.value.find((c) => c.criterionName === name)
+    if (!c) return []
+    const meta = (c.evidenceMetadata || {}) as any
+    if (Array.isArray(meta.evidences)) return meta.evidences as EvidenceFragment[]
+    return c.evidenceText && c.evidenceText.trim() !== ''
+      ? [{ text: c.evidenceText, locked: true }]
+      : []
+  }
+
+  // Escribe la lista de fragmentos en el criterio y re-sincroniza evidenceText
+  // (y el valor de fecha para los criterios de tipo fecha, igual que setEvidence).
+  function applyEvidences(c: CriterionState, evidences: EvidenceFragment[]) {
+    const joined = fragmentsToText(evidences)
+    const meta: Record<string, any> = { ...(c.evidenceMetadata || {}), evidences }
+    const name = c.criterionName
+    const isDateCheck = name.includes('fecha') || name.includes('inicio') || name.includes('termino') || name.includes('realizacion')
+    if (isDateCheck && joined) {
+      const match = joined.match(/\b\d{1,2}[\s/.\-]+\d{1,2}[\s/.\-]+\d{2,4}\b/) || joined.match(/\b\d{6,8}\b/)
+      if (match) {
+        const norm = normalizeFecha(match[0])
+        if (norm && /^\d{2}\/\d{2}\/\d{4}$/.test(norm)) meta.value = norm
+      }
+    }
+    c.evidenceMetadata = meta
+    c.evidenceText = joined
+  }
+
+  function setActiveEvidence(name: string, index: number) {
+    setActive(name)
+    activeEvidenceIndex.value = index
+  }
+
+  function addEvidenceFragment(name: string) {
+    const c = criteria.value.find((c) => c.criterionName === name)
+    if (!c) return
+    const list = getEvidenceList(name).slice()
+    // Materializa la casilla principal (fantasma) antes de agregar la secundaria.
+    if (list.length === 0) list.push({ text: '', locked: false })
+    list.push({ text: '', locked: false })
+    applyEvidences(c, list)
+    setActiveEvidence(name, list.length - 1)
+  }
+
+  // Solo elimina casillas secundarias (index > 0); la principal es obligatoria.
+  function removeEvidenceFragment(name: string, index: number) {
+    const c = criteria.value.find((c) => c.criterionName === name)
+    if (!c || index <= 0) return
+    const list = getEvidenceList(name).slice()
+    if (index >= list.length) return
+    list.splice(index, 1)
+    applyEvidences(c, list)
+    if (activeCriterionName.value === name && activeEvidenceIndex.value >= list.length) {
+      activeEvidenceIndex.value = Math.max(0, list.length - 1)
+    }
+  }
+
+  function toggleEvidenceLock(name: string, index: number) {
+    const c = criteria.value.find((c) => c.criterionName === name)
+    if (!c) return
+    const list = getEvidenceList(name).slice()
+    if (!list[index]) return
+    list[index] = { ...list[index], locked: !list[index].locked }
+    applyEvidences(c, list)
+  }
+
+  // Edición manual del texto de una casilla abierta.
+  function setEvidenceFragmentText(name: string, index: number, text: string) {
+    const c = criteria.value.find((c) => c.criterionName === name)
+    if (!c) return
+    const list = getEvidenceList(name).slice()
+    // Materializa la casilla principal si aún no existía (criterio recién marcado).
+    if (list.length === 0 && index === 0) list.push({ text: '', locked: false })
+    if (!list[index] || list[index].locked) return
+    list[index] = { ...list[index], text }
+    applyEvidences(c, list)
+  }
+
   function setComments(name: string, text: string) {
     const c = criteria.value.find((c) => c.criterionName === name)
     if (c) c.comments = text
@@ -583,9 +684,20 @@ export const useAnnotationStore = defineStore('annotation', () => {
     }
 
     if (activeCriterionName.value) {
-      setEvidence(activeCriterionName.value, text)
-      const c = criteria.value.find((c) => c.criterionName === activeCriterionName.value)
-      if (c) (c as any).evidenceMetadata = { ...((c as any).evidenceMetadata || {}), highlightIds: evidenceMetadataMap.value[field] }
+      // HU-029: la selección se copia a la casilla activa SOLO si está abierta.
+      // Si está cerrada (locked) o no hay casilla, no hace nada.
+      const name = activeCriterionName.value
+      const c = criteria.value.find((c) => c.criterionName === name)
+      if (c) {
+        const list = getEvidenceList(name).slice()
+        if (list.length === 0) list.push({ text: '', locked: false })
+        const idx = activeEvidenceIndex.value
+        const target = list[idx]
+        if (target && !target.locked) {
+          list[idx] = { ...target, text }
+          applyEvidences(c, list)
+        }
+      }
     } else if (activeClinicalField.value) {
       setClinical(activeClinicalField.value as keyof ClinicalData, text)
     } else if (activeMetadataField.value) {
@@ -804,6 +916,13 @@ export const useAnnotationStore = defineStore('annotation', () => {
     setEvidence,
     setComments,
     injectEvidenceToActive,
+    activeEvidenceIndex,
+    getEvidenceList,
+    setActiveEvidence,
+    addEvidenceFragment,
+    removeEvidenceFragment,
+    toggleEvidenceLock,
+    setEvidenceFragmentText,
     clearActive,
     clearGlobalSelection,
     saveProgress,
