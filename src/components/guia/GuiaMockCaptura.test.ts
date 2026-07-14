@@ -1,36 +1,44 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
 import { mount } from '@vue/test-utils'
 import GuiaMockCaptura from './GuiaMockCaptura.vue'
 
-describe('GuiaMockCaptura (guía 2.3)', () => {
-  it('captura la evidencia al seleccionar el fragmento y presionar Capturar', async () => {
+const addBtn = (w: any) => w.findAll('button').find((b: any) => b.attributes('title') === 'Agregar otro fragmento')!
+const lockBtns = (w: any) => w.findAll('button').filter((b: any) => (b.attributes('title') || '').toLowerCase().includes('casilla'))
+const removeBtns = (w: any) => w.findAll('button').filter((b: any) => b.attributes('title') === 'Eliminar este fragmento')
+const capturarBtn = (w: any) => w.findAll('button').find((b: any) => b.text() === 'Capturar')!
+
+describe('GuiaMockCaptura (guía 2.3 — múltiples evidencias)', () => {
+  beforeEach(() => { setActivePinia(createPinia()) })
+
+  it('captura el fragmento seleccionado en la casilla activa', async () => {
     const wrapper = mount(GuiaMockCaptura)
-    const fragmento = 'hipertensión arterial en tratamiento con losartán'
-
-    // sin seleccionar, Capturar está deshabilitado
-    const capturar = wrapper.findAll('button').find((b) => b.text() === 'Capturar')!
-    expect(capturar.attributes('disabled')).toBeDefined()
-
-    // clic en el fragmento del documento
-    const target = wrapper.findAll('button').find((b) => b.text() === fragmento)!
-    await target.trigger('click')
-
-    // ahora se puede capturar
-    const capturar2 = wrapper.findAll('button').find((b) => b.text() === 'Capturar')!
-    expect(capturar2.attributes('disabled')).toBeUndefined()
-    await capturar2.trigger('click')
-
-    // la evidencia queda registrada
-    expect(wrapper.text()).toContain(fragmento)
-    expect(wrapper.text()).not.toContain('Selecciona texto en el documento')
+    // seleccionar un fragmento del documento
+    const frag = wrapper.findAll('button').find((b) => b.text().includes('hipertensión arterial'))!
+    await frag.trigger('click')
+    await capturarBtn(wrapper).trigger('click')
+    expect(wrapper.text()).toContain('hipertensión arterial en tratamiento con losartán')
   })
 
-  it('permite limpiar la evidencia capturada', async () => {
+  it('la casilla principal no tiene botón eliminar; [+] agrega una secundaria que sí', async () => {
     const wrapper = mount(GuiaMockCaptura)
-    const fragmento = 'hipertensión arterial en tratamiento con losartán'
-    await wrapper.findAll('button').find((b) => b.text() === fragmento)!.trigger('click')
-    await wrapper.findAll('button').find((b) => b.text() === 'Capturar')!.trigger('click')
-    await wrapper.findAll('button').find((b) => b.text() === 'limpiar')!.trigger('click')
-    expect(wrapper.text()).toContain('Selecciona texto en el documento')
+    expect(removeBtns(wrapper)).toHaveLength(0)
+    await addBtn(wrapper).trigger('click')
+    expect(removeBtns(wrapper)).toHaveLength(1)
+    await removeBtns(wrapper)[0].trigger('click')
+    expect(removeBtns(wrapper)).toHaveLength(0)
+  })
+
+  it('una casilla cerrada (candado) no recibe la captura', async () => {
+    const wrapper = mount(GuiaMockCaptura)
+    // capturar en la principal y cerrarla
+    const frag = wrapper.findAll('button').find((b) => b.text().includes('hipertensión arterial'))!
+    await frag.trigger('click')
+    await capturarBtn(wrapper).trigger('click')
+    await lockBtns(wrapper)[0].trigger('click')
+    // seleccionar otro fragmento e intentar capturar: el botón queda deshabilitado
+    const frag2 = wrapper.findAll('button').find((b) => b.text().includes('diabetes mellitus'))!
+    await frag2.trigger('click')
+    expect(capturarBtn(wrapper).attributes('disabled')).toBeDefined()
   })
 })
