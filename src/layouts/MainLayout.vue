@@ -41,6 +41,14 @@ async function handleLogout() {
               Mis Tareas
             </RouterLink>
             <RouterLink
+              v-if="!auth.isAdmin"
+              to="/guia"
+              class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+              :class="route.name === 'guia' ? 'text-brand-600 bg-brand-50' : 'text-slate-500 hover:text-slate-700 hover:bg-gray-100'"
+            >
+              Guía
+            </RouterLink>
+            <RouterLink
               v-if="auth.isAdmin"
               to="/admin"
               class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
