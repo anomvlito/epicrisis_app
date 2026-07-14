@@ -114,9 +114,8 @@ function onDateBlur(e: FocusEvent) {
 
 function onSelectChange(e: Event) {
   const val = (e.target as HTMLInputElement | HTMLSelectElement).value
-  // Save selected choice inside evidenceMetadata
+  // Save selected choice inside evidenceMetadata (preservando evidences/HU-029)
   const currentMeta = (state.value as any).evidenceMetadata || {}
-  annotationStore.injectEvidenceToActive(state.value.evidenceText, '') // Clear highlight association
   const newState = annotationStore.criteria.find(c => c.criterionName === props.node.key)
   if (newState) {
     newState.evidenceMetadata = { ...currentMeta, value: val }
