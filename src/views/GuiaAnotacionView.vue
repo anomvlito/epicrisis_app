@@ -123,6 +123,16 @@ const toc = [
           <li>Presiona el botón <strong>Capturar</strong>, arriba a la derecha en el criterio correspondiente, o pulsa la <strong>barra espaciadora</strong>.</li>
         </ol>
         <p>Para corregir una captura, pulsa <strong>Limpiar</strong> y vuelve a seleccionar y capturar.</p>
+        <p>
+          Puedes capturar <strong>varios fragmentos</strong> para un mismo criterio: cada uno vive en su propia
+          casilla. El botón <strong>+</strong> agrega otra casilla y <strong>−</strong> elimina las secundarias
+          (la casilla principal no se elimina).
+        </p>
+        <p>
+          Cada casilla tiene un <strong>candado</strong>: <strong>abierto</strong> significa que está editable y
+          "a la escucha" (la captura cae ahí); <strong>cerrado</strong> la deja confirmada y en solo lectura, sin
+          recibir nuevas capturas. Solo hay <strong>una casilla activa a la vez</strong> en todo el formulario.
+        </p>
         <GuiaCallout variant="green">
           <strong>Regla de evidencia:</strong> los criterios marcados <GuiaValuePill variant="si" /> y
           <GuiaValuePill variant="ns" /> deben tener evidencia capturada (es <strong>obligatorio</strong>); los
