@@ -84,7 +84,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
   const activeMetadataField = ref<string | null>(null)
   // HU-029: índice de la única casilla de evidencia activa (dentro del criterio activo)
   const activeEvidenceIndex = ref(0)
-  // HU-022: Estado del glosario
+  // HU-037: Estado del glosario
   const isGlossaryOpen = ref(false)
   const glossaryActiveKey = ref<string | null>(null)
   const criteria = ref<CriterionState[]>([])
