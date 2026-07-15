@@ -262,16 +262,16 @@ export const FORM_SCHEMA: FormNode[] = [
     label: 'Bloque 3. Ingreso',
     type: 'mother',
     children: [
-      { id: '3.1', key: 'ingreso.fecha_ingreso_upc', label: 'Fecha de ingreso a UPC', type: 'leaf' },
-      { id: '3.2', key: 'ingreso.unidad_origen', label: 'Unidad de origen', type: 'leaf', synonyms: ['procedencia', 'urgencia', 'pabellon'] },
+      { id: '3.1', key: 'ingreso.fecha_ingreso_upc', label: 'Fecha de ingreso a UPC', type: 'date', placeholder: 'DD/MM/AAAA' },
+      { id: '3.2', key: 'ingreso.unidad_origen', label: 'Unidad de origen', type: 'select', choices: ['Urgencia', 'Sala / servicio', 'Pabellón', 'Otro centro (traslado)', 'Otro'], synonyms: ['procedencia', 'urgencia', 'pabellon'] },
       {
         id: '3.3',
         key: 'ingreso.diagnostico',
         label: 'Diagnóstico de ingreso',
         type: 'mother',
         children: [
-          { id: '3.3.1', key: 'ingreso.diagnostico.principal', label: 'Diagnóstico principal', type: 'leaf' },
-          { id: '3.3.2', key: 'ingreso.diagnostico.otros', label: 'Otros diagnósticos de ingreso', type: 'leaf' }
+          { id: '3.3.1', key: 'ingreso.diagnostico.principal', label: 'Diagnóstico principal', type: 'text' },
+          { id: '3.3.2', key: 'ingreso.diagnostico.otros', label: 'Otros diagnósticos de ingreso', type: 'text' }
         ]
       }
     ]
@@ -291,9 +291,9 @@ export const FORM_SCHEMA: FormNode[] = [
         synonyms: ['rcp', 'paro cardiaco', 'parada', 'reanimado'],
         children: [
           { id: '4.1.1', key: 'soporte.reanimacion.fecha_disponible', label: 'Fecha disponible', type: 'leaf' },
-          { id: '4.1.2', key: 'soporte.reanimacion.ritmo_inicial', label: 'Ritmo inicial (Desfibrilable/No desfibrilable)', type: 'leaf' },
-          { id: '4.1.3', key: 'soporte.reanimacion.causa_paro', label: 'Causa del paro', type: 'leaf' },
-          { id: '4.1.4', key: 'soporte.reanimacion.duracion_ciclos', label: 'Duración o número de ciclos', type: 'leaf' },
+          { id: '4.1.2', key: 'soporte.reanimacion.ritmo_inicial', label: 'Ritmo inicial (Desfibrilable/No desfibrilable)', type: 'select', choices: ['Desfibrilable', 'No desfibrilable'] },
+          { id: '4.1.3', key: 'soporte.reanimacion.causa_paro', label: 'Causa del paro', type: 'text' },
+          { id: '4.1.4', key: 'soporte.reanimacion.duracion_ciclos', label: 'Duración o número de ciclos', type: 'text' },
           { id: '4.1.5', key: 'soporte.reanimacion.requirio_desfibrilacion', label: 'Requirió desfibrilación', type: 'leaf' },
           { id: '4.1.7', key: 'soporte.reanimacion.retorno_circulacion', label: 'Retorno a circulación espontánea (ROSC)', type: 'leaf' }
         ]
@@ -338,9 +338,9 @@ export const FORM_SCHEMA: FormNode[] = [
             synonyms: ['vmi', 'tubo endotraqueal', 'tet', 'intubacion', 'intubado', 'acople', 'ventilado'],
             mutuallyExclusiveWith: ['soporte.respiratorio.vmni'],
             children: [
-              { id: '4.3.2.1', key: 'soporte.respiratorio.vmi.fecha_inicio', label: 'Fecha de inicio', type: 'leaf' },
-              { id: '4.3.2.2', key: 'soporte.respiratorio.vmi.fecha_termino', label: 'Fecha de término', type: 'leaf' },
-              { id: '4.3.2.3', key: 'soporte.respiratorio.vmi.motivo', label: 'Motivo', type: 'leaf' },
+              { id: '4.3.2.1', key: 'soporte.respiratorio.vmi.fecha_inicio', label: 'Fecha de inicio', type: 'date', placeholder: 'DD/MM/AAAA' },
+              { id: '4.3.2.2', key: 'soporte.respiratorio.vmi.fecha_termino', label: 'Fecha de término', type: 'date', placeholder: 'DD/MM/AAAA' },
+              { id: '4.3.2.3', key: 'soporte.respiratorio.vmi.motivo', label: 'Motivo', type: 'text' },
               { id: '4.3.2.4', key: 'soporte.respiratorio.vmi.mas_de_un_ciclo', label: 'Requirió más de un ciclo de VMI', type: 'leaf' }
             ]
           },
@@ -352,8 +352,8 @@ export const FORM_SCHEMA: FormNode[] = [
             synonyms: ['bnm', 'cisatracurio', 'relajante', 'paralisis'],
             mutuallyExclusiveWith: ['soporte.respiratorio.vmni'],
             children: [
-              { id: '4.3.3.1', key: 'soporte.respiratorio.bloqueo_neuromuscular.fecha_inicio', label: 'Fecha de inicio', type: 'leaf' },
-              { id: '4.3.3.2', key: 'soporte.respiratorio.bloqueo_neuromuscular.fecha_termino', label: 'Fecha de término', type: 'leaf' },
+              { id: '4.3.3.1', key: 'soporte.respiratorio.bloqueo_neuromuscular.fecha_inicio', label: 'Fecha de inicio', type: 'date', placeholder: 'DD/MM/AAAA' },
+              { id: '4.3.3.2', key: 'soporte.respiratorio.bloqueo_neuromuscular.fecha_termino', label: 'Fecha de término', type: 'date', placeholder: 'DD/MM/AAAA' },
               { id: '4.3.3.3', key: 'soporte.respiratorio.bloqueo_neuromuscular.mas_de_un_ciclo', label: 'Requirió más de un ciclo de bloqueo neuromuscular', type: 'leaf' }
             ]
           },
@@ -365,8 +365,8 @@ export const FORM_SCHEMA: FormNode[] = [
             synonyms: ['pronacion', 'decubito prono', 'boca abajo'],
             mutuallyExclusiveWith: ['soporte.respiratorio.vmni'],
             children: [
-              { id: '4.3.4.1', key: 'soporte.respiratorio.prono.fecha_inicio', label: 'Fecha de inicio', type: 'leaf' },
-              { id: '4.3.4.2', key: 'soporte.respiratorio.prono.fecha_termino', label: 'Fecha de término', type: 'leaf' },
+              { id: '4.3.4.1', key: 'soporte.respiratorio.prono.fecha_inicio', label: 'Fecha de inicio', type: 'date', placeholder: 'DD/MM/AAAA' },
+              { id: '4.3.4.2', key: 'soporte.respiratorio.prono.fecha_termino', label: 'Fecha de término', type: 'date', placeholder: 'DD/MM/AAAA' },
               { id: '4.3.4.3', key: 'soporte.respiratorio.prono.mas_de_un_ciclo', label: 'Requirió más de un ciclo de prono', type: 'leaf' }
             ]
           },
@@ -378,8 +378,8 @@ export const FORM_SCHEMA: FormNode[] = [
             synonyms: ['tqt', 'traqueo'],
             mutuallyExclusiveWith: ['soporte.respiratorio.vmni'],
             children: [
-              { id: '4.3.5.1', key: 'soporte.respiratorio.traqueostomia.fecha_realizacion', label: 'Fecha de realización', type: 'leaf' },
-              { id: '4.3.5.2', key: 'soporte.respiratorio.traqueostomia.motivo', label: 'Motivo', type: 'leaf' }
+              { id: '4.3.5.1', key: 'soporte.respiratorio.traqueostomia.fecha_realizacion', label: 'Fecha de realización', type: 'date', placeholder: 'DD/MM/AAAA' },
+              { id: '4.3.5.2', key: 'soporte.respiratorio.traqueostomia.motivo', label: 'Motivo', type: 'text' }
             ]
           }
         ]
@@ -406,7 +406,7 @@ export const FORM_SCHEMA: FormNode[] = [
         type: 'leaf',
         synonyms: ['hfav'],
         children: [
-          { id: '4.7.1', key: 'soporte.hfav.motivo', label: 'Motivo', type: 'leaf' }
+          { id: '4.7.1', key: 'soporte.hfav.motivo', label: 'Motivo', type: 'text' }
         ]
       },
       {
@@ -643,10 +643,10 @@ export const FORM_SCHEMA: FormNode[] = [
     label: 'Bloque 8. Egreso',
     type: 'mother',
     children: [
-      { id: '8.1', key: 'egreso.fecha_egreso_upc', label: 'Fecha de egreso de UPC', type: 'leaf' },
-      { id: '8.2', key: 'egreso.estado_vital', label: 'Estado vital al egreso de UPC', type: 'leaf', synonyms: ['vivo', 'fallecido', 'muerto', 'deceso', 'mortalidad'] },
-      { id: '8.3', key: 'egreso.destino', label: 'Destino de egreso de UPC', type: 'leaf', synonyms: ['sala comun', 'alta a domicilio', 'derivado', 'traslado'] },
-      { id: '8.4', key: 'egreso.diagnostico', label: 'Diagnóstico de egreso de UPC', type: 'leaf' },
+      { id: '8.1', key: 'egreso.fecha_egreso_upc', label: 'Fecha de egreso de UPC', type: 'date', placeholder: 'DD/MM/AAAA' },
+      { id: '8.2', key: 'egreso.estado_vital', label: 'Estado vital al egreso de UPC', type: 'select', choices: ['Vivo', 'Fallecido'], synonyms: ['vivo', 'fallecido', 'muerto', 'deceso', 'mortalidad'] },
+      { id: '8.3', key: 'egreso.destino', label: 'Destino de egreso de UPC', type: 'select', choices: ['Sala común / otra unidad', 'Alta a domicilio', 'Traslado a otro centro', 'Otro'], synonyms: ['sala comun', 'alta a domicilio', 'derivado', 'traslado'] },
+      { id: '8.4', key: 'egreso.diagnostico', label: 'Diagnóstico de egreso de UPC', type: 'text' },
       { id: '8.5', key: 'egreso.reingreso_upc', label: 'Reingreso a UPC durante la hospitalización', type: 'leaf', synonyms: ['reingresado'] }
     ]
   },

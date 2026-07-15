@@ -352,3 +352,48 @@ describe('HU-029 múltiples fragmentos de evidencia', () => {
     expect(s.getEvidenceList(C0)).toEqual([{ text: 'evidencia guardada antes', locked: true }])
   })
 })
+
+// HU-039 — corregir tipos de campos que pedían Sí/No y deberían capturar un dato
+describe('HU-039 tipos de campos (Egreso/Ingreso/Soporte)', () => {
+  beforeEach(() => { localStorage.clear(); setActivePinia(createPinia()) })
+
+  function nodeByKey(key: string): any {
+    let found: any = null
+    const walk = (n: any) => { if (n.key === key) found = n; (n.children || []).forEach(walk) }
+    FORM_SCHEMA.forEach(walk)
+    return found
+  }
+
+  it('los campos de Egreso/Ingreso tienen el tipo correcto (no leaf)', () => {
+    expect(nodeByKey('egreso.fecha_egreso_upc').type).toBe('date')
+    expect(nodeByKey('egreso.estado_vital').type).toBe('select')
+    expect(nodeByKey('egreso.estado_vital').choices).toEqual(['Vivo', 'Fallecido'])
+    expect(nodeByKey('egreso.destino').type).toBe('select')
+    expect(nodeByKey('egreso.diagnostico').type).toBe('text')
+    expect(nodeByKey('ingreso.fecha_ingreso_upc').type).toBe('date')
+    expect(nodeByKey('ingreso.unidad_origen').type).toBe('select')
+    expect(nodeByKey('ingreso.diagnostico.principal').type).toBe('text')
+    expect(nodeByKey('soporte.reanimacion.ritmo_inicial').type).toBe('select')
+    expect(nodeByKey('soporte.respiratorio.vmi.fecha_inicio').type).toBe('date')
+    // reingreso se mantiene como leaf (Sí/No)
+    expect(nodeByKey('egreso.reingreso_upc').type).toBe('leaf')
+  })
+
+  it('migra una fecha legacy (metadata.value) a evidenceText al cargar del servidor', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.loadFromServer([
+      { criterionName: 'egreso.fecha_egreso_upc', isPresent: true, evidenceText: null, comments: null, evidenceMetadata: { value: '30/12/2022' } } as any,
+    ], null)
+    const node = s.criteria.find(c => c.criterionName === 'egreso.fecha_egreso_upc')!
+    expect(node.evidenceText).toBe('30/12/2022') // migrado a evidenceText
+    expect(s.fechaEgresoUci).toBe('30/12/2022')
+  })
+
+  it('el getter de fecha de UPC escribe en evidenceText (nuevo modelo date)', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.fechaIngresoUci = '05/05/2026'
+    expect(s.criteria.find(c => c.criterionName === 'ingreso.fecha_ingreso_upc')!.evidenceText).toBe('05/05/2026')
+  })
+})

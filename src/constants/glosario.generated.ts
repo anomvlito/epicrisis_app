@@ -1798,7 +1798,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
         "id": "3.1",
         "key": "ingreso.fecha_ingreso_upc",
         "label": "Fecha de ingreso a UPC",
-        "type": "leaf",
+        "type": "date",
         "definitionMarkdown": "Fecha de ingreso a la Unidad de Paciente Crítico (DD/MM/AAAA).",
         "definitionHtml": "<p>Fecha de ingreso a la Unidad de Paciente Crítico (DD/MM/AAAA).</p>"
       },
@@ -1806,7 +1806,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
         "id": "3.2",
         "key": "ingreso.unidad_origen",
         "label": "Unidad de origen",
-        "type": "leaf",
+        "type": "select",
         "definitionMarkdown": "Lugar desde donde ingresa el paciente a la UPC (urgencias, sala, pabellón, otro centro, etc.).",
         "definitionHtml": "<p>Lugar desde donde ingresa el paciente a la UPC (urgencias, sala, pabellón, otro centro, etc.).</p>"
       },
@@ -1820,7 +1820,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
             "id": "3.3.1",
             "key": "ingreso.diagnostico.principal",
             "label": "Diagnóstico principal",
-            "type": "leaf",
+            "type": "text",
             "definitionMarkdown": "Diagnóstico que motivó el ingreso a la UPC.\n* **Nota de desambiguación:** No repitas aquí las enfermedades de base, salvo que hayan llegado descompensadas.",
             "definitionHtml": "<p>Diagnóstico que motivó el ingreso a la UPC.</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> No repitas aquí las enfermedades de base, salvo que hayan llegado descompensadas.</li>\n</ul>"
           },
@@ -1828,7 +1828,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
             "id": "3.3.2",
             "key": "ingreso.diagnostico.otros",
             "label": "Otros diagnósticos de ingreso",
-            "type": "leaf",
+            "type": "text",
             "definitionMarkdown": "Diagnósticos secundarios presentes al ingreso, distintos del principal.\n\n---",
             "definitionHtml": "<p>Diagnósticos secundarios presentes al ingreso, distintos del principal.</p>\n<hr>"
           }
@@ -1862,7 +1862,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
             "id": "4.1.2",
             "key": "soporte.reanimacion.ritmo_inicial",
             "label": "Ritmo inicial (Desfibrilable/No desfibrilable)",
-            "type": "leaf",
+            "type": "select",
             "definitionMarkdown": "Ritmo al inicio del paro: desfibrilable (fibrilación ventricular / taquicardia ventricular sin pulso) o no desfibrilable (asistolia / actividad eléctrica sin pulso).",
             "definitionHtml": "<p>Ritmo al inicio del paro: desfibrilable (fibrilación ventricular / taquicardia ventricular sin pulso) o no desfibrilable (asistolia / actividad eléctrica sin pulso).</p>"
           },
@@ -1870,7 +1870,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
             "id": "4.1.3",
             "key": "soporte.reanimacion.causa_paro",
             "label": "Causa del paro",
-            "type": "leaf",
+            "type": "text",
             "definitionMarkdown": "Causa documentada del paro cardiorrespiratorio.",
             "definitionHtml": "<p>Causa documentada del paro cardiorrespiratorio.</p>"
           },
@@ -1878,7 +1878,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
             "id": "4.1.4",
             "key": "soporte.reanimacion.duracion_ciclos",
             "label": "Duración o número de ciclos",
-            "type": "leaf",
+            "type": "text",
             "definitionMarkdown": "Duración del soporte o número de ciclos, cuando el texto lo especifica.",
             "definitionHtml": "<p>Duración del soporte o número de ciclos, cuando el texto lo especifica.</p>"
           },
@@ -1978,7 +1978,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
                 "id": "4.3.2.1",
                 "key": "soporte.respiratorio.vmi.fecha_inicio",
                 "label": "Fecha de inicio",
-                "type": "leaf",
+                "type": "date",
                 "definitionMarkdown": "Fecha en que comenzó el soporte o intervención (DD/MM/AAAA), cuando el texto la consigna.",
                 "definitionHtml": "<p>Fecha en que comenzó el soporte o intervención (DD/MM/AAAA), cuando el texto la consigna.</p>"
               },
@@ -1986,7 +1986,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
                 "id": "4.3.2.2",
                 "key": "soporte.respiratorio.vmi.fecha_termino",
                 "label": "Fecha de término",
-                "type": "leaf",
+                "type": "date",
                 "definitionMarkdown": "Fecha en que finalizó el soporte o intervención (DD/MM/AAAA), cuando el texto la consigna.",
                 "definitionHtml": "<p>Fecha en que finalizó el soporte o intervención (DD/MM/AAAA), cuando el texto la consigna.</p>"
               },
@@ -1994,7 +1994,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
                 "id": "4.3.2.3",
                 "key": "soporte.respiratorio.vmi.motivo",
                 "label": "Motivo",
-                "type": "leaf",
+                "type": "text",
                 "definitionMarkdown": "Indicación o razón documentada del soporte o intervención (p. ej. indicación de la hemofiltración o de la circulación extracorpórea).",
                 "definitionHtml": "<p>Indicación o razón documentada del soporte o intervención (p. ej. indicación de la hemofiltración o de la circulación extracorpórea).</p>"
               },
@@ -2020,7 +2020,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
                 "id": "4.3.3.1",
                 "key": "soporte.respiratorio.bloqueo_neuromuscular.fecha_inicio",
                 "label": "Fecha de inicio",
-                "type": "leaf",
+                "type": "date",
                 "definitionMarkdown": "Fecha en que comenzó el soporte o intervención (DD/MM/AAAA), cuando el texto la consigna.",
                 "definitionHtml": "<p>Fecha en que comenzó el soporte o intervención (DD/MM/AAAA), cuando el texto la consigna.</p>"
               },
@@ -2028,7 +2028,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
                 "id": "4.3.3.2",
                 "key": "soporte.respiratorio.bloqueo_neuromuscular.fecha_termino",
                 "label": "Fecha de término",
-                "type": "leaf",
+                "type": "date",
                 "definitionMarkdown": "Fecha en que finalizó el soporte o intervención (DD/MM/AAAA), cuando el texto la consigna.",
                 "definitionHtml": "<p>Fecha en que finalizó el soporte o intervención (DD/MM/AAAA), cuando el texto la consigna.</p>"
               },
@@ -2054,7 +2054,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
                 "id": "4.3.4.1",
                 "key": "soporte.respiratorio.prono.fecha_inicio",
                 "label": "Fecha de inicio",
-                "type": "leaf",
+                "type": "date",
                 "definitionMarkdown": "Fecha en que comenzó el soporte o intervención (DD/MM/AAAA), cuando el texto la consigna.",
                 "definitionHtml": "<p>Fecha en que comenzó el soporte o intervención (DD/MM/AAAA), cuando el texto la consigna.</p>"
               },
@@ -2062,7 +2062,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
                 "id": "4.3.4.2",
                 "key": "soporte.respiratorio.prono.fecha_termino",
                 "label": "Fecha de término",
-                "type": "leaf",
+                "type": "date",
                 "definitionMarkdown": "Fecha en que finalizó el soporte o intervención (DD/MM/AAAA), cuando el texto la consigna.",
                 "definitionHtml": "<p>Fecha en que finalizó el soporte o intervención (DD/MM/AAAA), cuando el texto la consigna.</p>"
               },
@@ -2088,7 +2088,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
                 "id": "4.3.5.1",
                 "key": "soporte.respiratorio.traqueostomia.fecha_realizacion",
                 "label": "Fecha de realización",
-                "type": "leaf",
+                "type": "date",
                 "definitionMarkdown": "Fecha en que se realizó el procedimiento (DD/MM/AAAA), cuando el texto la consigna.",
                 "definitionHtml": "<p>Fecha en que se realizó el procedimiento (DD/MM/AAAA), cuando el texto la consigna.</p>"
               },
@@ -2096,7 +2096,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
                 "id": "4.3.5.2",
                 "key": "soporte.respiratorio.traqueostomia.motivo",
                 "label": "Motivo",
-                "type": "leaf",
+                "type": "text",
                 "definitionMarkdown": "Indicación o razón documentada del soporte o intervención (p. ej. indicación de la hemofiltración o de la circulación extracorpórea).",
                 "definitionHtml": "<p>Indicación o razón documentada del soporte o intervención (p. ej. indicación de la hemofiltración o de la circulación extracorpórea).</p>"
               }
@@ -2182,7 +2182,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
             "id": "4.7.1",
             "key": "soporte.hfav.motivo",
             "label": "Motivo",
-            "type": "leaf",
+            "type": "text",
             "definitionMarkdown": "Indicación o razón documentada del soporte o intervención (p. ej. indicación de la hemofiltración o de la circulación extracorpórea).",
             "definitionHtml": "<p>Indicación o razón documentada del soporte o intervención (p. ej. indicación de la hemofiltración o de la circulación extracorpórea).</p>"
           }
@@ -2854,7 +2854,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
         "id": "8.1",
         "key": "egreso.fecha_egreso_upc",
         "label": "Fecha de egreso de UPC",
-        "type": "leaf",
+        "type": "date",
         "definitionMarkdown": "Fecha de egreso de la Unidad de Paciente Crítico (DD/MM/AAAA).",
         "definitionHtml": "<p>Fecha de egreso de la Unidad de Paciente Crítico (DD/MM/AAAA).</p>"
       },
@@ -2862,7 +2862,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
         "id": "8.2",
         "key": "egreso.estado_vital",
         "label": "Estado vital al egreso de UPC",
-        "type": "leaf",
+        "type": "select",
         "definitionMarkdown": "Condición del paciente al egreso de la UPC: vivo o fallecido.",
         "definitionHtml": "<p>Condición del paciente al egreso de la UPC: vivo o fallecido.</p>"
       },
@@ -2870,7 +2870,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
         "id": "8.3",
         "key": "egreso.destino",
         "label": "Destino de egreso de UPC",
-        "type": "leaf",
+        "type": "select",
         "definitionMarkdown": "Lugar al que se traslada el paciente al salir de la UPC (sala, otro centro, domicilio, etc.). Solo aplica si egresó vivo.",
         "definitionHtml": "<p>Lugar al que se traslada el paciente al salir de la UPC (sala, otro centro, domicilio, etc.). Solo aplica si egresó vivo.</p>"
       },
@@ -2878,7 +2878,7 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
         "id": "8.4",
         "key": "egreso.diagnostico",
         "label": "Diagnóstico de egreso de UPC",
-        "type": "leaf",
+        "type": "text",
         "definitionMarkdown": "Diagnóstico principal al egreso de la UPC.",
         "definitionHtml": "<p>Diagnóstico principal al egreso de la UPC.</p>"
       },

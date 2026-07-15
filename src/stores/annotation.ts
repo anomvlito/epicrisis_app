@@ -52,6 +52,20 @@ const DESCENDANT_MAP = buildDescendantMap()
 const ALL_FORM_NODES = getAllNodes()
 const V3_LEAF_VARIABLES = getLeafNodes()
 
+// HU-039: campos que pasaron de leaf a type 'date'. Su valor legacy quedó en
+// evidenceMetadata.value; al cargar lo movemos a evidenceText (donde vive el 'date').
+const DATE_REMAPPED_KEYS = [
+  'ingreso.fecha_ingreso_upc',
+  'egreso.fecha_egreso_upc',
+  'soporte.respiratorio.vmi.fecha_inicio',
+  'soporte.respiratorio.vmi.fecha_termino',
+  'soporte.respiratorio.bloqueo_neuromuscular.fecha_inicio',
+  'soporte.respiratorio.bloqueo_neuromuscular.fecha_termino',
+  'soporte.respiratorio.prono.fecha_inicio',
+  'soporte.respiratorio.prono.fecha_termino',
+  'soporte.respiratorio.traqueostomia.fecha_realizacion',
+]
+
 export type MissingItem = { category: string; label: string } & (
   | { kind: 'criterion'; key: string }
   | { kind: 'clinical';  key: string; section: string }
@@ -100,21 +114,16 @@ export const useAnnotationStore = defineStore('annotation', () => {
   const clinicalData = ref<ClinicalData>(defaultClinicalData())
   
   // Define getters/setters for vmiInicio and vmiFin on the clinicalData value object to link with criteria
+  // HU-039: estas fechas ahora son type 'date' (su valor vive en evidenceText).
+  // Fallback a evidenceMetadata.value para leer datos legacy (guardados como leaf).
   Object.defineProperty(clinicalData.value, 'vmiInicio', {
     get() {
       const node = criteria.value.find(c => c.criterionName === 'soporte.respiratorio.vmi.fecha_inicio')
-      return (node && node.isPresent === true) ? (node.evidenceMetadata?.value || '') : ''
+      return node ? (node.evidenceText || node.evidenceMetadata?.value || '') : ''
     },
     set(newVal) {
       const node = criteria.value.find(c => c.criterionName === 'soporte.respiratorio.vmi.fecha_inicio')
-      if (node) {
-        if (newVal) {
-          node.isPresent = true
-          node.evidenceMetadata = { ...node.evidenceMetadata, value: newVal }
-        } else if (node.isPresent === true) {
-          node.evidenceMetadata = { ...node.evidenceMetadata, value: '' }
-        }
-      }
+      if (node) node.evidenceText = newVal
     },
     enumerable: true,
     configurable: true
@@ -123,18 +132,11 @@ export const useAnnotationStore = defineStore('annotation', () => {
   Object.defineProperty(clinicalData.value, 'vmiFin', {
     get() {
       const node = criteria.value.find(c => c.criterionName === 'soporte.respiratorio.vmi.fecha_termino')
-      return (node && node.isPresent === true) ? (node.evidenceMetadata?.value || '') : ''
+      return node ? (node.evidenceText || node.evidenceMetadata?.value || '') : ''
     },
     set(newVal) {
       const node = criteria.value.find(c => c.criterionName === 'soporte.respiratorio.vmi.fecha_termino')
-      if (node) {
-        if (newVal) {
-          node.isPresent = true
-          node.evidenceMetadata = { ...node.evidenceMetadata, value: newVal }
-        } else if (node.isPresent === true) {
-          node.evidenceMetadata = { ...node.evidenceMetadata, value: '' }
-        }
-      }
+      if (node) node.evidenceText = newVal
     },
     enumerable: true,
     configurable: true
@@ -167,39 +169,26 @@ export const useAnnotationStore = defineStore('annotation', () => {
     }
   })
 
+  // HU-039: fechas de UPC ahora type 'date' (valor en evidenceText; fallback legacy a metadata.value).
   const fechaIngresoUci = computed({
     get() {
       const node = criteria.value.find(c => c.criterionName === 'ingreso.fecha_ingreso_upc')
-      return (node && node.isPresent === true) ? (node.evidenceMetadata?.value || '') : ''
+      return node ? (node.evidenceText || node.evidenceMetadata?.value || '') : ''
     },
     set(newVal) {
       const node = criteria.value.find(c => c.criterionName === 'ingreso.fecha_ingreso_upc')
-      if (node) {
-        if (newVal) {
-          node.isPresent = true
-          node.evidenceMetadata = { ...node.evidenceMetadata, value: newVal }
-        } else if (node.isPresent === true) {
-          node.evidenceMetadata = { ...node.evidenceMetadata, value: '' }
-        }
-      }
+      if (node) node.evidenceText = newVal
     }
   })
 
   const fechaEgresoUci = computed({
     get() {
       const node = criteria.value.find(c => c.criterionName === 'egreso.fecha_egreso_upc')
-      return (node && node.isPresent === true) ? (node.evidenceMetadata?.value || '') : ''
+      return node ? (node.evidenceText || node.evidenceMetadata?.value || '') : ''
     },
     set(newVal) {
       const node = criteria.value.find(c => c.criterionName === 'egreso.fecha_egreso_upc')
-      if (node) {
-        if (newVal) {
-          node.isPresent = true
-          node.evidenceMetadata = { ...node.evidenceMetadata, value: newVal }
-        } else if (node.isPresent === true) {
-          node.evidenceMetadata = { ...node.evidenceMetadata, value: '' }
-        }
-      }
+      if (node) node.evidenceText = newVal
     }
   })
 
@@ -419,6 +408,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
       clinicalData.value.vmiInicio = rest.vmiInicio ?? ''
       clinicalData.value.vmiFin = rest.vmiFin ?? ''
     }
+    migrateReTypedFields()
   }
 
   function loadFromServer(
@@ -466,6 +456,17 @@ export const useAnnotationStore = defineStore('annotation', () => {
         }
       }
     })
+    migrateReTypedFields()
+  }
+
+  // HU-039: migra el valor legacy de los campos-fecha remapeados (metadata.value → evidenceText).
+  function migrateReTypedFields() {
+    for (const key of DATE_REMAPPED_KEYS) {
+      const c = criteria.value.find((x) => x.criterionName === key)
+      if (c && (!c.evidenceText || c.evidenceText.trim() === '') && c.evidenceMetadata?.value) {
+        c.evidenceText = c.evidenceMetadata.value
+      }
+    }
   }
 
   function setActive(name: string) {
