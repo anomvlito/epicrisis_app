@@ -33,6 +33,22 @@ const toc = [
         </div>
       </div>
 
+      <!-- Video tutorial -->
+      <div class="mb-10">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Video tutorial</h2>
+        <div class="aspect-video w-full rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-black">
+          <iframe
+            class="w-full h-full"
+            src="https://www.youtube.com/embed/aircAruvnKk?rel=0"
+            title="Video tutorial de anotación"
+            loading="lazy"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </div>
+
       <!-- Índice (TOC) -->
       <nav class="bg-slate-50 border border-gray-200 rounded-lg px-6 py-5 mb-10">
         <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Contenido</h2>
