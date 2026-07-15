@@ -18,6 +18,7 @@ import SectionedViewer from '@/components/annotation/SectionedViewer.vue'
 import PdfViewer from '@/components/annotation/PdfViewer.vue'
 import DynamicViewer from '@/components/annotation/DynamicViewer.vue'
 import { epicrisisService } from '@/services/epicrisis.service'
+import { useEpicrisisAlias } from '@/composables/useEpicrisisAlias'
 import AnnotationTree from '@/components/annotation/AnnotationTree.vue'
 import GlosarioModal from '@/components/annotation/GlosarioModal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -32,6 +33,8 @@ const annotationStore = useAnnotationStore()
 
 const epicrisisId = Number(route.params.id)
 const epicrisisIdRef = computed(() => epicrisisId)
+// HU-040: nombre privado (localStorage) para reconocer esta epicrisis.
+const { alias: epicrisisAlias } = useEpicrisisAlias(epicrisisId)
 const timer = useAnnotationTimer(epicrisisIdRef)
 
 // Split pane
@@ -551,6 +554,16 @@ onUnmounted(() => {
             : 'Pendiente'
           }}
         </span>
+
+        <!-- HU-040: nombre privado (solo local, para reconocer la epicrisis) -->
+        <input
+          v-model="epicrisisAlias"
+          type="text"
+          maxlength="60"
+          placeholder="Ponle un nombre…"
+          title="Nombre privado para reconocer esta epicrisis. Solo tú lo ves y se guarda en este equipo."
+          class="hidden sm:inline-block flex-shrink-0 w-32 md:w-44 text-xs text-gray-600 placeholder-gray-300 bg-gray-50 border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:border-brand-400 focus:bg-white transition-colors"
+        />
       </div>
 
       <div class="flex-1" />
