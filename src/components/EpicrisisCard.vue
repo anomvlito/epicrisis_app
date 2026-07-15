@@ -3,9 +3,13 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { EpicrisisListItem } from '@/stores/epicrisis'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import { getEpicrisisAlias } from '@/composables/useEpicrisisAlias'
 
 const props = defineProps<{ epicrisis: EpicrisisListItem }>()
 const router = useRouter()
+
+// HU-040: nombre privado del anotador (localStorage), para reconocer la epicrisis.
+const alias = computed(() => getEpicrisisAlias(props.epicrisis.id))
 
 const maskedId = computed(() => 
   props.epicrisis.patientId 
@@ -42,6 +46,7 @@ function navigate() {
           {{ statusConfig.label }}
         </span>
       </div>
+      <p v-if="alias" class="text-sm font-semibold text-brand-700 truncate mb-0.5" :title="alias">{{ alias }}</p>
       <p class="text-xs text-gray-400">
         {{ new Date(epicrisis.createdAt).toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' }) }}
       </p>
