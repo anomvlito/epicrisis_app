@@ -1,22 +1,14 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed, onBeforeUpdate } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 import { useAnnotationStore } from '@/stores/annotation'
-import { GLOSARIO_DEFINICIONES } from '@/constants/glosario.generated'
+import { GLOSARIO_DEFINICIONES, GLOSARIO_ESTRUCTURA } from '@/constants/glosario.generated'
+import GlosarioTree from './GlosarioTree.vue'
 
 const annotationStore = useAnnotationStore()
 const searchQuery = ref('')
-const entryRefs = ref<Record<string, HTMLElement>>({})
+const scrollRef = ref<HTMLElement | null>(null)
 
-const setEntryRef = (key: string, el: any) => {
-  if (el) {
-    entryRefs.value[key] = el
-  }
-}
-
-// Clear refs on update to avoid leaks/stale elements
-onBeforeUpdate(() => {
-  entryRefs.value = {}
-})
+const isSearching = computed(() => !!searchQuery.value.trim())
 
 const hasActiveDefinition = computed(() => {
   return !!(annotationStore.glossaryActiveKey && GLOSARIO_DEFINICIONES[annotationStore.glossaryActiveKey])
@@ -52,8 +44,9 @@ watch(() => annotationStore.isGlossaryOpen, async (isOpen) => {
     searchQuery.value = ''
     await nextTick()
     const activeKey = annotationStore.glossaryActiveKey
-    if (activeKey && entryRefs.value[activeKey]) {
-      entryRefs.value[activeKey].scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (activeKey && scrollRef.value) {
+      const el = scrollRef.value.querySelector(`[data-glos-key="${activeKey}"]`)
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }
 })
@@ -90,7 +83,7 @@ watch(() => annotationStore.isGlossaryOpen, async (isOpen) => {
               class="text-slate-400 hover:text-slate-600 rounded-lg p-1 hover:bg-slate-50 transition-colors"
               @click="annotationStore.closeGlossary"
             >
-              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -98,7 +91,7 @@ watch(() => annotationStore.isGlossaryOpen, async (isOpen) => {
           
           <!-- Search input -->
           <div class="relative">
-            <svg class="w-4.5 h-4.5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 text-slate-400 absolute left-3 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input 
@@ -115,7 +108,7 @@ watch(() => annotationStore.isGlossaryOpen, async (isOpen) => {
           v-if="!hasActiveDefinition"
           class="mx-4 mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs flex gap-2"
         >
-          <svg class="w-4.5 h-4.5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <div>
@@ -124,49 +117,28 @@ watch(() => annotationStore.isGlossaryOpen, async (isOpen) => {
         </div>
 
         <!-- Entries Scroll Container -->
-        <div class="flex-1 overflow-y-auto p-4 space-y-3">
-          <div 
-            v-for="entry in filteredEntries" 
-            :key="entry.key"
-            :ref="el => setEntryRef(entry.key, el)"
-            :class="[
-              'p-3 border rounded-xl transition-all scroll-mt-2',
-              entry.key === annotationStore.glossaryActiveKey
-                ? 'border-brand-300 bg-brand-50/40 shadow-xs ring-1 ring-brand-300'
-                : 'border-slate-100 bg-slate-50/30'
-            ]"
-          >
-            <!-- Term name -->
-            <div class="flex items-center gap-1.5 mb-1.5">
-              <h4 
-                :class="[
-                  'font-bold text-xs',
-                  entry.key === annotationStore.glossaryActiveKey ? 'text-brand-700' : 'text-slate-800'
-                ]"
-              >
-                {{ entry.term }}
-              </h4>
-              <span 
-                v-if="entry.key === annotationStore.glossaryActiveKey"
-                class="bg-brand-100 text-brand-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase select-none"
-              >
-                Actual
-              </span>
+        <div ref="scrollRef" class="flex-1 overflow-y-auto p-4 space-y-2">
+          <!-- Búsqueda: lista plana de resultados -->
+          <template v-if="isSearching">
+            <div
+              v-for="entry in filteredEntries"
+              :key="entry.key"
+              class="p-3 border border-slate-100 rounded-xl bg-slate-50/30"
+            >
+              <h4 class="font-bold text-xs text-slate-800 mb-1">{{ entry.term }}</h4>
+              <div class="glosario-html text-[11px] text-slate-600 leading-relaxed" v-html="entry.definitionHtml" />
             </div>
-            <!-- Term definition -->
-            <div 
-              class="glosario-html text-[11px] text-slate-600 leading-relaxed font-normal"
-              v-html="entry.definitionHtml"
-            />
-          </div>
+            <div v-if="filteredEntries.length === 0" class="text-center py-8 text-slate-400 text-xs">
+              No se encontraron términos para "{{ searchQuery }}".
+            </div>
+          </template>
 
-          <!-- Empty state -->
-          <div 
-            v-if="filteredEntries.length === 0"
-            class="text-center py-8 text-slate-400 text-xs"
-          >
-            No se encontraron términos para "{{ searchQuery }}".
-          </div>
+          <!-- Vista jerárquica (respeta la anidación del formulario) -->
+          <GlosarioTree
+            v-else
+            :nodes="GLOSARIO_ESTRUCTURA"
+            :active-key="annotationStore.glossaryActiveKey"
+          />
         </div>
 
         <!-- Footer -->

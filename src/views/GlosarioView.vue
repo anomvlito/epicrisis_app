@@ -1,8 +1,19 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, provide } from 'vue'
 import { GLOSARIO_DEFINICIONES, GLOSARIO_ESTRUCTURA } from '@/constants/glosario.generated'
+import GlosarioTree from '@/components/annotation/GlosarioTree.vue'
 
 const searchQuery = ref('')
+
+// Colapsar / expandir todo: se propaga a los GlosarioTree vía provide/inject.
+const allCollapsed = ref(false)
+const collapseSignal = ref(0)
+provide('glosCollapseSignal', collapseSignal)
+provide('glosAllCollapsed', allCollapsed)
+function toggleAll() {
+  allCollapsed.value = !allCollapsed.value
+  collapseSignal.value++
+}
 
 function normalize(str: string): string {
   return str
@@ -92,52 +103,22 @@ const searchResults = computed(() => {
         </div>
       </div>
 
-      <!-- Vista Jerárquica Normal -->
-      <div v-else class="space-y-8">
-        <div 
-          v-for="block in GLOSARIO_ESTRUCTURA" 
-          :key="block.key"
-          class="space-y-4"
-        >
-          <!-- Título de Categoría Madre (Bloque 2, 4, 7) -->
-          <h2 class="text-sm font-black text-slate-800 border-b border-slate-200 pb-2 flex items-center gap-2 uppercase tracking-wide">
-            <span class="w-1.5 h-3.5 bg-brand-500 rounded-xs"></span>
-            {{ block.label }}
-          </h2>
-
-          <div class="space-y-3.5">
-            <!-- Recursion handler inside the block -->
-            <template v-for="child in block.children" :key="child.key">
-              <!-- If child has children (e.g. subcategories like cardiovascular) -->
-              <div v-if="child.children && child.children.length > 0" class="pl-3 border-l-2 border-slate-100 py-1 space-y-3.5">
-                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest">{{ child.label }}</h3>
-                <div 
-                  v-for="termNode in child.children" 
-                  :key="termNode.key"
-                  class="p-4 border border-slate-100 rounded-xl bg-white hover:border-slate-200 transition-colors shadow-xs"
-                >
-                  <h4 class="font-extrabold text-xs text-slate-800 mb-2">{{ termNode.label }}</h4>
-                  <div 
-                    class="glosario-html text-[11px] text-slate-600 leading-relaxed" 
-                    v-html="termNode.definitionHtml"
-                  />
-                </div>
-              </div>
-
-              <!-- Direct term under the block -->
-              <div 
-                v-else
-                class="p-4 border border-slate-150 rounded-xl bg-white hover:border-slate-200 transition-colors shadow-xs"
-              >
-                <h4 class="font-extrabold text-xs text-slate-800 mb-2">{{ child.label }}</h4>
-                <div 
-                  class="glosario-html text-[11px] text-slate-600 leading-relaxed" 
-                  v-html="child.definitionHtml"
-                />
-              </div>
-            </template>
-          </div>
+      <!-- Vista Jerárquica Normal (recursiva y colapsable, respeta la anidación del formulario) -->
+      <div v-else class="space-y-2">
+        <div class="flex justify-end mb-1">
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-800 border border-brand-200 rounded-lg px-3 py-1.5 hover:bg-brand-50 transition-colors"
+            @click="toggleAll"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path v-if="allCollapsed" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+            </svg>
+            {{ allCollapsed ? 'Expandir todo' : 'Colapsar todo' }}
+          </button>
         </div>
+        <GlosarioTree :nodes="GLOSARIO_ESTRUCTURA" collapsible />
       </div>
 
     </div>

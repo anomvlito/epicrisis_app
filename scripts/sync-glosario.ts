@@ -33,11 +33,15 @@ function run() {
   
   const leafNodes = getLeafNodes();
   
-  // Create mapping from normalized label to FormNode
-  const labelToNodeMap = new Map<string, FormNode>();
+  // Create mapping from normalized label to ALL FormNodes with that label.
+  // Varios campos comparten label (p. ej. "Agente microbiológico" o "Tratamiento
+  // para este foco" bajo cada foco): una sola definición debe aplicar a todos.
+  const labelToNodeMap = new Map<string, FormNode[]>();
   for (const node of leafNodes) {
     const norm = normalizeString(node.label);
-    labelToNodeMap.set(norm, node);
+    const arr = labelToNodeMap.get(norm) || [];
+    arr.push(node);
+    labelToNodeMap.set(norm, arr);
   }
 
   let modified = false;
@@ -49,36 +53,38 @@ function run() {
 
   function saveTerm(term: string, definitionLines: string[], headingLineIndex: number) {
     const normTerm = normalizeString(term);
-    const matchedNode = labelToNodeMap.get(normTerm);
-    
-    if (matchedNode) {
-      // If headings differ exactly (e.g. spelling or diacritics), adapt glossary md to formSchema
-      if (term !== matchedNode.label) {
-        console.log(`[Adaptación] Cambiando cabecera del glosario "${term}" -> "${matchedNode.label}" (se adapta al formulario)`);
-        lines[headingLineIndex] = `### ${matchedNode.label}`;
+    const matchedNodes = labelToNodeMap.get(normTerm);
+
+    const definitionMarkdown = definitionLines.join('\n').trim();
+    const definitionHtml = (marked.parse(definitionMarkdown) as string).trim();
+
+    if (matchedNodes && matchedNodes.length > 0) {
+      // If the heading differs from the formSchema label (spelling/diacritics),
+      // adapt the glossary md to the formSchema (el formulario manda los nombres).
+      const canonicalLabel = matchedNodes[0].label;
+      if (term !== canonicalLabel) {
+        console.log(`[Adaptación] Cambiando cabecera del glosario "${term}" -> "${canonicalLabel}" (se adapta al formulario)`);
+        lines[headingLineIndex] = `### ${canonicalLabel}`;
         modified = true;
-        term = matchedNode.label;
+        term = canonicalLabel;
       }
-      
-      const definitionMarkdown = definitionLines.join('\n').trim();
-      const definitionHtml = marked.parse(definitionMarkdown) as string;
-      
-      parsedDefinitions.set(matchedNode.key, {
-        key: matchedNode.key,
-        term: matchedNode.label,
-        definitionMarkdown,
-        definitionHtml: definitionHtml.trim()
-      });
+
+      // Apply the definition to EVERY node that shares this label.
+      for (const node of matchedNodes) {
+        parsedDefinitions.set(node.key, {
+          key: node.key,
+          term: node.label,
+          definitionMarkdown,
+          definitionHtml
+        });
+      }
     } else {
       // Orphan term (no matching node label in formSchema)
-      const definitionMarkdown = definitionLines.join('\n').trim();
-      const definitionHtml = marked.parse(definitionMarkdown) as string;
-      
       parsedDefinitions.set(`orphan:${term}`, {
         key: `orphan:${term}`,
         term,
         definitionMarkdown,
-        definitionHtml: definitionHtml.trim()
+        definitionHtml
       });
     }
   }
@@ -136,31 +142,26 @@ function run() {
   }
 
   // Filter FORM_SCHEMA recursively to only include sections with definitions
+  // Recorre por PRESENCIA de hijos (no solo type==='mother'): hay nodos hoja con
+  // hijos (p. ej. "Diabetes mellitus" con Tipo 1/2, o los focos de infección) cuya
+  // descendencia también debe aparecer en la jerarquía. Un nodo se incluye si tiene
+  // definición propia o descendientes con definición; puede tener ambos.
   function buildGlossaryStructure(nodes: FormNode[]): any[] {
     const result: any[] = [];
     for (const node of nodes) {
-      if (node.type === 'mother') {
-        const filteredChildren = buildGlossaryStructure(node.children || []);
-        if (filteredChildren.length > 0) {
-          result.push({
-            id: node.id,
-            key: node.key,
-            label: node.label,
-            type: node.type,
-            children: filteredChildren
-          });
-        }
-      } else {
-        if (definitionsObj[node.key]) {
-          result.push({
-            id: node.id,
-            key: node.key,
-            label: node.label,
-            type: node.type,
-            definitionMarkdown: definitionsObj[node.key].definitionMarkdown,
-            definitionHtml: definitionsObj[node.key].definitionHtml
-          });
-        }
+      const hasChildren = !!(node.children && node.children.length > 0);
+      const filteredChildren = hasChildren ? buildGlossaryStructure(node.children!) : [];
+      const def = definitionsObj[node.key];
+
+      if (def || filteredChildren.length > 0) {
+        result.push({
+          id: node.id,
+          key: node.key,
+          label: node.label,
+          type: node.type,
+          ...(def ? { definitionMarkdown: def.definitionMarkdown, definitionHtml: def.definitionHtml } : {}),
+          ...(filteredChildren.length > 0 ? { children: filteredChildren } : {})
+        });
       }
     }
     return result;
