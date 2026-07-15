@@ -229,12 +229,13 @@ const isVisible = computed(() => {
             <p class="text-xs font-semibold text-gray-800 leading-tight">
               {{ node.label }}
             </p>
-            <button 
-              type="button" 
-              class="text-[10px] text-brand-600 hover:text-brand-800 hover:underline font-semibold cursor-pointer select-none"
+            <button
+              type="button"
+              class="text-brand-500 hover:text-brand-700 cursor-pointer select-none inline-flex items-center align-middle"
+              title="Glosario"
               @click.stop="annotationStore.openGlossary(node.key)"
             >
-              Glosario
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
             </button>
           </div>
           <p v-if="node.icd10Hint" class="text-[9px] text-gray-400 font-mono mt-0.5">{{ node.icd10Hint }}</p>
@@ -365,12 +366,13 @@ const isVisible = computed(() => {
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-baseline gap-2">
           <span class="text-xs font-bold text-gray-700">{{ node.label }}</span>
-          <button 
-            type="button" 
-            class="text-[10px] text-brand-600 hover:text-brand-800 hover:underline font-semibold cursor-pointer select-none"
+          <button
+            type="button"
+            class="text-brand-500 hover:text-brand-700 cursor-pointer select-none inline-flex items-center align-middle"
+            title="Glosario"
             @click.stop="annotationStore.openGlossary(node.key)"
           >
-            Glosario
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
           </button>
         </div>
         <select 
@@ -393,12 +395,13 @@ const isVisible = computed(() => {
     >
       <div class="flex items-baseline gap-2">
         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ node.label }}</label>
-        <button 
-          type="button" 
-          class="text-[10px] text-brand-600 hover:text-brand-800 hover:underline font-semibold cursor-pointer select-none normal-case"
+        <button
+          type="button"
+          class="text-brand-500 hover:text-brand-700 cursor-pointer select-none inline-flex items-center align-middle"
+          title="Glosario"
           @click.stop="annotationStore.openGlossary(node.key)"
         >
-          Glosario
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
         </button>
       </div>
       <textarea
@@ -423,12 +426,13 @@ const isVisible = computed(() => {
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-baseline gap-2">
           <span class="text-xs font-bold text-gray-700">{{ node.label }}</span>
-          <button 
-            type="button" 
-            class="text-[10px] text-brand-600 hover:text-brand-800 hover:underline font-semibold cursor-pointer select-none"
+          <button
+            type="button"
+            class="text-brand-500 hover:text-brand-700 cursor-pointer select-none inline-flex items-center align-middle"
+            title="Glosario"
             @click.stop="annotationStore.openGlossary(node.key)"
           >
-            Glosario
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
           </button>
         </div>
         <input 
