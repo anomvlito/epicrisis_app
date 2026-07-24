@@ -35,6 +35,16 @@ describe('GuiaAnotacionView (HU-034)', () => {
     expect(text).toMatch(/obligatorio/i)
   })
 
+  // HU-038 — el reproductor debe apuntar al video tutorial oficial, no al
+  // placeholder que quedó tras la implementación inicial (PR #22).
+  it('embebe el video tutorial oficial de YouTube', () => {
+    const wrapper = mount(GuiaAnotacionView)
+    const iframe = wrapper.find('iframe')
+    expect(iframe.exists()).toBe(true)
+    expect(iframe.attributes('src')).toContain('youtube.com/embed/0YPV_nLZKVY')
+    expect(iframe.attributes('allowfullscreen')).toBeDefined()
+  })
+
   it('NO menciona mecanismos deprecados (semáforo / dificultad / ¿qué costó?)', () => {
     const wrapper = mount(GuiaAnotacionView)
     const text = wrapper.text().toLowerCase()

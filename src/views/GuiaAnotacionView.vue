@@ -39,7 +39,7 @@ const toc = [
         <div class="aspect-video w-full rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-black">
           <iframe
             class="w-full h-full"
-            src="https://www.youtube.com/embed/aircAruvnKk?rel=0"
+            src="https://www.youtube.com/embed/0YPV_nLZKVY?rel=0"
             title="Video tutorial de anotación"
             loading="lazy"
             referrerpolicy="strict-origin-when-cross-origin"
