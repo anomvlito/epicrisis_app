@@ -14,7 +14,6 @@ import { useToast } from '@/composables/useToast'
 import { COMORBIDITIES } from '@/constants/criteria'
 import { FOCOS, ORGANOS, normalizeSearch } from '@/constants/clinicalItems'
 
-import SectionedViewer from '@/components/annotation/SectionedViewer.vue'
 import PdfViewer from '@/components/annotation/PdfViewer.vue'
 import DynamicViewer from '@/components/annotation/DynamicViewer.vue'
 import { epicrisisService } from '@/services/epicrisis.service'
@@ -41,7 +40,6 @@ const timer = useAnnotationTimer(epicrisisIdRef)
 const leftWidthPct = ref(55)
 const isDragging = ref(false)
 const containerRef = ref<HTMLDivElement | null>(null)
-const textPanelRef = ref<HTMLDivElement | null>(null)
 const pdfViewerRef = ref<InstanceType<typeof PdfViewer> | null>(null)
 const dynamicViewerRef = ref<InstanceType<typeof DynamicViewer> | null>(null)
 const annotationTreeRef = ref<InstanceType<typeof AnnotationTree> | null>(null)
@@ -59,8 +57,8 @@ const dynamicContainerProxy = {
 }
 
 // Composables
-const { hasSelection, captureAndReturn } = useTextSelection(textPanelRef, pdfContainerProxy, dynamicContainerProxy)
-const { isObscured } = useAntiScreenCapture(textPanelRef, pdfContainerProxy, dynamicContainerProxy)
+const { hasSelection, captureAndReturn } = useTextSelection(pdfContainerProxy, dynamicContainerProxy)
+const { isObscured } = useAntiScreenCapture(pdfContainerProxy, dynamicContainerProxy)
 const validation = useAnnotationValidation()
 const { show: showToast } = useToast()
 
@@ -244,20 +242,8 @@ async function handleCloseExpertReview() {
 }
 
 
-// Left panel tab — PDF primero si está disponible, si no texto
-const docTab = ref<'text' | 'pdf'>('pdf')
 const layoutData = ref<any>(null)
 const loadingLayout = ref(true)
-
-watch(
-  [() => epicrisisStore.current?.pdfPath, loadingLayout, layoutData],
-  ([pdfPath, loading, layout]) => {
-    if (epicrisisStore.current && !pdfPath && !layout && !loading) {
-      docTab.value = 'text'
-    }
-  },
-  { immediate: true }
-)
 
 // Mobile responsiveness
 const activeMobilePanel = ref<'doc' | 'form'>('doc')
@@ -271,34 +257,16 @@ const rightPanelStyle = computed(() =>
 )
 function updateWindowWidth() { windowWidth.value = window.innerWidth }
 
-// Search within document (text + PDF)
+// HU-046: búsqueda sobre el visor que esté montado (layout dinámico o fallback)
 const searchQuery = ref('')
 const activeMatchIndex = ref(0)
 
-const textMatchCount = computed(() => {
-  const q = searchQuery.value.trim()
-  if (q.length < 2 || !epicrisisStore.current) return 0
-  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const re = new RegExp(escaped, 'gi')
-  const fullText = (epicrisisStore.current.sections ?? []).map((s) => s.content).join('\n')
-  return (fullText.match(re) ?? []).length
-})
+const activeViewer = computed(() => dynamicViewerRef.value ?? pdfViewerRef.value)
 
-const searchMatchCount = computed(() =>
-  docTab.value === 'pdf'
-    ? (pdfViewerRef.value?.pdfMatchCount ?? 0)
-    : textMatchCount.value
-)
+const searchMatchCount = computed(() => activeViewer.value?.matchCount ?? 0)
 
-async function scrollToActiveMatch() {
-  if (docTab.value === 'pdf') {
-    pdfViewerRef.value?.scrollToPdfMatch(activeMatchIndex.value)
-    return
-  }
-  await nextTick()
-  textPanelRef.value
-    ?.querySelector(`[data-match="${activeMatchIndex.value}"]`)
-    ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+function scrollToActiveMatch() {
+  activeViewer.value?.scrollToMatch(activeMatchIndex.value)
 }
 function nextMatch() {
   if (!searchMatchCount.value) return
@@ -314,7 +282,6 @@ watch(searchQuery, () => {
   activeMatchIndex.value = 0
   nextTick(scrollToActiveMatch)
 })
-watch(docTab, () => { activeMatchIndex.value = 0 })
 
 // Drag-to-resize split pane
 function startDrag(e: MouseEvent) {
@@ -483,9 +450,6 @@ onMounted(async () => {
     try {
       const layoutResponse = await epicrisisService.getLayout(epicrisisId)
       layoutData.value = layoutResponse.layoutData
-      if (!epicrisisStore.current?.pdfPath) {
-        docTab.value = 'pdf'
-      }
     } catch {
       layoutData.value = null
     } finally {
@@ -797,26 +761,9 @@ onUnmounted(() => {
         class="flex-col min-h-0 overflow-hidden border-r border-gray-200"
         :class="[!isMobile || activeMobilePanel === 'doc' ? 'flex' : 'hidden', isMobile ? 'w-full' : '']"
       >
-        <!-- Left panel header with tabs -->
+        <!-- Left panel header -->
         <div class="flex-shrink-0 flex items-center justify-between px-2 sm:px-4 py-1.5 bg-gray-50 border-b border-gray-200">
-          <!-- Doc/PDF tab switcher — PDF primero -->
-          <div class="flex items-center gap-0.5">
-            <button
-              v-if="epicrisisStore.current.pdfPath"
-              class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors"
-              :class="docTab === 'pdf'
-                ? 'bg-white shadow-sm text-brand-600 border border-gray-200'
-                : 'text-gray-400 hover:text-gray-600'"
-              @click="docTab = 'pdf'"
-            >PDF</button>
-            <button
-              class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors"
-              :class="docTab === 'text'
-                ? 'bg-white shadow-sm text-brand-600 border border-gray-200'
-                : 'text-gray-400 hover:text-gray-600'"
-              @click="docTab = 'text'"
-            >Texto</button>
-          </div>
+          <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">Documento</span>
           <div class="flex items-center gap-2">
             <span v-if="isObscured" class="flex items-center gap-1 text-[10px] text-red-500 font-bold uppercase tracking-wider">
               <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
@@ -826,7 +773,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Search bar (text + PDF) -->
+        <!-- Search bar -->
         <div class="flex-shrink-0 flex items-center gap-2 px-2 sm:px-4 py-1.5 bg-white border-b border-gray-200">
           <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -834,7 +781,7 @@ onUnmounted(() => {
           <input
             v-model="searchQuery"
             type="text"
-            :placeholder="docTab === 'pdf' ? 'Buscar en PDF…' : 'Buscar en documento…'"
+            placeholder="Buscar en el documento…"
             class="flex-1 text-xs bg-transparent outline-none text-gray-700 placeholder-gray-300 min-w-0"
           />
           <template v-if="searchQuery">
@@ -854,7 +801,6 @@ onUnmounted(() => {
 
         <div
           v-if="loadingLayout"
-          v-show="docTab === 'pdf'"
           class="flex-1 flex items-center justify-center min-h-0 bg-[#e8ecf0]"
         >
           <BaseLoader message="Cargando documento…" />
@@ -862,48 +808,21 @@ onUnmounted(() => {
 
         <DynamicViewer
           v-else-if="layoutData"
-          v-show="docTab === 'pdf'"
           ref="dynamicViewerRef"
           :layout-data="layoutData"
-          :search-query="docTab === 'pdf' ? searchQuery : ''"
+          :search-query="searchQuery"
           class="flex-1 min-h-0"
         />
 
         <!-- PDF viewer fallback: v-else-if monta solo si hay PDF y no hay layout -->
         <PdfViewer
           v-else-if="epicrisisStore.current.pdfPath"
-          v-show="docTab === 'pdf'"
           ref="pdfViewerRef"
           :pdf-path="epicrisisStore.current.pdfPath"
-          :search-query="docTab === 'pdf' ? searchQuery : ''"
+          :search-query="searchQuery"
           class="flex-1 min-h-0"
         />
 
-        <!-- Paper sheet effect: fondo gris, "hoja" blanca centrada -->
-        <div
-          v-show="docTab === 'text'"
-          ref="textPanelRef"
-          class="flex-1 min-h-0 overflow-y-auto relative text-selection-zone"
-          style="background: #e8ecf0;"
-        >
-          <!-- User Watermark (Deterrent) -->
-          <div class="absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-[0.03] select-none flex flex-wrap gap-20 p-20 content-start">
-            <span v-for="i in 20" :key="i" class="text-3xl font-black -rotate-45 whitespace-nowrap">
-              {{ auth.user?.email }}
-            </span>
-          </div>
-
-          <div
-            class="max-w-[680px] mx-auto my-4 sm:my-8 px-4 sm:px-8 lg:px-12 py-6 sm:py-8 lg:py-10 bg-white shadow-md rounded relative z-0"
-            v-memo="[epicrisisStore.current.sections, searchQuery, activeMatchIndex]"
-          >
-            <SectionedViewer
-              :sections="epicrisisStore.current.sections ?? []"
-              :highlight-query="searchQuery || undefined"
-              :active-match="activeMatchIndex"
-            />
-          </div>
-        </div>
       </div>
 
       <!-- Drag handle -->
