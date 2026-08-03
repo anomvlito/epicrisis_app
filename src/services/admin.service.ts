@@ -10,7 +10,10 @@ export interface AdminEpicrisisRow {
   assigneeId: number | null
   createdAt: string
   assigneeEmail: string | null
-  assignees: { id: number; email: string; annotatedCount: number; activeTimeMs: number }[]
+  assignees: { id: number; email: string; annotatedCount: number; activeTimeMs: number; completedAt: string | null }[]
+  annotationCount: number
+  assignedCount: number
+  completedCount: number
 }
 
 export interface IrrCriterionResult {
