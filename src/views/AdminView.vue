@@ -10,6 +10,8 @@ import BaseModal from '@/components/ui/BaseModal.vue'
 import AdminMatrix from '@/components/admin/AdminMatrix.vue'
 import EpicrisisCard from '@/components/EpicrisisCard.vue'
 import { COMORBIDITIES } from '@/constants/criteria'
+import { matchesEpicrisisIdentifier, matchesProgress } from '@/utils/adminEpicrisisFilter'
+import type { AdminProgressFilter } from '@/utils/adminEpicrisisFilter'
 
 const auth = useAuthStore()
 const epicrisisStore = useEpicrisisStore()
@@ -23,6 +25,8 @@ const stats = ref<AdminStats | null>(null)
 const loading = ref(true)
 const saving = ref<Record<number, boolean>>({})
 const filterStatus = ref<'all' | 'pending' | 'in_review' | 'reviewed' | 'unassigned'>('all')
+const identifierQuery = ref('')
+const progressFilter = ref<AdminProgressFilter>('all')
 
 // ── Matrix tab ──────────────────────────────────────────────────────────────
 const matrixRows = ref<AdminMatrixRow[]>([])
@@ -81,10 +85,20 @@ async function toggleAssignee(row: AdminEpicrisisRow, userId: number) {
 
 // ── Computed ─────────────────────────────────────────────────────────────────
 const filtered = computed(() => {
-  if (filterStatus.value === 'all') return epicrises.value
-  if (filterStatus.value === 'unassigned') return epicrises.value.filter(e => !e.assignees?.length)
-  return epicrises.value.filter(e => e.status === filterStatus.value)
+  return epicrises.value.filter(row => {
+    const matchesStatus = filterStatus.value === 'all'
+      || (filterStatus.value === 'unassigned' ? !row.assignees?.length : row.status === filterStatus.value)
+    return matchesStatus
+      && matchesEpicrisisIdentifier(row, identifierQuery.value)
+      && matchesProgress(row, progressFilter.value)
+  })
 })
+
+function clearEpicrisisFilters() {
+  identifierQuery.value = ''
+  progressFilter.value = 'all'
+  filterStatus.value = 'all'
+}
 
 // HU-001: cola de revisión experta
 const expertQueue = computed(() => epicrises.value.filter(e => e.status === 'needs_expert_review'))
@@ -258,7 +272,10 @@ async function assign(epicrisisId: number, userIds: number[]) {
         email: allUsers.value.find(u => u.id === id)?.email ?? String(id),
         annotatedCount: row.assignees.find(a => a.id === id)?.annotatedCount ?? 0,
         activeTimeMs: row.assignees.find(a => a.id === id)?.activeTimeMs ?? 0,
+        completedAt: row.assignees.find(a => a.id === id)?.completedAt ?? null,
       }))
+      row.assignedCount = row.assignees.length
+      row.completedCount = row.assignees.filter(a => a.completedAt != null).length
       row.assigneeId = userIds[0] ?? null
       row.assigneeEmail = row.assignees[0]?.email ?? null
     }
@@ -521,6 +538,50 @@ onMounted(load)
             </div>
           </div>
 
+          <!-- Búsqueda por identificador y avance de anotación -->
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
+            <div class="flex flex-col lg:flex-row lg:items-end gap-3">
+              <label class="flex-1 min-w-0">
+                <span class="block text-xs font-semibold text-gray-600 mb-1.5">Buscar epicrisis</span>
+                <div class="relative">
+                  <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m2.35-5.65a8 8 0 11-16 0 8 8 0 0116 0z" />
+                  </svg>
+                  <input
+                    v-model="identifierQuery"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="EPC-00605, 605 o E364F032C1F6309E"
+                    class="w-full rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400"
+                  />
+                </div>
+                <span class="block text-[10px] text-gray-400 mt-1">El ID anónimo coincide con la cohorte experimental local.</span>
+              </label>
+
+              <label class="lg:w-56">
+                <span class="block text-xs font-semibold text-gray-600 mb-1.5">Avance del anotador</span>
+                <select
+                  v-model="progressFilter"
+                  class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400"
+                >
+                  <option value="all">Cualquier avance</option>
+                  <option value="annotated">Con respuestas guardadas</option>
+                  <option value="completed_any">Completada por alguno</option>
+                  <option value="completed_all">Completada por todos</option>
+                </select>
+              </label>
+
+              <button
+                v-if="identifierQuery || progressFilter !== 'all' || filterStatus !== 'all'"
+                type="button"
+                class="px-3 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                @click="clearEpicrisisFilters"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          </div>
+
           <!-- Quick-assign toolbar -->
           <div class="flex items-center gap-3 mb-4 flex-wrap">
             <span class="text-xs text-gray-500 font-medium">
@@ -671,7 +732,7 @@ onMounted(load)
                 </tr>
                 <tr v-if="filtered.length === 0">
                   <td colspan="6" class="px-4 py-12 text-center text-sm text-gray-400">
-                    No hay epicrisis en esta categoría.
+                    No se encontraron epicrisis con los filtros seleccionados.
                   </td>
                 </tr>
               </tbody>
