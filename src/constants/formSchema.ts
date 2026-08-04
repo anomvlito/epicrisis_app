@@ -220,7 +220,24 @@ export const FORM_SCHEMA: FormNode[] = [
               { id: '2.1.9.5', key: 'antecedentes.neurologico.otra_neurologica', label: 'Otra neurológica', type: 'leaf' }
             ]
           },
-          { id: '2.1.10', key: 'antecedentes.otro_antecedente_medico', label: 'Otro antecedente médico', type: 'leaf' }
+          {
+            id: '2.1.10',
+            key: 'antecedentes.psiquiatrico',
+            label: 'Psiquiátrico',
+            type: 'mother',
+            children: [
+              { id: '2.1.10.1', key: 'antecedentes.psiquiatrico.depresion', label: 'Trastorno depresivo', type: 'leaf', icd10Hint: 'F32-F33', synonyms: ['depresion', 'depresivo', 'distimia', 'antidepresivo', 'sertralina', 'fluoxetina'] },
+              { id: '2.1.10.2', key: 'antecedentes.psiquiatrico.ansiedad', label: 'Trastorno de ansiedad', type: 'leaf', icd10Hint: 'F41', synonyms: ['ansioso', 'crisis de panico', 'angustia', 'ansiolitico'] },
+              { id: '2.1.10.3', key: 'antecedentes.psiquiatrico.trastorno_bipolar', label: 'Trastorno bipolar', type: 'leaf', icd10Hint: 'F31', synonyms: ['bipolaridad', 'maniaco', 'litio', 'estabilizador del animo'] },
+              { id: '2.1.10.4', key: 'antecedentes.psiquiatrico.esquizofrenia_otro_psicotico', label: 'Esquizofrenia u otro trastorno psicótico', type: 'leaf', icd10Hint: 'F20-F29', synonyms: ['psicosis', 'esquizofrenico', 'delirante', 'antipsicotico', 'alucinaciones'] },
+              { id: '2.1.10.5', key: 'antecedentes.psiquiatrico.trastorno_consumo_sustancias', label: 'Trastorno por consumo de sustancias', type: 'leaf', icd10Hint: 'F10-F19', synonyms: ['dependencia', 'adiccion', 'abstinencia', 'alcoholismo', 'drogodependencia'] },
+              { id: '2.1.10.6', key: 'antecedentes.psiquiatrico.intento_suicidio_previo', label: 'Intento de suicidio o autolesión previa', type: 'leaf', icd10Hint: 'Z91.5', synonyms: ['autolisis', 'intoxicacion voluntaria', 'ideacion suicida', 'autoagresion'] },
+              { id: '2.1.10.7', key: 'antecedentes.psiquiatrico.trastorno_personalidad', label: 'Trastorno de personalidad', type: 'leaf', icd10Hint: 'F60', synonyms: ['limitrofe', 'borderline', 'personalidad'] },
+              { id: '2.1.10.8', key: 'antecedentes.psiquiatrico.uso_cronico_psicofarmacos', label: 'Uso crónico de psicofármacos', type: 'leaf', icd10Hint: 'Z79.8', synonyms: ['benzodiazepinas', 'clonazepam', 'alprazolam', 'quetiapina', 'neuroleptico'] },
+              { id: '2.1.10.9', key: 'antecedentes.psiquiatrico.otra_psiquiatrica', label: 'Otra psiquiátrica', type: 'leaf' }
+            ]
+          },
+          { id: '2.1.11', key: 'antecedentes.otro_antecedente_medico', label: 'Otro antecedente médico', type: 'leaf' }
         ]
       },
       { id: '2.2', key: 'antecedentes.quirurgicos', label: 'Antecedentes quirúrgicos', type: 'leaf', synonyms: ['operaciones previas', 'cirugias', 'quirurgico'] },

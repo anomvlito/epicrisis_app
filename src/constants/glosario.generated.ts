@@ -349,6 +349,60 @@ export const GLOSARIO_DEFINICIONES: Record<string, GlosarioEntry> = {
     "definitionMarkdown": "Otro antecedente neurológico relevante no cubierto por los campos anteriores.\n* **Nota de desambiguación:** El evento cerebrovascular previo va en *Cardiovascular*, no aquí.",
     "definitionHtml": "<p>Otro antecedente neurológico relevante no cubierto por los campos anteriores.</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> El evento cerebrovascular previo va en <em>Cardiovascular</em>, no aquí.</li>\n</ul>"
   },
+  "antecedentes.psiquiatrico.depresion": {
+    "key": "antecedentes.psiquiatrico.depresion",
+    "term": "Trastorno depresivo",
+    "definitionMarkdown": "Diagnóstico previo de depresión o distimia, o tratamiento antidepresivo en curso.\n* **Nota de desambiguación:** Un ánimo bajo mencionado al pasar, sin diagnóstico ni tratamiento, se marca `[?]`, no `[Sí]`.",
+    "definitionHtml": "<p>Diagnóstico previo de depresión o distimia, o tratamiento antidepresivo en curso.</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> Un ánimo bajo mencionado al pasar, sin diagnóstico ni tratamiento, se marca <code>[?]</code>, no <code>[Sí]</code>.</li>\n</ul>"
+  },
+  "antecedentes.psiquiatrico.ansiedad": {
+    "key": "antecedentes.psiquiatrico.ansiedad",
+    "term": "Trastorno de ansiedad",
+    "definitionMarkdown": "Trastorno ansioso diagnosticado (ansiedad generalizada, crisis de pánico, fobias) o en tratamiento ansiolítico.",
+    "definitionHtml": "<p>Trastorno ansioso diagnosticado (ansiedad generalizada, crisis de pánico, fobias) o en tratamiento ansiolítico.</p>"
+  },
+  "antecedentes.psiquiatrico.trastorno_bipolar": {
+    "key": "antecedentes.psiquiatrico.trastorno_bipolar",
+    "term": "Trastorno bipolar",
+    "definitionMarkdown": "Trastorno afectivo bipolar diagnosticado, o tratamiento con estabilizadores del ánimo (litio, ácido valproico) por esa indicación.",
+    "definitionHtml": "<p>Trastorno afectivo bipolar diagnosticado, o tratamiento con estabilizadores del ánimo (litio, ácido valproico) por esa indicación.</p>"
+  },
+  "antecedentes.psiquiatrico.esquizofrenia_otro_psicotico": {
+    "key": "antecedentes.psiquiatrico.esquizofrenia_otro_psicotico",
+    "term": "Esquizofrenia u otro trastorno psicótico",
+    "definitionMarkdown": "Esquizofrenia, trastorno esquizoafectivo, trastorno delirante u otra psicosis crónica diagnosticada, o tratamiento antipsicótico por esa indicación.\n* **Nota de desambiguación:** Un episodio psicótico atribuido a sustancias va también en *Trastorno por consumo de sustancias*.",
+    "definitionHtml": "<p>Esquizofrenia, trastorno esquizoafectivo, trastorno delirante u otra psicosis crónica diagnosticada, o tratamiento antipsicótico por esa indicación.</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> Un episodio psicótico atribuido a sustancias va también en <em>Trastorno por consumo de sustancias</em>.</li>\n</ul>"
+  },
+  "antecedentes.psiquiatrico.trastorno_consumo_sustancias": {
+    "key": "antecedentes.psiquiatrico.trastorno_consumo_sustancias",
+    "term": "Trastorno por consumo de sustancias",
+    "definitionMarkdown": "Dependencia o abuso de sustancias documentado: alcohol, drogas ilícitas o fármacos. Incluye antecedente de síndrome de abstinencia y tratamiento de deshabituación.\n* **Nota de desambiguación:** El consumo como hábito va en *Hábitos* (Tabaquismo, Alcohol, Otras sustancias). Aquí se marca solo cuando hay trastorno documentado: dependencia, abstinencia previa, tratamiento de deshabituación o diagnóstico explícito. Un mismo paciente puede tener ambas marcadas.",
+    "definitionHtml": "<p>Dependencia o abuso de sustancias documentado: alcohol, drogas ilícitas o fármacos. Incluye antecedente de síndrome de abstinencia y tratamiento de deshabituación.</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> El consumo como hábito va en <em>Hábitos</em> (Tabaquismo, Alcohol, Otras sustancias). Aquí se marca solo cuando hay trastorno documentado: dependencia, abstinencia previa, tratamiento de deshabituación o diagnóstico explícito. Un mismo paciente puede tener ambas marcadas.</li>\n</ul>"
+  },
+  "antecedentes.psiquiatrico.intento_suicidio_previo": {
+    "key": "antecedentes.psiquiatrico.intento_suicidio_previo",
+    "term": "Intento de suicidio o autolesión previa",
+    "definitionMarkdown": "Antecedente de intento de suicidio, autoagresión o intoxicación voluntaria.\n* **Nota de desambiguación:** Se marca también cuando el intento es la causa del ingreso actual; la evidencia capturada debe dejar claro si es previo o corresponde a esta hospitalización.",
+    "definitionHtml": "<p>Antecedente de intento de suicidio, autoagresión o intoxicación voluntaria.</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> Se marca también cuando el intento es la causa del ingreso actual; la evidencia capturada debe dejar claro si es previo o corresponde a esta hospitalización.</li>\n</ul>"
+  },
+  "antecedentes.psiquiatrico.trastorno_personalidad": {
+    "key": "antecedentes.psiquiatrico.trastorno_personalidad",
+    "term": "Trastorno de personalidad",
+    "definitionMarkdown": "Trastorno de personalidad diagnosticado (limítrofe, antisocial u otro).",
+    "definitionHtml": "<p>Trastorno de personalidad diagnosticado (limítrofe, antisocial u otro).</p>"
+  },
+  "antecedentes.psiquiatrico.uso_cronico_psicofarmacos": {
+    "key": "antecedentes.psiquiatrico.uso_cronico_psicofarmacos",
+    "term": "Uso crónico de psicofármacos",
+    "definitionMarkdown": "Uso habitual y mantenido de psicofármacos antes del ingreso: benzodiazepinas, antipsicóticos, antidepresivos, estabilizadores del ánimo. Es relevante por el riesgo de abstinencia al suspenderlos en la unidad.\n* **Nota de desambiguación:** Es una exposición, no un diagnóstico. Se marca aunque no haya un trastorno psiquiátrico consignado.",
+    "definitionHtml": "<p>Uso habitual y mantenido de psicofármacos antes del ingreso: benzodiazepinas, antipsicóticos, antidepresivos, estabilizadores del ánimo. Es relevante por el riesgo de abstinencia al suspenderlos en la unidad.</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> Es una exposición, no un diagnóstico. Se marca aunque no haya un trastorno psiquiátrico consignado.</li>\n</ul>"
+  },
+  "antecedentes.psiquiatrico.otra_psiquiatrica": {
+    "key": "antecedentes.psiquiatrico.otra_psiquiatrica",
+    "term": "Otra psiquiátrica",
+    "definitionMarkdown": "Otro antecedente psiquiátrico relevante no cubierto por los campos anteriores (trastorno de conducta alimentaria, discapacidad intelectual, insomnio crónico, etc.).\n* **Nota de desambiguación:** La demencia y el deterioro cognitivo mayor van en *Neurológico*. El delirium del episodio actual no es antecedente y no se anota en este bloque.",
+    "definitionHtml": "<p>Otro antecedente psiquiátrico relevante no cubierto por los campos anteriores (trastorno de conducta alimentaria, discapacidad intelectual, insomnio crónico, etc.).</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> La demencia y el deterioro cognitivo mayor van en <em>Neurológico</em>. El delirium del episodio actual no es antecedente y no se anota en este bloque.</li>\n</ul>"
+  },
   "antecedentes.habitos.tabaquismo": {
     "key": "antecedentes.habitos.tabaquismo",
     "term": "Tabaquismo",
@@ -1702,6 +1756,86 @@ export const GLOSARIO_ESTRUCTURA: GlosarioSection[] = [
           },
           {
             "id": "2.1.10",
+            "key": "antecedentes.psiquiatrico",
+            "label": "Psiquiátrico",
+            "type": "mother",
+            "children": [
+              {
+                "id": "2.1.10.1",
+                "key": "antecedentes.psiquiatrico.depresion",
+                "label": "Trastorno depresivo",
+                "type": "leaf",
+                "definitionMarkdown": "Diagnóstico previo de depresión o distimia, o tratamiento antidepresivo en curso.\n* **Nota de desambiguación:** Un ánimo bajo mencionado al pasar, sin diagnóstico ni tratamiento, se marca `[?]`, no `[Sí]`.",
+                "definitionHtml": "<p>Diagnóstico previo de depresión o distimia, o tratamiento antidepresivo en curso.</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> Un ánimo bajo mencionado al pasar, sin diagnóstico ni tratamiento, se marca <code>[?]</code>, no <code>[Sí]</code>.</li>\n</ul>"
+              },
+              {
+                "id": "2.1.10.2",
+                "key": "antecedentes.psiquiatrico.ansiedad",
+                "label": "Trastorno de ansiedad",
+                "type": "leaf",
+                "definitionMarkdown": "Trastorno ansioso diagnosticado (ansiedad generalizada, crisis de pánico, fobias) o en tratamiento ansiolítico.",
+                "definitionHtml": "<p>Trastorno ansioso diagnosticado (ansiedad generalizada, crisis de pánico, fobias) o en tratamiento ansiolítico.</p>"
+              },
+              {
+                "id": "2.1.10.3",
+                "key": "antecedentes.psiquiatrico.trastorno_bipolar",
+                "label": "Trastorno bipolar",
+                "type": "leaf",
+                "definitionMarkdown": "Trastorno afectivo bipolar diagnosticado, o tratamiento con estabilizadores del ánimo (litio, ácido valproico) por esa indicación.",
+                "definitionHtml": "<p>Trastorno afectivo bipolar diagnosticado, o tratamiento con estabilizadores del ánimo (litio, ácido valproico) por esa indicación.</p>"
+              },
+              {
+                "id": "2.1.10.4",
+                "key": "antecedentes.psiquiatrico.esquizofrenia_otro_psicotico",
+                "label": "Esquizofrenia u otro trastorno psicótico",
+                "type": "leaf",
+                "definitionMarkdown": "Esquizofrenia, trastorno esquizoafectivo, trastorno delirante u otra psicosis crónica diagnosticada, o tratamiento antipsicótico por esa indicación.\n* **Nota de desambiguación:** Un episodio psicótico atribuido a sustancias va también en *Trastorno por consumo de sustancias*.",
+                "definitionHtml": "<p>Esquizofrenia, trastorno esquizoafectivo, trastorno delirante u otra psicosis crónica diagnosticada, o tratamiento antipsicótico por esa indicación.</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> Un episodio psicótico atribuido a sustancias va también en <em>Trastorno por consumo de sustancias</em>.</li>\n</ul>"
+              },
+              {
+                "id": "2.1.10.5",
+                "key": "antecedentes.psiquiatrico.trastorno_consumo_sustancias",
+                "label": "Trastorno por consumo de sustancias",
+                "type": "leaf",
+                "definitionMarkdown": "Dependencia o abuso de sustancias documentado: alcohol, drogas ilícitas o fármacos. Incluye antecedente de síndrome de abstinencia y tratamiento de deshabituación.\n* **Nota de desambiguación:** El consumo como hábito va en *Hábitos* (Tabaquismo, Alcohol, Otras sustancias). Aquí se marca solo cuando hay trastorno documentado: dependencia, abstinencia previa, tratamiento de deshabituación o diagnóstico explícito. Un mismo paciente puede tener ambas marcadas.",
+                "definitionHtml": "<p>Dependencia o abuso de sustancias documentado: alcohol, drogas ilícitas o fármacos. Incluye antecedente de síndrome de abstinencia y tratamiento de deshabituación.</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> El consumo como hábito va en <em>Hábitos</em> (Tabaquismo, Alcohol, Otras sustancias). Aquí se marca solo cuando hay trastorno documentado: dependencia, abstinencia previa, tratamiento de deshabituación o diagnóstico explícito. Un mismo paciente puede tener ambas marcadas.</li>\n</ul>"
+              },
+              {
+                "id": "2.1.10.6",
+                "key": "antecedentes.psiquiatrico.intento_suicidio_previo",
+                "label": "Intento de suicidio o autolesión previa",
+                "type": "leaf",
+                "definitionMarkdown": "Antecedente de intento de suicidio, autoagresión o intoxicación voluntaria.\n* **Nota de desambiguación:** Se marca también cuando el intento es la causa del ingreso actual; la evidencia capturada debe dejar claro si es previo o corresponde a esta hospitalización.",
+                "definitionHtml": "<p>Antecedente de intento de suicidio, autoagresión o intoxicación voluntaria.</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> Se marca también cuando el intento es la causa del ingreso actual; la evidencia capturada debe dejar claro si es previo o corresponde a esta hospitalización.</li>\n</ul>"
+              },
+              {
+                "id": "2.1.10.7",
+                "key": "antecedentes.psiquiatrico.trastorno_personalidad",
+                "label": "Trastorno de personalidad",
+                "type": "leaf",
+                "definitionMarkdown": "Trastorno de personalidad diagnosticado (limítrofe, antisocial u otro).",
+                "definitionHtml": "<p>Trastorno de personalidad diagnosticado (limítrofe, antisocial u otro).</p>"
+              },
+              {
+                "id": "2.1.10.8",
+                "key": "antecedentes.psiquiatrico.uso_cronico_psicofarmacos",
+                "label": "Uso crónico de psicofármacos",
+                "type": "leaf",
+                "definitionMarkdown": "Uso habitual y mantenido de psicofármacos antes del ingreso: benzodiazepinas, antipsicóticos, antidepresivos, estabilizadores del ánimo. Es relevante por el riesgo de abstinencia al suspenderlos en la unidad.\n* **Nota de desambiguación:** Es una exposición, no un diagnóstico. Se marca aunque no haya un trastorno psiquiátrico consignado.",
+                "definitionHtml": "<p>Uso habitual y mantenido de psicofármacos antes del ingreso: benzodiazepinas, antipsicóticos, antidepresivos, estabilizadores del ánimo. Es relevante por el riesgo de abstinencia al suspenderlos en la unidad.</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> Es una exposición, no un diagnóstico. Se marca aunque no haya un trastorno psiquiátrico consignado.</li>\n</ul>"
+              },
+              {
+                "id": "2.1.10.9",
+                "key": "antecedentes.psiquiatrico.otra_psiquiatrica",
+                "label": "Otra psiquiátrica",
+                "type": "leaf",
+                "definitionMarkdown": "Otro antecedente psiquiátrico relevante no cubierto por los campos anteriores (trastorno de conducta alimentaria, discapacidad intelectual, insomnio crónico, etc.).\n* **Nota de desambiguación:** La demencia y el deterioro cognitivo mayor van en *Neurológico*. El delirium del episodio actual no es antecedente y no se anota en este bloque.",
+                "definitionHtml": "<p>Otro antecedente psiquiátrico relevante no cubierto por los campos anteriores (trastorno de conducta alimentaria, discapacidad intelectual, insomnio crónico, etc.).</p>\n<ul>\n<li><strong>Nota de desambiguación:</strong> La demencia y el deterioro cognitivo mayor van en <em>Neurológico</em>. El delirium del episodio actual no es antecedente y no se anota en este bloque.</li>\n</ul>"
+              }
+            ]
+          },
+          {
+            "id": "2.1.11",
             "key": "antecedentes.otro_antecedente_medico",
             "label": "Otro antecedente médico",
             "type": "leaf",
