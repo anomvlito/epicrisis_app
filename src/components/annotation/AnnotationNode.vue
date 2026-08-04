@@ -4,6 +4,7 @@ import type { Ref } from 'vue'
 import { useAnnotationStore } from '@/stores/annotation'
 import type { FormNode } from '@/constants/formSchema'
 import { normalizeFecha } from '@/utils/fecha'
+import { useToast } from '@/composables/useToast'
 import AnnotationEvidence from './AnnotationEvidence.vue'
 
 const props = defineProps<{
@@ -13,6 +14,7 @@ const props = defineProps<{
 }>()
 
 const annotationStore = useAnnotationStore()
+const toast = useToast()
 
 const state = computed(() => {
   return annotationStore.criteria.find(c => c.criterionName === props.node.key) || {
@@ -59,6 +61,8 @@ const isActive = computed(() => {
 })
 
 const showEvidence = computed(() => {
+  // HU-043: un "No" no necesita respaldo — no se pide evidencia ni se muestra la caja
+  if (state.value.isPresent === false) return false
   return isActive.value || state.value.isPresent !== null || !!state.value.evidenceText
 })
 
@@ -95,6 +99,51 @@ function setPresent(value: boolean | null | 'unknown') {
   }
 
   annotationStore.setIsPresent(props.node.key, value)
+
+  // HU-044: el rebote. Si marcamos No y el invariante devolvió la sección a Sí,
+  // es porque quedó un Sí/? bloqueado río abajo. Se explica para que no se lea
+  // como un bug — el estado No intermedio nunca llegó a renderizarse.
+  if (value === false && isParent.value && state.value.isPresent === true) {
+    const n = annotationStore.countSiOrUnknownBelow(props.node.key)
+    toast.show(
+      `Esta sección quedó en Sí: hay ${n} ${n === 1 ? 'variable marcada' : 'variables marcadas'} más abajo. Se marcó No el resto.`,
+      'info'
+    )
+  }
+}
+
+// ── HU-044: candado manual y reset ───────────────────────────────────────────
+
+const isParent = computed(() => (props.node.children?.length ?? 0) > 0)
+const isLocked = computed(() => annotationStore.isLocked(props.node.key))
+const showNodeControls = computed(() => !props.isReadOnly && isParent.value)
+
+// Auto-candado: derivado del estado, solo informativo. Explica al anotador por qué
+// la cascada no tocó esta variable.
+const isAutoLocked = computed(
+  () => state.value.isPresent === true || state.value.isPresent === 'unknown'
+)
+
+function onToggleLock() {
+  if (props.isReadOnly) return
+  const nowLocked = annotationStore.toggleLock(props.node.key)
+  toast.show(
+    nowLocked
+      ? 'Sección bloqueada: no la tocarán las reglas automáticas'
+      : 'Sección desbloqueada',
+    'info'
+  )
+}
+
+function onReset() {
+  if (props.isReadOnly) return
+  const cleared = annotationStore.resetDescendants(props.node.key)
+  toast.show(
+    cleared > 0
+      ? `${cleared} ${cleared === 1 ? 'variable devuelta' : 'variables devueltas'} a en blanco`
+      : 'No había nada que reiniciar en esta sección',
+    'info'
+  )
 }
 
 function onCommentsInput(e: Event) {
@@ -145,6 +194,7 @@ function onSuspicionChange(e: Event) {
 const isVisible = computed(() => {
   return true
 })
+
 </script>
 
 <template>
@@ -171,34 +221,68 @@ const isVisible = computed(() => {
           </span>
         </div>
 
-        <!-- Mother toggle [Sí] [No] -->
-        <div class="flex gap-1 flex-shrink-0" @click.stop>
-          <button
-            :class="[
-              'px-2 py-0.5 rounded text-[10px] font-bold transition-colors border',
-              state.isPresent === true
-                ? 'bg-green-500 text-white border-green-500 shadow-sm'
-                : 'bg-white text-gray-500 border-gray-200 hover:bg-green-50',
-            ]"
-            :disabled="isReadOnly"
-            @click="setPresent(state.isPresent === true ? null : true)"
-          >Sí</button>
-          <button
-            :class="[
-              'px-2 py-0.5 rounded text-[10px] font-bold transition-colors border',
-              state.isPresent === false
-                ? 'bg-red-500 text-white border-red-500 shadow-sm'
-                : 'bg-white text-gray-500 border-gray-200 hover:bg-red-50',
-            ]"
-            :disabled="isReadOnly"
-            @click="setPresent(state.isPresent === false ? null : false)"
-          >No</button>
+        <!-- Header controls -->
+        <div class="flex items-center gap-1 flex-shrink-0" @click.stop>
+          <!-- Mother toggle [Sí] [No] — HU-042: hidden on blocks whose content isn't a Sí/No question -->
+          <div v-if="!node.hideToggle" class="flex gap-1">
+            <button
+              :class="[
+                'px-2 py-0.5 rounded text-[10px] font-bold transition-colors border',
+                state.isPresent === true
+                  ? 'bg-green-500 text-white border-green-500 shadow-sm'
+                  : 'bg-white text-gray-500 border-gray-200 hover:bg-green-50',
+              ]"
+              :disabled="isReadOnly"
+              @click="setPresent(state.isPresent === true ? null : true)"
+            >Sí</button>
+            <button
+              :class="[
+                'px-2 py-0.5 rounded text-[10px] font-bold transition-colors border',
+                state.isPresent === false
+                  ? 'bg-red-500 text-white border-red-500 shadow-sm'
+                  : 'bg-white text-gray-500 border-gray-200 hover:bg-red-50',
+              ]"
+              :disabled="isReadOnly"
+              @click="setPresent(state.isPresent === false ? null : false)"
+            >No</button>
+          </div>
+
+          <!-- HU-044: reset (giro) y candado manual, solo en nodos con hijos -->
+          <template v-if="showNodeControls">
+            <button
+              type="button"
+              data-testid="reset-button"
+              title="Dejar en blanco todo lo de esta sección"
+              class="p-1 rounded border border-gray-200 bg-white text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+              @click="onReset"
+            >
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            </button>
+            <button
+              type="button"
+              data-testid="lock-button"
+              :title="isLocked
+                ? 'Sección bloqueada: las reglas automáticas no la tocan. Click para desbloquear'
+                : 'Bloquear esta sección frente a las reglas automáticas'"
+              :class="[
+                'p-1 rounded border transition-colors',
+                isLocked
+                  ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                  : 'bg-white text-gray-400 border-gray-200 hover:bg-amber-50 hover:text-amber-600',
+              ]"
+              @click="onToggleLock"
+            >
+              <svg v-if="isLocked" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+              <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
+            </button>
+          </template>
         </div>
       </div>
 
       <!-- Mother Children -->
-      <div 
-        v-show="isExpanded" 
+      <div
+        v-show="isExpanded"
+        data-testid="mother-children"
         class="p-2.5 bg-white border-t border-gray-50 space-y-2"
         :style="{ paddingLeft: `${(depth + 1) * 6 + 10}px` }"
       >
@@ -237,6 +321,15 @@ const isVisible = computed(() => {
             >
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
             </button>
+            <!-- HU-044: auto-candado. Solo informativo: explica por qué la cascada no la tocó -->
+            <span
+              v-if="isAutoLocked"
+              data-testid="auto-lock-badge"
+              class="text-amber-500 inline-flex items-center align-middle flex-shrink-0"
+              title="Protegida de la cascada automática por estar en Sí o ?. Se libera al cambiarla."
+            >
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            </span>
           </div>
           <p v-if="node.icd10Hint" class="text-[9px] text-gray-400 font-mono mt-0.5">{{ node.icd10Hint }}</p>
         </div>
@@ -286,7 +379,7 @@ const isVisible = computed(() => {
         leave-from-class="opacity-100 max-h-40"
         leave-to-class="opacity-0 max-h-0"
       >
-        <div v-show="showEvidence" class="mt-2 border-t border-gray-50 pt-2 space-y-1.5" @click.stop>
+        <div v-show="showEvidence" data-testid="evidence-box" class="mt-2 border-t border-gray-50 pt-2 space-y-1.5" @click.stop>
           
           <!-- Suspicion Dropdown (only for '?') -->
           <div v-if="state.isPresent === 'unknown'" class="flex items-center justify-between gap-2">

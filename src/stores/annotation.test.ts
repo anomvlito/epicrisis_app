@@ -397,3 +397,221 @@ describe('HU-039 tipos de campos (Egreso/Ingreso/Soporte)', () => {
     expect(s.criteria.find(c => c.criterionName === 'ingreso.fecha_ingreso_upc')!.evidenceText).toBe('05/05/2026')
   })
 })
+
+// HU-044 — cascada no destructiva, invariante de subida, candado y reset
+describe('HU-044 cascada, invariante y candados', () => {
+  beforeEach(() => { localStorage.clear(); setActivePinia(createPinia()) })
+
+  const ANTEC = 'antecedentes'
+  const CARDIO = 'antecedentes.cardiovascular'
+  const HTA = 'antecedentes.cardiovascular.hipertension_arterial'
+  const CORONARIA = 'antecedentes.cardiovascular.enfermedad_coronaria'
+  const ACV = 'antecedentes.cardiovascular.accidente_cerebrovascular_previo'
+  const RENAL_ERC = 'antecedentes.renal.enfermedad_renal_cronica'
+  const DM_COMPLICADA = 'antecedentes.metabolico_endocrino.diabetes_mellitus.complicada'
+
+  function get(s: any, key: string) {
+    return s.criteria.find((c: any) => c.criterionName === key)!
+  }
+
+  // ── R1: la cascada No solo escribe sobre lo que está en blanco ──
+  it('R1: No baja solo a los descendientes en blanco', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    get(s, HTA).isPresent = true
+
+    s.setIsPresent(CARDIO, false)
+
+    expect(get(s, HTA).isPresent).toBe(true)              // auto-bloqueada
+    expect(get(s, CORONARIA).isPresent).toBe(false)       // estaba en blanco
+  })
+
+  it('R1: la cascada no borra evidencia de nadie', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    const hta = get(s, HTA)
+    hta.isPresent = true
+    hta.evidenceText = 'paciente hipertenso'
+    hta.comments = 'confirmado'
+    hta.evidenceMetadata = { value: 'x' }
+
+    s.setIsPresent(CARDIO, false)
+
+    expect(hta.evidenceText).toBe('paciente hipertenso')
+    expect(hta.comments).toBe('confirmado')
+    expect(hta.evidenceMetadata).toEqual({ value: 'x' })
+  })
+
+  it('R1: un ? también queda protegido de la cascada', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    get(s, HTA).isPresent = 'unknown'
+
+    s.setIsPresent(CARDIO, false)
+
+    expect(get(s, HTA).isPresent).toBe('unknown')
+  })
+
+  // ── R2: el Sí conserva, salvo que todo esté en No ──
+  it('R2: con estados mezclados, marcar Sí deja los hijos tal cual', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    get(s, HTA).isPresent = false
+    get(s, CORONARIA).isPresent = false
+    // ACV y el resto siguen en blanco
+
+    s.setIsPresent(CARDIO, true)
+
+    expect(get(s, HTA).isPresent).toBe(false)
+    expect(get(s, CORONARIA).isPresent).toBe(false)
+    expect(get(s, ACV).isPresent).toBeNull()
+  })
+
+  it('R2: si TODO el subárbol está en No, marcar Sí lo resetea a blanco', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.setIsPresent(CARDIO, false) // deja todo el subárbol en No
+
+    s.setIsPresent(CARDIO, true)
+
+    expect(get(s, HTA).isPresent).toBeNull()
+    expect(get(s, ACV).isPresent).toBeNull()
+  })
+
+  it('R2: la comprobación mira todo el subárbol, no solo los hijos directos', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.setIsPresent(ANTEC, false)
+    // una variable profunda deja de estar en No → ya no se cumple "todo en No"
+    get(s, DM_COMPLICADA).isPresent = null
+
+    s.setIsPresent(ANTEC, true)
+
+    expect(get(s, HTA).isPresent).toBe(false) // no se reseteó nada
+  })
+
+  // ── R3: invariante de subida ──
+  it('R3: marcar un nieto Sí promueve a madre y abuela', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+
+    s.setIsPresent(HTA, true)
+
+    expect(get(s, CARDIO).isPresent).toBe(true)
+    expect(get(s, 'antecedentes.medicos').isPresent).toBe(true)
+    expect(get(s, ANTEC).isPresent).toBe(true)
+  })
+
+  it('R3: un ? abajo promueve igual que un Sí', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+
+    s.setIsPresent(HTA, 'unknown')
+
+    expect(get(s, CARDIO).isPresent).toBe(true)
+  })
+
+  it('R3 es invariante: se reevalúa aunque el Sí venga de antes', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    get(s, HTA).isPresent = true // puesto a mano, sin pasar por setIsPresent
+
+    s.setIsPresent(RENAL_ERC, false) // cualquier cambio dispara el invariante
+
+    expect(get(s, CARDIO).isPresent).toBe(true)
+  })
+
+  // ── El rebote ──
+  it('rebote: marcar No con un Sí abajo deja la sección en Sí y marca el resto', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    get(s, HTA).isPresent = true
+
+    s.setIsPresent(CARDIO, false)
+
+    expect(get(s, CARDIO).isPresent).toBe(true)        // rebotó
+    expect(get(s, CORONARIA).isPresent).toBe(false)    // el resto sí quedó en No
+    expect(s.countSiOrUnknownBelow(CARDIO)).toBe(1)
+  })
+
+  // ── Candado manual ──
+  it('candado: la cascada no cruza una sección bloqueada', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.toggleLock(CARDIO)
+
+    s.setIsPresent(ANTEC, false)
+
+    expect(get(s, HTA).isPresent).toBeNull()           // congelada
+    expect(get(s, RENAL_ERC).isPresent).toBe(false)    // rama sin candado sí cambió
+  })
+
+  it('candado: un Sí encerrado no promueve por encima del candado', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.toggleLock(CARDIO)
+
+    s.setIsPresent(HTA, true)
+
+    expect(get(s, ANTEC).isPresent).not.toBe(true)
+  })
+
+  it('candado: abrirlo no dispara nada retroactivo', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    s.toggleLock(CARDIO)
+    s.setIsPresent(ANTEC, false)
+    expect(get(s, HTA).isPresent).toBeNull()
+
+    s.toggleLock(CARDIO) // desbloquear
+
+    expect(get(s, HTA).isPresent).toBeNull() // sigue igual
+  })
+
+  it('candado: toggleLock alterna y isLocked lo refleja', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    expect(s.isLocked(CARDIO)).toBe(false)
+    expect(s.toggleLock(CARDIO)).toBe(true)
+    expect(s.isLocked(CARDIO)).toBe(true)
+    expect(s.toggleLock(CARDIO)).toBe(false)
+  })
+
+  // ── R4: reset ──
+  it('R4: el reset deja el subárbol en blanco, incluso lo auto-bloqueado', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    get(s, HTA).isPresent = true
+    get(s, CORONARIA).isPresent = false
+
+    const cleared = s.resetDescendants(CARDIO)
+
+    expect(cleared).toBeGreaterThan(0)
+    expect(get(s, HTA).isPresent).toBeNull()
+    expect(get(s, CORONARIA).isPresent).toBeNull()
+  })
+
+  it('R4: el reset respeta el candado manual', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    get(s, HTA).isPresent = true
+    s.toggleLock(CARDIO)
+
+    s.resetDescendants(ANTEC)
+
+    expect(get(s, HTA).isPresent).toBe(true)
+  })
+
+  it('R4: el reset no borra evidencia', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(1, null)
+    const hta = get(s, HTA)
+    hta.isPresent = true
+    hta.evidenceText = 'hipertenso'
+
+    s.resetDescendants(CARDIO)
+
+    expect(hta.isPresent).toBeNull()
+    expect(hta.evidenceText).toBe('hipertenso')
+  })
+})

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch, computed } from 'vue'
 import { annotationService } from '@/services/annotation.service'
-import { FORM_SCHEMA, getLeafNodes } from '@/constants/formSchema'
+import { FORM_SCHEMA, getLeafNodes, isBooleanNode } from '@/constants/formSchema'
 import type { LlmPrediction, LlmPredictions } from '@/types/db'
 import type { EpicrisisDetail } from '@/stores/epicrisis'
 import { defaultClinicalData } from '@/types/clinical'
@@ -22,35 +22,22 @@ function getAllNodes(nodes = FORM_SCHEMA) {
   return list
 }
 
-// Build a map of parentKey → [all descendant keys] for cascade propagation
-function buildDescendantMap(nodes = FORM_SCHEMA): Map<string, string[]> {
-  const map = new Map<string, string[]>()
-  function collectDescendants(node: any): string[] {
-    const keys: string[] = []
-    if (node.children) {
-      for (const child of node.children) {
-        keys.push(child.key)
-        keys.push(...collectDescendants(child))
-      }
-    }
-    return keys
-  }
-  function traverse(node: any) {
-    if (node.children && node.children.length > 0) {
-      map.set(node.key, collectDescendants(node))
-    }
-    if (node.children) {
-      node.children.forEach(traverse)
-    }
-  }
-  nodes.forEach(traverse)
-  return map
-}
-
-const DESCENDANT_MAP = buildDescendantMap()
-
 const ALL_FORM_NODES = getAllNodes()
 const V3_LEAF_VARIABLES = getLeafNodes()
+
+// HU-044: hijos directos por clave, para recorrer el árbol deteniéndose en los candados
+const CHILDREN_MAP = new Map<string, string[]>(
+  ALL_FORM_NODES.map((n) => [n.key, (n.children ?? []).map((c: any) => c.key)])
+)
+
+// HU-044: claves que sostienen un estado Sí|No|? (el resto son fechas, selects y texto)
+const BOOLEAN_NODE_KEYS = new Set<string>(
+  ALL_FORM_NODES.filter(isBooleanNode).map((n) => n.key)
+)
+
+const PARENT_KEYS = new Set<string>(
+  ALL_FORM_NODES.filter((n) => (n.children ?? []).length > 0).map((n) => n.key)
+)
 
 // HU-039: campos que pasaron de leaf a type 'date'. Su valor legacy quedó en
 // evidenceMetadata.value; al cargar lo movemos a evidenceText (donde vive el 'date').
@@ -511,35 +498,134 @@ export const useAnnotationStore = defineStore('annotation', () => {
         clearGlobalSelection()
       }
 
-      // HU-032: Cascade propagation to descendants
-      const descendantKeys = DESCENDANT_MAP.get(name)
-      if (descendantKeys && descendantKeys.length > 0) {
-        if (value === false || value === 'unknown') {
-          // Propagate No/? down: set all descendants to the same value
-          for (const key of descendantKeys) {
-            const child = criteria.value.find((cr) => cr.criterionName === key)
-            if (child) {
-              child.isPresent = value
-              if (value === false) {
-                // Clear evidence data when cascading No
-                child.evidenceText = ''
-                child.comments = ''
-                child.evidenceMetadata = null
-              }
-            }
-          }
-        } else if (value === true) {
-          // When mother switches to Sí, reset children to null (blank)
-          // so the annotator must review them individually
-          for (const key of descendantKeys) {
-            const child = criteria.value.find((cr) => cr.criterionName === key)
-            if (child) {
-              child.isPresent = null
-            }
-          }
+      // HU-044: la cascada solo baja con No y solo escribe sobre lo que está en
+      // blanco. El ? ya no cascadea: bajarlo auto-bloquearía a los hijos y el
+      // invariante R3 devolvería la madre a Sí, o sea marcar ? la dejaría en Sí.
+      if (PARENT_KEYS.has(name) && !lockedKeys.value.has(name)) {
+        if (value === false) {
+          cascadeNoInto(name)
+        } else if (value === true && allBooleanDescendantsAreNo(name)) {
+          // R2: solo se resetea cuando TODO el subárbol estaba en No
+          resetDescendants(name)
         }
       }
+
+      enforceSiInvariant()
     }
+  }
+
+  // ── HU-044: candados, cascada e invariante ──────────────────────────────────
+
+  // Candado manual. Estado local de UI: no se persiste todavía (ver HU-044).
+  const lockedKeys = ref<Set<string>>(new Set())
+
+  function isLocked(key: string): boolean {
+    return lockedKeys.value.has(key)
+  }
+
+  function toggleLock(key: string): boolean {
+    const next = new Set(lockedKeys.value)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    lockedKeys.value = next
+    return next.has(key)
+  }
+
+  // Auto-candado: un nodo en Sí o ? se protege solo de la cascada. Es derivado —
+  // se libera en cuanto el anotador lo saca de ese estado.
+  function isAutoLocked(state: CriterionState | undefined): boolean {
+    return state?.isPresent === true || state?.isPresent === 'unknown'
+  }
+
+  function stateOf(key: string): CriterionState | undefined {
+    return criteria.value.find((c) => c.criterionName === key)
+  }
+
+  // R1: No baja solo sobre lo que está en blanco. Nunca toca evidencia, porque
+  // nunca escribe sobre una variable ya respondida.
+  function cascadeNoInto(key: string): void {
+    for (const childKey of CHILDREN_MAP.get(key) ?? []) {
+      if (lockedKeys.value.has(childKey)) continue // candado manual: no se cruza
+      const child = stateOf(childKey)
+      if (child && !isAutoLocked(child) && BOOLEAN_NODE_KEYS.has(childKey) && child.isPresent === null) {
+        child.isPresent = false
+      }
+      cascadeNoInto(childKey)
+    }
+  }
+
+  // R2: ¿todo el subárbol booleano está en No? Ignora las ramas con candado manual.
+  function allBooleanDescendantsAreNo(key: string): boolean {
+    let sawOne = false
+    function walk(k: string): boolean {
+      for (const childKey of CHILDREN_MAP.get(k) ?? []) {
+        if (lockedKeys.value.has(childKey)) continue
+        if (BOOLEAN_NODE_KEYS.has(childKey)) {
+          const child = stateOf(childKey)
+          if (!child || child.isPresent !== false) return false
+          sawOne = true
+        }
+        if (!walk(childKey)) return false
+      }
+      return true
+    }
+    return walk(key) && sawOne
+  }
+
+  // R4: deja en blanco el subárbol booleano. Ignora el auto-candado a propósito
+  // (es la vía de escape para deshacer una rama) y respeta el candado manual.
+  function resetDescendants(key: string): number {
+    let cleared = 0
+    function walk(k: string): void {
+      for (const childKey of CHILDREN_MAP.get(k) ?? []) {
+        if (lockedKeys.value.has(childKey)) continue
+        const child = stateOf(childKey)
+        if (child && BOOLEAN_NODE_KEYS.has(childKey) && child.isPresent !== null) {
+          child.isPresent = null
+          cleared++
+        }
+        walk(childKey)
+      }
+    }
+    walk(key)
+    enforceSiInvariant()
+    return cleared
+  }
+
+  // R3: toda madre con algún descendiente en Sí o ? queda en Sí. La búsqueda se
+  // detiene en un candado manual, así que un Sí encerrado no promueve hacia arriba.
+  function hasSiOrUnknownBelow(key: string): boolean {
+    for (const childKey of CHILDREN_MAP.get(key) ?? []) {
+      if (lockedKeys.value.has(childKey)) continue
+      if (isAutoLocked(stateOf(childKey))) return true
+      if (hasSiOrUnknownBelow(childKey)) return true
+    }
+    return false
+  }
+
+  function enforceSiInvariant(): void {
+    for (const key of PARENT_KEYS) {
+      if (lockedKeys.value.has(key)) continue
+      if (!BOOLEAN_NODE_KEYS.has(key)) continue
+      const parent = stateOf(key)
+      if (parent && parent.isPresent !== true && hasSiOrUnknownBelow(key)) {
+        parent.isPresent = true
+      }
+    }
+  }
+
+  // Para el aviso del rebote: cuántas variables quedaron en Sí/? bajo esta sección.
+  function countSiOrUnknownBelow(key: string): number {
+    let count = 0
+    function walk(k: string): void {
+      for (const childKey of CHILDREN_MAP.get(k) ?? []) {
+        if (lockedKeys.value.has(childKey)) continue
+        if (isAutoLocked(stateOf(childKey))) count++
+        walk(childKey)
+      }
+    }
+    walk(key)
+    return count
   }
 
   // HU-032: Fill all remaining null states as No (used before final submit)
@@ -946,6 +1032,11 @@ export const useAnnotationStore = defineStore('annotation', () => {
     saveProgress,
     submitFinal,
     fillRemainingAsNo,
+    lockedKeys,
+    isLocked,
+    toggleLock,
+    resetDescendants,
+    countSiOrUnknownBelow,
     reset,
   }
 })

@@ -8,6 +8,7 @@ export interface FormNode {
   choices?: string[]
   mutuallyExclusiveWith?: string[] // sibling keys that must be unchecked when this is checked
   dependsOnParentState?: boolean  // if true, only visible/enabled if parent state is true or not No
+  hideToggle?: boolean            // HU-042: mother whose content isn't a Sí/No question — no header toggle
   children?: FormNode[]
   synonyms?: string[]
   icd10Hint?: string
@@ -21,6 +22,7 @@ export const FORM_SCHEMA: FormNode[] = [
     key: 'hospitalizacion',
     label: 'Bloque 1. Datos de la hospitalización',
     type: 'mother',
+    hideToggle: true,
     children: [
       { id: '1.1', key: 'hospitalizacion.fecha_ingreso', label: 'Fecha de ingreso al hospital', type: 'date', placeholder: 'DD/MM/AAAA' },
       { id: '1.2', key: 'hospitalizacion.fecha_egreso', label: 'Fecha de egreso del hospital', type: 'date', placeholder: 'DD/MM/AAAA' }
@@ -642,6 +644,7 @@ export const FORM_SCHEMA: FormNode[] = [
     key: 'egreso',
     label: 'Bloque 8. Egreso',
     type: 'mother',
+    hideToggle: true,
     children: [
       { id: '8.1', key: 'egreso.fecha_egreso_upc', label: 'Fecha de egreso de UPC', type: 'date', placeholder: 'DD/MM/AAAA' },
       { id: '8.2', key: 'egreso.estado_vital', label: 'Estado vital al egreso de UPC', type: 'select', choices: ['Vivo', 'Fallecido'], synonyms: ['vivo', 'fallecido', 'muerto', 'deceso', 'mortalidad'] },
@@ -656,12 +659,19 @@ export const FORM_SCHEMA: FormNode[] = [
     key: 'calidad',
     label: 'Bloque 9. Calidad global de la epicrisis',
     type: 'mother',
+    hideToggle: true,
     children: [
       { id: '9.1', key: 'calidad.global', label: 'Calidad global de la epicrisis', type: 'select', choices: ['confiable', 'parcial', 'deficiente'] },
       { id: '9.2', key: 'calidad.comentario', label: 'Comentario final (opcional)', type: 'text' }
     ]
   }
 ]
+
+// HU-044: nodes that carry a Sí|No|? state. Only these take part in the cascade,
+// the reset and the upward invariant — dates, selects and free text have no `No`.
+export function isBooleanNode(node: FormNode): boolean {
+  return node.type === 'leaf' || (node.type === 'mother' && !node.hideToggle)
+}
 
 // Helper to recursively retrieve all leaf variables (nodes with no children of type leaf/mother, or node types that act as variables)
 export function getLeafNodes(nodes: FormNode[] = FORM_SCHEMA): FormNode[] {
