@@ -220,7 +220,8 @@ function paletteKeydown(e: KeyboardEvent) {
 
 
 const isReadOnly = computed(() => {
-  return isLockedByOthers.value || !!epicrisisStore.current?.completedAt
+  // Una entrega final marca progreso, pero no impide corregir y reenviar.
+  return isLockedByOthers.value
 })
 
 // HU-001: revisión experta — admin puede cerrar la derivación
@@ -988,7 +989,7 @@ onUnmounted(() => {
       </p>
       <ul class="text-sm text-gray-600 list-disc list-inside mb-4 space-y-1">
         <li>Marcará la epicrisis como <strong>Revisada</strong></li>
-        <li>No podrás modificar esta anotación posteriormente</li>
+        <li>Podrás corregir y reenviar esta anotación posteriormente</li>
         <li>Los datos quedarán registrados para validar el modelo LLM</li>
       </ul>
       <div class="flex gap-2 justify-end">
