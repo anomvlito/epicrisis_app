@@ -23,6 +23,8 @@ function applyHighlights() {
   spans.forEach(span => {
     const matches = q.length >= 2 && normalizeSearch(span.textContent ?? '').includes(q)
     span.classList.toggle('search-highlight', matches)
+    // Ver DynamicViewer: la activa se recalcula en cada búsqueda, si no queda pegada.
+    span.classList.remove('search-highlight-active')
     if (matches) count++
   })
   pdfMatchCount.value = count
@@ -31,10 +33,19 @@ function applyHighlights() {
 function scrollToPdfMatch(index: number) {
   if (!containerRef.value) return
   const matches = containerRef.value.querySelectorAll<HTMLElement>('.search-highlight')
+  matches.forEach((el, i) => el.classList.toggle('search-highlight-active', i === index))
   matches[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
-defineExpose({ containerRef, pdfMatchCount, scrollToPdfMatch })
+// HU-046: matchCount / scrollToMatch son la interfaz común con DynamicViewer.
+// Se conservan los nombres antiguos por compatibilidad.
+defineExpose({
+  containerRef,
+  pdfMatchCount,
+  scrollToPdfMatch,
+  matchCount: pdfMatchCount,
+  scrollToMatch: scrollToPdfMatch,
+})
 
 const pdfUrl = computed(() => {
   if (!props.pdfPath) return ''
@@ -181,5 +192,9 @@ onBeforeUnmount(async () => {
   background-color: rgba(250, 200, 0, 0.5);
   border-radius: 2px;
   outline: 1px solid rgba(200, 150, 0, 0.5);
+}
+.pdfTextLayer .search-highlight.search-highlight-active {
+  background-color: rgba(255, 140, 0, 0.65);
+  outline: 1px solid rgba(200, 90, 0, 0.8);
 }
 </style>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
+import { normalizeSearch } from '@/constants/clinicalItems'
 
 const props = defineProps<{
   layoutData: any
@@ -15,11 +16,44 @@ const pages = computed(() => {
 })
 
 const containerRef = ref<HTMLDivElement | null>(null)
-defineExpose({ containerRef })
+
+// HU-046: búsqueda dentro del layout. Misma interfaz que PdfViewer (matchCount /
+// scrollToMatch) para que AnnotationView no tenga que saber cuál visor está montado.
+const matchCount = ref(0)
+
+function applyHighlights() {
+  if (!containerRef.value) return
+  const spans = containerRef.value.querySelectorAll<HTMLElement>('.pdf-span')
+  const q = normalizeSearch(props.searchQuery?.trim() ?? '')
+  let count = 0
+  spans.forEach((span) => {
+    const matches = q.length >= 2 && normalizeSearch(span.textContent ?? '').includes(q)
+    span.classList.toggle('search-highlight', matches)
+    // La activa se recalcula desde cero en cada búsqueda: si no se limpiara aquí,
+    // el naranjo de la consulta anterior quedaría pegado para siempre.
+    span.classList.remove('search-highlight-active')
+    if (matches) count++
+  })
+  matchCount.value = count
+}
+
+function scrollToMatch(index: number) {
+  if (!containerRef.value) return
+  const matches = containerRef.value.querySelectorAll<HTMLElement>('.search-highlight')
+  matches.forEach((el, i) => el.classList.toggle('search-highlight-active', i === index))
+  matches[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+// El HTML del layout llega por v-html, así que hay que reaplicar cuando cambia
+// el documento y no solo cuando cambia la consulta.
+watch(() => props.searchQuery, applyHighlights)
+watch(pages, () => nextTick(applyHighlights), { immediate: true })
+
+defineExpose({ containerRef, matchCount, scrollToMatch })
 </script>
 
 <template>
-  <div 
+  <div
     ref="containerRef"
     class="flex flex-col flex-1 min-h-0 bg-[#4a4a4a] overflow-y-auto py-6 px-4 items-center pdf-document-container text-selection-zone"
   >
@@ -40,5 +74,16 @@ defineExpose({ containerRef })
 }
 .pdf-span::selection {
   background: rgba(0, 120, 255, 0.25);
+}
+
+/* HU-046: resaltado de búsqueda — mismos colores que el fallback PdfViewer */
+.pdf-document-container .search-highlight {
+  background-color: rgba(250, 200, 0, 0.5);
+  border-radius: 2px;
+  outline: 1px solid rgba(200, 150, 0, 0.5);
+}
+.pdf-document-container .search-highlight.search-highlight-active {
+  background-color: rgba(255, 140, 0, 0.65);
+  outline: 1px solid rgba(200, 90, 0, 0.8);
 }
 </style>
