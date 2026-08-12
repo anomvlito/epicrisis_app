@@ -141,6 +141,55 @@ describe('HU-013 notas del anotador', () => {
     expect(p.total).toBeGreaterThan(0)
     expect(p.percentage).toBeGreaterThanOrEqual(0)
   })
+
+  it('no exige fechas ni textos ocultos cuando su variable madre está en No', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(626, null)
+
+    s.setIsPresent('soporte.respiratorio.vmi', true)
+    const activeTotal = s.totalProgress.total
+    s.setIsPresent('soporte.respiratorio.vmi', false)
+
+    const conditionalKeys = [
+      'soporte.respiratorio.vmi.fecha_inicio',
+      'soporte.respiratorio.vmi.fecha_termino',
+      'soporte.respiratorio.vmi.motivo',
+    ]
+    expect(s.totalProgress.total).toBe(activeTotal - conditionalKeys.length)
+    expect(s.missingItems.map(item => item.key)).not.toEqual(
+      expect.arrayContaining(conditionalKeys),
+    )
+  })
+
+  it('todo No permite completar sin inventar datos en subcampos condicionales', () => {
+    const s = useAnnotationStore()
+    s.initForEpicrisis(626, null)
+    s.fillRemainingAsNo()
+
+    const textValues: Record<string, string> = {
+      'hospitalizacion.fecha_ingreso': '28/11/2022',
+      'hospitalizacion.fecha_egreso': '21/01/2023',
+      'ingreso.fecha_ingreso_upc': '28/11/2022',
+      'egreso.fecha_egreso_upc': '21/01/2023',
+      'egreso.diagnostico': 'Shock hipovolémico',
+      'calidad.comentario': 'Prueba de formulario',
+    }
+    for (const [key, value] of Object.entries(textValues)) s.setEvidence(key, value)
+
+    const selectValues: Record<string, string> = {
+      'ingreso.unidad_origen': 'Urgencia',
+      'egreso.estado_vital': 'Fallecido',
+      'egreso.destino': 'Sala común / otra unidad',
+      'calidad.global': 'confiable',
+    }
+    for (const [key, value] of Object.entries(selectValues)) {
+      const criterion = s.criteria.find(c => c.criterionName === key)!
+      criterion.evidenceMetadata = { value }
+    }
+
+    expect(s.missingItems).toEqual([])
+    expect(s.isComplete).toBe(true)
+  })
 })
 
 describe('Sincronización de fechas bidireccional y auto-fill', () => {
