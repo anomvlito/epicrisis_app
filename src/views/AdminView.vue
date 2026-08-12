@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { adminService } from '@/services/admin.service'
-import type { AdminEpicrisisRow, AdminStats, AdminUser, AdminMatrixRow, IrrResult } from '@/services/admin.service'
+import type { AdminEpicrisisRow, AdminStats, AdminUser, AdminMatrixRow, IrrResult, ExperimentDashboard } from '@/services/admin.service'
 import { useAuthStore } from '@/stores/auth'
 import { useEpicrisisStore } from '@/stores/epicrisis'
 import BaseLoader from '@/components/ui/BaseLoader.vue'
@@ -16,7 +16,7 @@ import type { AdminProgressFilter } from '@/utils/adminEpicrisisFilter'
 const auth = useAuthStore()
 const epicrisisStore = useEpicrisisStore()
 
-type AdminTab = 'assignment' | 'expert_queue' | 'matrix' | 'irr' | 'users' | 'my_tasks'
+type AdminTab = 'assignment' | 'experiment' | 'expert_queue' | 'matrix' | 'irr' | 'users' | 'my_tasks'
 
 // ── Assignment tab ──────────────────────────────────────────────────────────
 // ── Assignment tab ──────────────────────────────────────────────────────────
@@ -27,6 +27,11 @@ const saving = ref<Record<number, boolean>>({})
 const filterStatus = ref<'all' | 'pending' | 'in_review' | 'reviewed' | 'unassigned'>('all')
 const identifierQuery = ref('')
 const progressFilter = ref<AdminProgressFilter>('all')
+
+// ── Experiment tab ─────────────────────────────────────────────────────────
+const experimentData = ref<ExperimentDashboard | null>(null)
+const experimentLoaded = ref(false)
+const loadingExperiment = ref(false)
 
 // ── Matrix tab ──────────────────────────────────────────────────────────────
 const matrixRows = ref<AdminMatrixRow[]>([])
@@ -236,14 +241,31 @@ function switchTab(tab: AdminTab) {
   confirmDeleteId.value = null
   openDropdownId.value = null
   if (tab === 'matrix') loadMatrix()
+  if (tab === 'experiment') loadExperiment()
   if (tab === 'irr') loadIrr()
   if (tab === 'users') loadAllUsers()
   if (tab === 'my_tasks') loadMyTasks()
 }
 
+async function loadExperiment(force = false) {
+  if (experimentLoaded.value && !force) return
+  loadingExperiment.value = true
+  errorMsg.value = ''
+  try {
+    experimentData.value = await adminService.getExperiment()
+    experimentLoaded.value = true
+  } catch (e) {
+    errorMsg.value = e instanceof Error ? e.message : 'Error cargando el experimento'
+  } finally {
+    loadingExperiment.value = false
+  }
+}
+
 function refresh() {
   if (activeTab.value === 'assignment') {
     load()
+  } else if (activeTab.value === 'experiment') {
+    loadExperiment(true)
   } else if (activeTab.value === 'matrix') {
     matrixLoaded.value = false
     loadMatrix()
@@ -437,6 +459,16 @@ onMounted(load)
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
           Asignaciones
+        </button>
+        <button
+          class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap"
+          :class="activeTab === 'experiment' ? 'bg-white text-brand-600 shadow-md ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
+          @click="switchTab('experiment')"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19h6m-7 2h8a2 2 0 002-2v-5.5a4 4 0 00-1.17-2.83L14 7.83V5h-4v2.83l-2.83 2.84A4 4 0 006 13.5V19a2 2 0 002 2z" />
+          </svg>
+          Experimento 50
         </button>
         <button
           class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
@@ -742,6 +774,69 @@ onMounted(load)
           <div class="mt-4 text-xs text-gray-400">
             <strong class="text-gray-600">Anotadores ({{ annotators.length }}):</strong>
             {{ annotators.map(u => u.email.split('@')[0]).join(', ') }}
+          </div>
+        </template>
+      </template>
+
+      <!-- TAB: EXPERIMENTO 50 -->
+      <template v-if="activeTab === 'experiment'">
+        <BaseLoader v-if="loadingExperiment" message="Cargando experimento…" />
+        <template v-else-if="experimentData">
+          <div class="mb-5">
+            <h2 class="text-lg font-bold text-gray-900">{{ experimentData.experiment.name }}</h2>
+            <p class="text-sm text-gray-500">Vista de seguimiento; las asignaciones siguen visibles y editables en el panel global.</p>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <div v-for="item in [
+              ['Epicrisis', experimentData.stats.cases],
+              ['Revisiones', experimentData.stats.reviews],
+              ['Completadas', experimentData.stats.completed],
+              ['Pendientes', experimentData.stats.inProgress],
+            ]" :key="String(item[0])" class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <div class="text-2xl font-bold text-gray-900">{{ item[1] }}</div>
+              <div class="text-xs text-gray-400 mt-0.5">{{ item[0] }}</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-[300px_1fr] gap-5">
+            <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden self-start">
+              <h3 class="px-4 py-3 bg-gray-50 border-b text-xs font-bold text-gray-600 uppercase">Progreso por anotador</h3>
+              <div v-for="annotator in experimentData.annotators" :key="annotator.id" class="px-4 py-3 border-b last:border-0">
+                <div class="flex justify-between gap-3 text-xs mb-1.5">
+                  <span class="font-medium text-gray-700 truncate" :title="annotator.email">{{ annotator.email.split('@')[0] }}</span>
+                  <span class="text-gray-500">{{ annotator.completed }}/{{ annotator.assigned }}</span>
+                </div>
+                <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-brand-500 rounded-full" :style="{ width: `${annotator.assigned ? annotator.completed / annotator.assigned * 100 : 0}%` }" />
+                </div>
+              </div>
+            </section>
+
+            <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+              <table class="w-full text-sm min-w-[680px]">
+                <thead><tr class="bg-gray-50 border-b">
+                  <th class="text-left px-4 py-3 text-xs text-gray-500 uppercase">Caso</th>
+                  <th class="text-left px-4 py-3 text-xs text-gray-500 uppercase">Epicrisis</th>
+                  <th class="text-left px-4 py-3 text-xs text-gray-500 uppercase">Revisores</th>
+                  <th class="text-left px-4 py-3 text-xs text-gray-500 uppercase">Avance</th>
+                </tr></thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr v-for="item in experimentData.cases" :key="item.id" class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-semibold text-brand-700">{{ item.caseNumber }}</td>
+                    <td class="px-4 py-3 font-mono text-xs">
+                      <router-link :to="{ name: 'annotate', params: { id: item.id } }" class="hover:underline">{{ maskedId(item.id, item.patientId) }}</router-link>
+                    </td>
+                    <td class="px-4 py-3"><div class="flex flex-wrap gap-1">
+                      <span v-for="reviewer in item.assignees" :key="reviewer.id" class="px-1.5 py-0.5 rounded-full text-[10px] border" :class="reviewer.completedAt ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-600'">
+                        {{ reviewer.email.split('@')[0] }}
+                      </span>
+                    </div></td>
+                    <td class="px-4 py-3 text-xs text-gray-500">{{ item.assignees.filter(a => a.completedAt).length }}/{{ item.assignees.length }} completadas</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
           </div>
         </template>
       </template>
