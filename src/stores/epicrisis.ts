@@ -13,6 +13,7 @@ export interface EpicrisisListItem {
   assigneeId: number | null
   createdAt: string
   assigneeEmail: string | null
+  completedAt: string | null
 }
 
 export interface EpicrisisSection {
@@ -49,9 +50,9 @@ export const useEpicrisisStore = defineStore('epicrisis', () => {
     dashboardScrollTop.value = 0
   }
 
-  const pending = computed(() => list.value.filter((e) => e.status === 'pending'))
-  const inReview = computed(() => list.value.filter((e) => e.status === 'in_review'))
-  const reviewed = computed(() => list.value.filter((e) => e.status === 'reviewed'))
+  const pending = computed(() => list.value.filter((e) => !e.completedAt && e.status === 'pending'))
+  const inReview = computed(() => list.value.filter((e) => !e.completedAt && e.status === 'in_review'))
+  const reviewed = computed(() => list.value.filter((e) => !!e.completedAt || e.status === 'reviewed'))
   const needsExpertReview = computed(() => list.value.filter((e) => e.status === 'needs_expert_review'))
 
   async function fetchList(silent = false) {

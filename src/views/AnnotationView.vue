@@ -220,7 +220,7 @@ function paletteKeydown(e: KeyboardEvent) {
 
 
 const isReadOnly = computed(() => {
-  return isLockedByOthers.value
+  return isLockedByOthers.value || !!epicrisisStore.current?.completedAt
 })
 
 // HU-001: revisión experta — admin puede cerrar la derivación
@@ -354,7 +354,7 @@ async function handleSaveProgress() {
 
 async function handleSubmitFinal() {
   // HU-032: Check for null (unreviewed) states before submitting
-  const nullCount = annotationStore.criteria.filter(c => c.isPresent === null).length
+  const nullCount = annotationStore.pendingBooleanCount
   if (nullCount > 0 && !showFillRemainingModal.value) {
     pendingNullCount.value = nullCount
     showFillRemainingModal.value = true
