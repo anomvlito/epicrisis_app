@@ -30,6 +30,17 @@ const CHILDREN_MAP = new Map<string, string[]>(
   ALL_FORM_NODES.map((n) => [n.key, (n.children ?? []).map((c: any) => c.key)])
 )
 
+// Ancestro directo por clave. El progreso usa esta relación para no exigir
+// subcampos que la interfaz oculta detrás de una respuesta No / sin responder.
+const PARENT_MAP = new Map<string, string>()
+function indexParents(nodes = FORM_SCHEMA, parentKey?: string): void {
+  for (const node of nodes) {
+    if (parentKey) PARENT_MAP.set(node.key, parentKey)
+    if (node.children) indexParents(node.children, node.key)
+  }
+}
+indexParents()
+
 // HU-044: claves que sostienen un estado Sí|No|? (el resto son fechas, selects y texto)
 const BOOLEAN_NODE_KEYS = new Set<string>(
   ALL_FORM_NODES.filter(isBooleanNode).map((n) => n.key)
@@ -194,9 +205,21 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   const activeTimeMs = ref(0)
 
-  // Helper to determine if a node is visible (meaning no parent mother is marked 'No')
+  // Un nodo condicional solo cuenta si todos sus ancestros clínicos booleanos
+  // están activos. Los bloques estructurales hideToggle no bloquean a sus hijos.
   function isNodeVisible(key: string): boolean {
-    return !!key
+    // Los booleanos reciben No por cascada y siguen formando parte del
+    // denominador clínico. Solo se ocultan subcampos que no admiten No.
+    if (BOOLEAN_NODE_KEYS.has(key)) return true
+    let parentKey = PARENT_MAP.get(key)
+    while (parentKey) {
+      if (BOOLEAN_NODE_KEYS.has(parentKey)) {
+        const parent = criteria.value.find(c => c.criterionName === parentKey)
+        if (parent?.isPresent !== true && parent?.isPresent !== 'unknown') return false
+      }
+      parentKey = PARENT_MAP.get(parentKey)
+    }
+    return true
   }
 
   const totalProgress = computed(() => {
