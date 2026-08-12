@@ -319,15 +319,15 @@ describe('HU-032 inicio en blanco y propagación en cascada', () => {
     expect(hta.isPresent).toBeNull()
   })
 
-  it('fillRemainingAsNo convierte todos los null restantes en false', () => {
+  it('fillRemainingAsNo convierte solo preguntas booleanas y no campos de texto/fecha/select', () => {
     const s = useAnnotationStore()
     s.initForEpicrisis(1, null)
     // Mark just one node as Sí
     s.setIsPresent('antecedentes.cardiovascular.hipertension_arterial', true)
     const filled = s.fillRemainingAsNo()
     expect(filled).toBeGreaterThan(0)
-    // No more nulls should exist
-    expect(s.criteria.every(c => c.isPresent !== null)).toBe(true)
+    expect(s.pendingBooleanCount).toBe(0)
+    expect(s.criteria.find(c => c.criterionName === 'egreso.diagnostico')?.isPresent).toBeNull()
     // The one we set to true should remain true
     const hta = s.criteria.find(c => c.criterionName === 'antecedentes.cardiovascular.hipertension_arterial')!
     expect(hta.isPresent).toBe(true)

@@ -268,6 +268,10 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   const isComplete = computed(() => totalProgress.value.completed === totalProgress.value.total)
 
+  const pendingBooleanCount = computed(() =>
+    criteria.value.filter(c => BOOLEAN_NODE_KEYS.has(c.criterionName) && c.isPresent === null).length
+  )
+
   const missingItems = computed((): MissingItem[] => {
     const items: MissingItem[] = []
     const visibleLeaves = V3_LEAF_VARIABLES.filter(node => isNodeVisible(node.key))
@@ -655,7 +659,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
   function fillRemainingAsNo(): number {
     let filled = 0
     for (const c of criteria.value) {
-      if (c.isPresent === null) {
+      if (BOOLEAN_NODE_KEYS.has(c.criterionName) && c.isPresent === null) {
         c.isPresent = false
         filled++
       }
@@ -1012,6 +1016,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     hasSelection,
     totalProgress,
     isComplete,
+    pendingBooleanCount,
     pendingCount,
     missingItems,
     fechaIngresoHosp,
