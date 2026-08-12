@@ -68,9 +68,25 @@ export interface AdminUser {
   termsAcceptedAt: string | null
 }
 
+export interface ExperimentDashboard {
+  experiment: { id: number; code: string; name: string; status: string; createdAt: string }
+  cases: Array<{
+    caseNumber: string
+    id: number
+    patientId: string | null
+    status: EpicrisisStatus
+    assignees: Array<{ id: number; email: string; completedAt: string | null; activeTimeMs: number }>
+  }>
+  annotators: Array<{ id: number; email: string; assigned: number; completed: number }>
+  stats: { cases: number; reviews: number; completed: number; inProgress: number }
+}
+
 export const adminService = {
   getEpicrises: () =>
     api.get<{ epicrises: AdminEpicrisisRow[]; stats: AdminStats }>('/admin?resource=epicrisis'),
+
+  getExperiment: () =>
+    api.get<ExperimentDashboard>('/admin?resource=experiment&code=concordancia-50-v1'),
 
   getUsers: () =>
     api.get<{ users: AdminUser[] }>('/admin?resource=users'),
