@@ -28,6 +28,21 @@ export interface IrrResult {
   results: IrrCriterionResult[]
   nOverlapped: number
   avgKappa: number | null
+  scope?: AnalyticsScope
+}
+
+export interface AnalyticsScope {
+  type: 'experiment' | 'global'
+  code: string | null
+  name: string
+  completedOnly?: boolean
+}
+
+export interface EpicrisisReviewer {
+  id: number
+  email: string
+  completedAt: string | null
+  annotationCount: number
 }
 
 export interface MatrixAnnotatorEntry {
@@ -94,14 +109,17 @@ export const adminService = {
   getAllUsers: () =>
     api.get<{ users: AdminUser[] }>('/admin?resource=allUsers'),
 
-  getMatrix: () =>
-    api.get<{ matrix: AdminMatrixRow[] }>('/admin?resource=matrix'),
+  getMatrix: (experimentCode = 'concordancia-50-v1') =>
+    api.get<{ matrix: AdminMatrixRow[]; scope: AnalyticsScope }>(`/admin?resource=matrix&experimentCode=${encodeURIComponent(experimentCode)}`),
+
+  getEpicrisisReviewers: (epicrisisId: number) =>
+    api.get<{ reviewers: EpicrisisReviewer[] }>(`/admin?resource=epicrisisReviewers&epicrisisId=${epicrisisId}`),
 
   assign: (epicrisisId: number, userIds: number[]) =>
     api.patch<{ ok: boolean }>('/admin', { epicrisisId, userIds }),
 
-  getIRR: () =>
-    api.get<IrrResult>('/admin?resource=irr'),
+  getIRR: (experimentCode = 'concordancia-50-v1') =>
+    api.get<IrrResult>(`/admin?resource=irr&experimentCode=${encodeURIComponent(experimentCode)}`),
 
   createUser: (email: string, password: string, role: 'admin' | 'annotator') =>
     api.post<{ ok: boolean; user: AdminUser }>('/admin', { action: 'createUser', email, password, role }),
