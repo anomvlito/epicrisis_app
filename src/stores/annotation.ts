@@ -342,6 +342,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     llmPredictions: LlmPredictions | null,
     epicrisisData?: EpicrisisDetail | null,
   ) {
+    persistenceEnabled.value = true
     epicrisisId.value = id
 
     let criteriaLoaded = false
@@ -470,6 +471,39 @@ export const useAnnotationStore = defineStore('annotation', () => {
         }
       }
     })
+    migrateReTypedFields()
+  }
+
+  function loadAdminReview(
+    id: number,
+    serverAnnotations: Parameters<typeof loadFromServer>[0],
+    serverClinicalData: Record<string, any> | null,
+    serverClinicalDifficulty: Record<string, { difficulty: string | null; notes: string }>,
+    llmPredictions: LlmPredictions | null,
+  ) {
+    persistenceEnabled.value = false
+    reset()
+    epicrisisId.value = id
+    criteria.value = buildInitial(llmPredictions)
+    if (serverAnnotations.length) loadFromServer(serverAnnotations, llmPredictions)
+
+    const defaults = defaultClinicalData()
+    const data = serverClinicalData ?? {}
+    for (const key of Object.keys(defaults)) {
+      if (key !== 'vmiInicio' && key !== 'vmiFin') {
+        ;(clinicalData.value as any)[key] = data[key] ?? (defaults as any)[key]
+      }
+    }
+    clinicalData.value._unknowns = data.unknownFields ?? []
+    clinicalData.value.vmiInicio = data.vmiInicio ?? ''
+    clinicalData.value.vmiFin = data.vmiFin ?? ''
+    fechaIngresoHosp.value = data.fechaIngresoHosp ?? ''
+    fechaEgresoHosp.value = data.fechaEgresoHosp ?? ''
+    fechaIngresoUci.value = data.fechaIngresoUci ?? ''
+    fechaEgresoUci.value = data.fechaEgresoUci ?? ''
+    comentarioFinal.value = data.comentarioFinal ?? ''
+    clinicalDifficulty.value = {}
+    setClinicalDifficultyFromServer(serverClinicalDifficulty)
     migrateReTypedFields()
   }
 
@@ -946,8 +980,10 @@ export const useAnnotationStore = defineStore('annotation', () => {
     }
   }
 
+  const persistenceEnabled = ref(true)
+
   function persistLocally() {
-    if (!epicrisisId.value) return
+    if (!epicrisisId.value || !persistenceEnabled.value) return
     const toSave = {
       criteria: criteria.value.map(({ llm: _llm, ...rest }) => rest),
       fechaIngresoHosp: fechaIngresoHosp.value,
@@ -1037,6 +1073,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     setDifficultyNotes,
     initForEpicrisis,
     loadFromServer,
+    loadAdminReview,
     setActive,
     setActiveClinical,
     setActiveMetadata,

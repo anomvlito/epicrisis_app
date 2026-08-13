@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { adminService } from '@/services/admin.service'
-import type { AdminEpicrisisRow, AdminStats, AdminUser, AdminMatrixRow, IrrResult, ExperimentDashboard } from '@/services/admin.service'
+import type { AdminEpicrisisRow, AdminStats, AdminUser, AdminMatrixRow, IrrResult, ExperimentDashboard, AnalyticsScope } from '@/services/admin.service'
 import { useAuthStore } from '@/stores/auth'
 import { useEpicrisisStore } from '@/stores/epicrisis'
 import BaseLoader from '@/components/ui/BaseLoader.vue'
@@ -37,6 +37,7 @@ const loadingExperiment = ref(false)
 const matrixRows = ref<AdminMatrixRow[]>([])
 const loadingMatrix = ref(false)
 const matrixLoaded = ref(false)
+const matrixScope = ref<AnalyticsScope | null>(null)
 
 // ── Shared ──────────────────────────────────────────────────────────────────
 const activeTab = ref<AdminTab>('assignment')
@@ -201,6 +202,7 @@ async function loadMatrix() {
   try {
     const res = await adminService.getMatrix()
     matrixRows.value = res.matrix
+    matrixScope.value = res.scope
     matrixLoaded.value = true
   } catch {
     errorMsg.value = 'Error cargando matriz'
@@ -944,6 +946,10 @@ onMounted(load)
         <BaseLoader v-if="loadingIrr" message="Calculando métricas IRR…" />
 
         <template v-else-if="irrData">
+          <div class="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+            <strong>Alcance:</strong> {{ irrData.scope?.name ?? 'Experimento 50' }}.
+            Solo se incluyen anotaciones enviadas; los borradores no modifican el acuerdo.
+          </div>
           <!-- Summary cards -->
           <div class="grid grid-cols-3 gap-3 mb-6">
             <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
@@ -1019,7 +1025,7 @@ onMounted(load)
           </div>
 
           <p class="mt-3 text-xs text-gray-400">
-            Solo se muestran epicrisis anotadas por ≥2 personas. κ calculado con Pe=0.5 (distribución binaria conservadora).
+            Solo se muestran epicrisis finalizadas por ≥2 personas. κ usa las frecuencias marginales observadas de cada par de respuestas.
           </p>
         </template>
 
@@ -1033,7 +1039,13 @@ onMounted(load)
       <!-- ═══════════════════════════════════════════════════════════════════ -->
       <template v-else-if="activeTab === 'matrix'">
         <BaseLoader v-if="loadingMatrix" message="Cargando matriz…" />
-        <AdminMatrix v-else :rows="matrixRows" />
+        <template v-else>
+          <div class="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+            <strong>Alcance:</strong> {{ matrixScope?.name ?? 'Experimento 50' }}.
+            Muestra el estado vivo de los cinco anotadores asignados, incluidos sus borradores.
+          </div>
+          <AdminMatrix :rows="matrixRows" />
+        </template>
       </template>
 
       <!-- ═══════════════════════════════════════════════════════════════════ -->

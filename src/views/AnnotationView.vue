@@ -5,7 +5,7 @@ import { useEpicrisisStore, type EpicrisisListItem } from '@/stores/epicrisis'
 import { useAuthStore } from '@/stores/auth'
 import { useAnnotationStore, type MissingItem } from '@/stores/annotation'
 import { annotationService } from '@/services/annotation.service'
-import { adminService } from '@/services/admin.service'
+import { adminService, type EpicrisisReviewer } from '@/services/admin.service'
 import { useTextSelection } from '@/composables/useTextSelection'
 import { useAntiScreenCapture } from '@/composables/useAntiScreenCapture'
 import { useAnnotationTimer } from '@/composables/useAnnotationTimer'
@@ -97,6 +97,29 @@ const lastAutoSavedLabel = computed(() => {
   return lastAutoSaved.value.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
 })
 let autoSaveInterval: ReturnType<typeof setInterval> | null = null
+let adminReviewInterval: ReturnType<typeof setInterval> | null = null
+const adminReviewers = ref<EpicrisisReviewer[]>([])
+const selectedReviewUserId = ref<number | null>(null)
+const loadingAdminReview = ref(false)
+
+async function loadAdminReview(userId = selectedReviewUserId.value) {
+  if (!auth.isAdmin || !userId) return
+  loadingAdminReview.value = true
+  try {
+    const response = await annotationService.getForEpicrisis(epicrisisId, userId)
+    annotationStore.loadAdminReview(
+      epicrisisId,
+      response.annotations,
+      response.clinicalData,
+      response.clinicalDifficulty,
+      epicrisisStore.current?.llmPredictions ?? null,
+    )
+  } catch (e) {
+    showToast(e instanceof Error ? e.message : 'No se pudo cargar la revisión.', 'error')
+  } finally {
+    loadingAdminReview.value = false
+  }
+}
 
 async function runAutoSave() {
   if (isReadOnly.value || annotationStore.saving || annotationStore.submitting) return
@@ -221,7 +244,7 @@ function paletteKeydown(e: KeyboardEvent) {
 
 const isReadOnly = computed(() => {
   // Una entrega final marca progreso, pero no impide corregir y reenviar.
-  return isLockedByOthers.value
+  return isLockedByOthers.value || (auth.isAdmin && selectedReviewUserId.value !== null)
 })
 
 // HU-001: revisión experta — admin puede cerrar la derivación
@@ -437,13 +460,18 @@ onMounted(async () => {
     // Re-inicializar con predicciones y fechas auto-extraídas
     annotationStore.initForEpicrisis(epicrisisId, llmPredictions, epicrisisStore.current)
 
-    // Cargar anotaciones guardadas
-    const { annotations, clinicalDifficulty } = await annotationService.getForEpicrisis(epicrisisId)
-    if (annotations.length > 0) {
-      annotationStore.loadFromServer(annotations, llmPredictions)
-    }
-    if (clinicalDifficulty && Object.keys(clinicalDifficulty).length > 0) {
-      annotationStore.setClinicalDifficultyFromServer(clinicalDifficulty)
+    if (auth.isAdmin) {
+      const response = await adminService.getEpicrisisReviewers(epicrisisId)
+      adminReviewers.value = response.reviewers
+      selectedReviewUserId.value = response.reviewers[0]?.id ?? null
+      if (selectedReviewUserId.value) await loadAdminReview()
+    } else {
+      // Cargar anotaciones guardadas del anotador autenticado
+      const { annotations, clinicalDifficulty } = await annotationService.getForEpicrisis(epicrisisId)
+      if (annotations.length > 0) annotationStore.loadFromServer(annotations, llmPredictions)
+      if (clinicalDifficulty && Object.keys(clinicalDifficulty).length > 0) {
+        annotationStore.setClinicalDifficultyFromServer(clinicalDifficulty)
+      }
     }
 
     // Try to fetch layout data
@@ -466,6 +494,9 @@ onMounted(async () => {
 
   validation.attachWatchers()
   autoSaveInterval = setInterval(runAutoSave, 2 * 60 * 1000)
+  if (auth.isAdmin && selectedReviewUserId.value) {
+    adminReviewInterval = setInterval(() => loadAdminReview(), 30 * 1000)
+  }
 
   if (COMORBIDITIES.length > 0) {
     annotationStore.setActive(COMORBIDITIES[0].name)
@@ -473,6 +504,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  if (adminReviewInterval) clearInterval(adminReviewInterval)
   window.removeEventListener('resize', updateWindowWidth)
   window.removeEventListener('keydown', handleKeyDown)
   document.removeEventListener('mousedown', handleCaptureOutsideClick)
@@ -529,6 +561,31 @@ onUnmounted(() => {
           title="Nombre privado para reconocer esta epicrisis. Solo tú lo ves y se guarda en este equipo."
           class="hidden sm:inline-block flex-shrink-0 w-32 md:w-44 text-xs text-gray-600 placeholder-gray-300 bg-gray-50 border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:border-brand-400 focus:bg-white transition-colors"
         />
+      </div>
+
+      <div v-if="auth.isAdmin && adminReviewers.length" class="flex items-center gap-2 flex-shrink-0">
+        <label for="reviewer-select" class="hidden lg:inline text-[11px] font-semibold text-gray-500">
+          Revisando a
+        </label>
+        <select
+          id="reviewer-select"
+          v-model.number="selectedReviewUserId"
+          class="max-w-52 rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-1.5 text-xs font-medium text-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          :disabled="loadingAdminReview"
+          @change="loadAdminReview()"
+        >
+          <option v-for="reviewer in adminReviewers" :key="reviewer.id" :value="reviewer.id">
+            {{ reviewer.email }} · {{ reviewer.annotationCount }} campos{{ reviewer.completedAt ? ' · enviada' : ' · borrador' }}
+          </option>
+        </select>
+        <button
+          class="rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+          :disabled="loadingAdminReview"
+          title="Actualizar respuestas desde el servidor"
+          @click="loadAdminReview()"
+        >
+          {{ loadingAdminReview ? 'Actualizando…' : 'Actualizar' }}
+        </button>
       </div>
 
       <div class="flex-1" />
@@ -682,7 +739,7 @@ onUnmounted(() => {
         v-if="isReadOnly"
         class="px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200"
       >
-        Bloqueado (Solo Lectura)
+        {{ auth.isAdmin && selectedReviewUserId ? 'Revisión en vivo · Solo lectura' : 'Bloqueado (Solo Lectura)' }}
       </div>
     </div>
 

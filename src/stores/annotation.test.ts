@@ -90,6 +90,32 @@ describe('annotation store — captura y estado activo', () => {
   })
 })
 
+describe('revisión administrativa', () => {
+  it('reemplaza respuestas por anotador sin contaminar el borrador local del admin', () => {
+    const store = useAnnotationStore()
+    store.initForEpicrisis(626, null)
+    localStorage.removeItem('annotation_draft_626')
+
+    store.loadAdminReview(626, [{
+      criterionName: 'antecedentes.cardiovascular.hipertension_arterial', isPresent: true, evidenceText: 'HTA conocida', comments: 'Vicente',
+    }], { fechaIngresoHosp: '28/11/2022', notes: 'nota privada' }, {}, null)
+
+    expect(store.criteria.find(item => item.criterionName === 'antecedentes.cardiovascular.hipertension_arterial')?.isPresent).toBe(true)
+    expect(store.fechaIngresoHosp).toBe('28/11/2022')
+    expect(store.clinicalData.notes).toBe('nota privada')
+    expect(localStorage.getItem('annotation_draft_626')).toBeNull()
+
+    store.loadAdminReview(626, [{
+      criterionName: 'antecedentes.cardiovascular.hipertension_arterial', isPresent: false, evidenceText: null, comments: 'Matías',
+    }], null, {}, null)
+
+    expect(store.criteria.find(item => item.criterionName === 'antecedentes.cardiovascular.hipertension_arterial')?.isPresent).toBe(false)
+    expect(store.fechaIngresoHosp).toBe('')
+    expect(store.clinicalData.notes).toBe('')
+    expect(localStorage.getItem('annotation_draft_626')).toBeNull()
+  })
+})
+
 // HU-001 (anotador) — cierre automático del modo captura.
 // Verifica el mecanismo del store detrás de captureEvidence() y del listener
 // click-outside (handleCaptureOutsideClick) de AnnotationView.
